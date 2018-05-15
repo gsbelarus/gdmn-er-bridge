@@ -61,3 +61,7 @@ typings/
 .next
 
 dict.opcorpora.txt
+
+dist/*.js.map
+dist/**/*.js.map
+
