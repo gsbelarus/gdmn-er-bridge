@@ -1,0 +1,32 @@
+{
+  "name": "gdmn-er-bridge",
+  "version": "1.0.0",
+  "description": "gdmn-er-bridge",
+  "main": "./dist/index.js",
+  "scripts": {
+    "test": "tsc && jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gsbelarus/gdmn-er-bridge.git"
+  },
+  "keywords": [
+    "gdmn"
+  ],
+  "author": "Golden Software of Belarus, Ltd",
+  "license": "MPL-2.0",
+  "bugs": {
+    "url": "https://github.com/gsbelarus/gdmn-er-bridge/issues"
+  },
+  "homepage": "https://github.com/gsbelarus/gdmn-er-bridge#readme",
+  "dependencies": {
+    "gdmn-db": "git://github.com/gsbelarus/gdmn-db.git",
+    "gdmn-orm": "git://github.com/gsbelarus/gdmn-orm.git"
+  },
+  "devDependencies": {
+    "@types/jest": "^22.2.3",
+    "jest": "^22.4.3",
+    "ts-jest": "^22.4.6",
+    "typescript": "^2.8.3"
+  }
+}
