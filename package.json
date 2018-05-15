@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "gdmn-er-bridge",
   "main": "./dist/index.js",
+  "types": "./dist/definitions/index.d.ts",
   "scripts": {
     "test": "tsc && jest"
   },
