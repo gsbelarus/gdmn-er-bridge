@@ -142,7 +142,19 @@ function erExport(dbs, connection, transaction, erModel) {
                 var line = createEntity(lineParent, lineAdapter, false, "LINE_" + ruid + "_" + setLR, { ru: { name: "\u041F\u043E\u0437\u0438\u0446\u0438\u044F: " + name } });
                 line.add(new erm.ParentAttribute('PARENT', { ru: { name: 'Шапка документа' } }, [header]));
                 documentClasses[ruid] = __assign({}, documentClasses[ruid], { line: line });
-                header.add(new erm.DetailAttribute(line.name, line.lName, false, [line]));
+                var masterLinks = [
+                    {
+                        detailRelation: 'GD_DOCUMENT',
+                        link2masterField: 'PARENT'
+                    }
+                ];
+                if (dbs.relations[setLR] && dbs.relations[setLR].relationFields['MASTERKEY']) {
+                    masterLinks.push({
+                        detailRelation: setLR,
+                        link2masterField: 'MASTERKEY'
+                    });
+                }
+                header.add(new erm.DetailAttribute(line.name, line.lName, false, [line], { masterLinks: masterLinks }));
             }
         }
         function recursInherited(parentRelation, parentEntity) {
@@ -495,7 +507,14 @@ function erExport(dbs, connection, transaction, erModel) {
                         crossRelation: 'GD_CONTACTLIST'
                     }));
                     companyAccount = createEntity(undefined, rdbadapter.relationName2Adapter('GD_COMPANYACCOUNT'));
-                    Company.add(new erm.DetailAttribute('GD_COMPANYACCOUNT', { ru: { name: 'Банковские счета' } }, false, [companyAccount]));
+                    Company.add(new erm.DetailAttribute('GD_COMPANYACCOUNT', { ru: { name: 'Банковские счета' } }, false, [companyAccount], {
+                        masterLinks: [
+                            {
+                                detailRelation: 'GD_COMPANYACCOUNT',
+                                link2masterField: 'COMPANYKEY'
+                            }
+                        ]
+                    }));
                     gdtables_1.gedeminTables.forEach(function (t) { return createEntity(undefined, rdbadapter.relationName2Adapter(t)); });
                     createEntity(undefined, rdbadapter.relationName2Adapter('INV_CARD'));
                     TgdcDocument = createEntity(undefined, rdbadapter.relationName2Adapter('GD_DOCUMENT'), true, 'TgdcDocument');

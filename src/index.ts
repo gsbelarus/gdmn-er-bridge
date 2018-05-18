@@ -388,7 +388,16 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
   const companyAccount = createEntity(undefined, rdbadapter.relationName2Adapter('GD_COMPANYACCOUNT'));
 
   Company.add(
-    new erm.DetailAttribute('GD_COMPANYACCOUNT', {ru: {name: 'Банковские счета'}}, false, [companyAccount])
+    new erm.DetailAttribute('GD_COMPANYACCOUNT', {ru: {name: 'Банковские счета'}}, false, [companyAccount],
+      {
+        masterLinks: [
+          {
+            detailRelation: 'GD_COMPANYACCOUNT',
+            link2masterField: 'COMPANYKEY'
+          }
+        ]
+      }
+    )
   );
 
   gedeminTables.forEach( t => createEntity(undefined, rdbadapter.relationName2Adapter(t)) );
@@ -450,8 +459,20 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
         new erm.ParentAttribute('PARENT', {ru: {name: 'Шапка документа'}}, [header])
       );
       documentClasses[ruid] = { ...documentClasses[ruid], line };
+      const masterLinks = [
+        {
+          detailRelation: 'GD_DOCUMENT',
+          link2masterField: 'PARENT'
+        }
+      ];
+      if (dbs.relations[setLR] && dbs.relations[setLR].relationFields['MASTERKEY']) {
+        masterLinks.push({
+          detailRelation: setLR,
+          link2masterField: 'MASTERKEY'
+        });
+      }
       header.add(
-        new erm.DetailAttribute(line.name, line.lName, false, [line])
+        new erm.DetailAttribute(line.name, line.lName, false, [line], { masterLinks })
       );
     }
   };
