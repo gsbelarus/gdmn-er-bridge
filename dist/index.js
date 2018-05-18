@@ -271,7 +271,7 @@ function erExport(dbs, connection, transaction, erModel) {
                         return new erm.StringAttribute(attributeName, lName, required, undefined, undefined, undefined, false, undefined, adapter);
                     }
                     else {
-                        return new erm.BLOBAttribute(attributeName, lName, required, adapter);
+                        return new erm.BlobAttribute(attributeName, lName, required, adapter);
                     }
                 default:
                     throw new Error("Unknown data type " + fieldSource + "=" + fieldSource.fieldType + " for field " + r.name + "." + attributeName);

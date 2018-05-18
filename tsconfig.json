@@ -11,7 +11,6 @@
     "declarationDir": "./dist/definitions"
   },
   "exclude": [
-    "./dist",
-    "./**/test",
+    "./dist"
   ]
 }

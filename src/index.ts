@@ -655,7 +655,7 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
             adapter
           );
         } else {
-          return new erm.BLOBAttribute(attributeName, lName, required, adapter);
+          return new erm.BlobAttribute(attributeName, lName, required, adapter);
         }
 
       default:
