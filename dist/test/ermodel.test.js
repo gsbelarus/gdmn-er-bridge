@@ -47,7 +47,6 @@ var fs = __importStar(require("fs"));
 var gdmn_db_1 = require("gdmn-db");
 var gdmn_orm_1 = require("gdmn-orm");
 var __1 = require("..");
-var gdmn_orm_2 = require("gdmn-orm");
 var testDB = [
     {
         alias: "test",
@@ -121,16 +120,12 @@ function loadERModel(dbDetail) {
     });
 }
 test("erModel", function () { return __awaiter(_this, void 0, void 0, function () {
-    var result, tstTable, serialized, deserialized;
+    var result, serialized, deserialized;
     return __generator(this, function (_a) {
         switch (_a.label) {
-            case 0: return [4 /*yield*/, loadERModel(testDB[0])];
+            case 0: return [4 /*yield*/, loadERModel(testDB[1])];
             case 1:
                 result = _a.sent();
-                tstTable = result.erModel.entities[gdmn_orm_2.adjustName("USR$TST_TABLE")];
-                expect(tstTable).toBeDefined();
-                expect(tstTable.attribute(gdmn_orm_2.adjustName("USR$SET_COMPANY_WF"))).toBeInstanceOf(gdmn_orm_1.SetAttribute);
-                expect(tstTable.attribute(gdmn_orm_2.adjustName("USR$SET_COMPANY_WOF"))).toBeInstanceOf(gdmn_orm_1.SetAttribute);
                 serialized = result.erModel.serialize();
                 deserialized = gdmn_orm_1.deserializeERModel(serialized);
                 if (fs.existsSync("c:/temp/test")) {
@@ -145,5 +140,5 @@ test("erModel", function () { return __awaiter(_this, void 0, void 0, function (
                 return [2 /*return*/];
         }
     });
-}); });
+}); }, 40000);
 //# sourceMappingURL=ermodel.test.js.map
