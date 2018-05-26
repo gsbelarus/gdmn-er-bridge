@@ -3,37 +3,8 @@ import {AConnection, ADriver, Factory, IConnectionOptions} from "gdmn-db";
 import {ERModel, SetAttribute, deserializeERModel} from "gdmn-orm";
 import {erExport} from "..";
 import { adjustName } from "gdmn-orm";
-
-interface IDBDetail<ConnectionOptions extends IConnectionOptions = IConnectionOptions> {
-  alias: string;
-  driver: ADriver;
-  options: ConnectionOptions;
-}
-
-const testDB: IDBDetail[] = [
-  {
-    alias: "test",
-    driver: Factory.FBDriver,
-    options: {
-      host: "localhost",
-      port: 3050,
-      username: "SYSDBA",
-      password: "masterkey",
-      path: "c:\\golden\\ns\\gdmn-back\\test\\db\\test.fdb"
-    }
-  },
-  {
-    alias: "broiler",
-    driver: Factory.FBDriver,
-    options: {
-      host: "brutto",
-      port: 3053,
-      username: "SYSDBA",
-      password: "masterkey",
-      path: "k:\\bases\\broiler\\GDBASE_2017_10_02.FDB"
-    }
-  }
-];
+import { testDB } from "./testDB";
+import { IDBDetail } from "./dbdetail";
 
 async function loadERModel(dbDetail: IDBDetail) {
   const {driver, options}: IDBDetail = dbDetail;
@@ -67,15 +38,6 @@ async function loadERModel(dbDetail: IDBDetail) {
 
 test("erModel", async () => {
   const result = await loadERModel(testDB[1]);
-
-  /*
-  const tstTable = result.erModel.entities[adjustName("USR$TST_TABLE")];
-
-  expect(tstTable).toBeDefined();
-  expect(tstTable.attribute(adjustName("USR$SET_COMPANY_WF"))).toBeInstanceOf(SetAttribute);
-  expect(tstTable.attribute(adjustName("USR$SET_COMPANY_WOF"))).toBeInstanceOf(SetAttribute);
-  */
-
   const serialized = result.erModel.serialize();
   const deserialized = deserializeERModel(serialized);
 

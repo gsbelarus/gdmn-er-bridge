@@ -47,30 +47,7 @@ var fs = __importStar(require("fs"));
 var gdmn_db_1 = require("gdmn-db");
 var gdmn_orm_1 = require("gdmn-orm");
 var __1 = require("..");
-var testDB = [
-    {
-        alias: "test",
-        driver: gdmn_db_1.Factory.FBDriver,
-        options: {
-            host: "localhost",
-            port: 3050,
-            username: "SYSDBA",
-            password: "masterkey",
-            path: "c:\\golden\\ns\\gdmn-back\\test\\db\\test.fdb"
-        }
-    },
-    {
-        alias: "broiler",
-        driver: gdmn_db_1.Factory.FBDriver,
-        options: {
-            host: "brutto",
-            port: 3053,
-            username: "SYSDBA",
-            password: "masterkey",
-            path: "k:\\bases\\broiler\\GDBASE_2017_10_02.FDB"
-        }
-    }
-];
+var testDB_1 = require("./testDB");
 function loadERModel(dbDetail) {
     return __awaiter(this, void 0, void 0, function () {
         var _this = this;
@@ -123,7 +100,7 @@ test("erModel", function () { return __awaiter(_this, void 0, void 0, function (
     var result, serialized, deserialized;
     return __generator(this, function (_a) {
         switch (_a.label) {
-            case 0: return [4 /*yield*/, loadERModel(testDB[1])];
+            case 0: return [4 /*yield*/, loadERModel(testDB_1.testDB[1])];
             case 1:
                 result = _a.sent();
                 serialized = result.erModel.serialize();
