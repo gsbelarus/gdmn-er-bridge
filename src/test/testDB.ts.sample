@@ -1,5 +1,5 @@
 import { Factory } from "gdmn-db";
-import { IDBDetail } from "./dbdetail";
+import { IDBDetail } from "../dbdetail";
 
 export const testDB: IDBDetail[] = [
   {

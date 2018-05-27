@@ -4,7 +4,7 @@ import {ERModel, SetAttribute, deserializeERModel} from "gdmn-orm";
 import {erExport} from "..";
 import { adjustName } from "gdmn-orm";
 import { testDB } from "./testDB";
-import { IDBDetail } from "./dbdetail";
+import { IDBDetail } from "../dbdetail";
 
 async function loadERModel(dbDetail: IDBDetail) {
   const {driver, options}: IDBDetail = dbDetail;

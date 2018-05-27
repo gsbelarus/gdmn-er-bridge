@@ -1,2 +1,2 @@
-import { IDBDetail } from "./dbdetail";
+import { IDBDetail } from "../dbdetail";
 export declare const testDB: IDBDetail[];
