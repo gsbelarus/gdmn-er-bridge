@@ -22,8 +22,8 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     function step(op) {
         if (f) throw new TypeError("Generator is already executing.");
         while (_) try {
-            if (f = 1, y && (t = y[op[0] & 2 ? "return" : op[0] ? "throw" : "next"]) && !(t = t.call(y, op[1])).done) return t;
-            if (y = 0, t) op = [0, t.value];
+            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [op[0] & 2, t.value];
             switch (op[0]) {
                 case 0: case 1: t = op; break;
                 case 4: _.label++; return { value: op[1], done: false };
@@ -58,6 +58,7 @@ var util_1 = require("./util");
 var document_1 = require("./document");
 var gdtables_1 = require("./gdtables");
 var gddomains_1 = require("./gddomains");
+var gdmn_nlp_1 = require("gdmn-nlp");
 function erExport(dbs, connection, transaction, erModel) {
     return __awaiter(this, void 0, void 0, function () {
         function findEntities(relationName, selectors) {
@@ -87,7 +88,8 @@ function erExport(dbs, connection, transaction, erModel) {
             }
             return found;
         }
-        function createEntity(parent, adapter, abstract, entityName, lName, attributes) {
+        function createEntity(parent, adapter, abstract, entityName, lName, semCategories, attributes) {
+            if (semCategories === void 0) { semCategories = []; }
             if (!abstract) {
                 var found = Object.entries(erModel.entities).find(function (e) { return !e[1].isAbstract && rdbadapter.sameAdapter(adapter, e[1].adapter); });
                 if (found) {
@@ -101,7 +103,7 @@ function erExport(dbs, connection, transaction, erModel) {
             var setEntityName = rdbadapter.adjustName(entityName ? entityName : relation.relationName);
             var atRelation = atrelations[relation.relationName];
             var fake = rdbadapter.relationName2Adapter(setEntityName);
-            var entity = new erm.Entity(parent, setEntityName, lName ? lName : (atRelation ? atRelation.lName : {}), !!abstract, JSON.stringify(adapter) !== JSON.stringify(fake) ? adapter : undefined);
+            var entity = new erm.Entity(parent, setEntityName, lName ? lName : (atRelation ? atRelation.lName : {}), !!abstract, semCategories, JSON.stringify(adapter) !== JSON.stringify(fake) ? adapter : undefined);
             if (!parent) {
                 entity.add(new erm.SequenceAttribute('ID', { ru: { name: 'Идентификатор' } }, GDGUnique));
             }
@@ -154,7 +156,7 @@ function erExport(dbs, connection, transaction, erModel) {
                         link2masterField: 'MASTERKEY'
                     });
                 }
-                header.add(new erm.DetailAttribute(line.name, line.lName, false, [line], { masterLinks: masterLinks }));
+                header.add(new erm.DetailAttribute(line.name, line.lName, false, [line], [], { masterLinks: masterLinks }));
             }
         }
         function recursInherited(parentRelation, parentEntity) {
@@ -208,7 +210,7 @@ function erExport(dbs, connection, transaction, erModel) {
                         console.warn("Not processed for " + attributeName + ": " + JSON.stringify(fieldSource.validationSource));
                     }
                 }
-                return new erm.NumericAttribute(attributeName, lName, required, fieldSource.fieldPrecision, fieldSource.fieldScale, MinValue, MaxValue, util_1.default2Number(defaultValue), adapter);
+                return new erm.NumericAttribute(attributeName, lName, required, fieldSource.fieldPrecision, fieldSource.fieldScale, MinValue, MaxValue, util_1.default2Number(defaultValue), [], adapter);
             }
             switch (fieldSource.fieldType) {
                 case gdmn_db_1.FieldType.INTEGER:
@@ -224,10 +226,10 @@ function erExport(dbs, connection, transaction, erModel) {
                             if (!refEntities.length) {
                                 console.warn(r.name + "." + rf.name + ": no entities for table " + refRelationName + (cond ? ', condition: ' + JSON.stringify(cond) : ''));
                             }
-                            return new erm.EntityAttribute(attributeName, lName, required, refEntities, adapter);
+                            return new erm.EntityAttribute(attributeName, lName, required, refEntities, [], adapter);
                         }
                         else {
-                            return new erm.IntegerAttribute(attributeName, lName, required, rdbadapter.MIN_32BIT_INT, rdbadapter.MAX_32BIT_INT, util_1.default2Int(defaultValue), adapter);
+                            return new erm.IntegerAttribute(attributeName, lName, required, rdbadapter.MIN_32BIT_INT, rdbadapter.MAX_32BIT_INT, util_1.default2Int(defaultValue), [], adapter);
                         }
                     }
                 case gdmn_db_1.FieldType.CHAR:
@@ -246,7 +248,7 @@ function erExport(dbs, connection, transaction, erModel) {
                                 }
                             }
                             if (enumValues.length) {
-                                return new erm.EnumAttribute(attributeName, lName, required, enumValues, undefined, adapter);
+                                return new erm.EnumAttribute(attributeName, lName, required, enumValues, undefined, [], adapter);
                             }
                             else {
                                 console.warn("Not processed for " + attributeName + ": " + JSON.stringify(fieldSource.validationSource));
@@ -263,27 +265,27 @@ function erExport(dbs, connection, transaction, erModel) {
                                 }
                             }
                         }
-                        return new erm.StringAttribute(attributeName, lName, required, minLength, fieldSource.fieldLength, undefined, true, undefined, adapter);
+                        return new erm.StringAttribute(attributeName, lName, required, minLength, fieldSource.fieldLength, undefined, true, undefined, [], adapter);
                     }
                 case gdmn_db_1.FieldType.TIMESTAMP:
-                    return new erm.TimeStampAttribute(attributeName, lName, required, undefined, undefined, util_1.default2Date(defaultValue), adapter);
+                    return new erm.TimeStampAttribute(attributeName, lName, required, undefined, undefined, util_1.default2Date(defaultValue), [], adapter);
                 case gdmn_db_1.FieldType.DATE:
-                    return new erm.DateAttribute(attributeName, lName, required, undefined, undefined, util_1.default2Date(defaultValue), adapter);
+                    return new erm.DateAttribute(attributeName, lName, required, undefined, undefined, util_1.default2Date(defaultValue), [], adapter);
                 case gdmn_db_1.FieldType.TIME:
-                    return new erm.TimeAttribute(attributeName, lName, required, undefined, undefined, util_1.default2Date(defaultValue), adapter);
+                    return new erm.TimeAttribute(attributeName, lName, required, undefined, undefined, util_1.default2Date(defaultValue), [], adapter);
                 case gdmn_db_1.FieldType.FLOAT:
                 case gdmn_db_1.FieldType.DOUBLE:
-                    return new erm.FloatAttribute(attributeName, lName, required, undefined, undefined, util_1.default2Number(defaultValue), adapter);
+                    return new erm.FloatAttribute(attributeName, lName, required, undefined, undefined, util_1.default2Number(defaultValue), [], adapter);
                 case gdmn_db_1.FieldType.SMALL_INTEGER:
-                    return new erm.IntegerAttribute(attributeName, lName, required, rdbadapter.MIN_16BIT_INT, rdbadapter.MAX_16BIT_INT, util_1.default2Int(defaultValue), adapter);
+                    return new erm.IntegerAttribute(attributeName, lName, required, rdbadapter.MIN_16BIT_INT, rdbadapter.MAX_16BIT_INT, util_1.default2Int(defaultValue), [], adapter);
                 case gdmn_db_1.FieldType.BIG_INTEGER:
-                    return new erm.IntegerAttribute(attributeName, lName, required, rdbadapter.MIN_64BIT_INT, rdbadapter.MAX_64BIT_INT, util_1.default2Int(defaultValue), adapter);
+                    return new erm.IntegerAttribute(attributeName, lName, required, rdbadapter.MIN_64BIT_INT, rdbadapter.MAX_64BIT_INT, util_1.default2Int(defaultValue), [], adapter);
                 case gdmn_db_1.FieldType.BLOB:
                     if (fieldSource.fieldSubType === 1) {
-                        return new erm.StringAttribute(attributeName, lName, required, undefined, undefined, undefined, false, undefined, adapter);
+                        return new erm.StringAttribute(attributeName, lName, required, undefined, undefined, undefined, false, undefined, [], adapter);
                     }
                     else {
-                        return new erm.BlobAttribute(attributeName, lName, required, adapter);
+                        return new erm.BlobAttribute(attributeName, lName, required, [], adapter);
                     }
                 default:
                     throw new Error("Unknown data type " + fieldSource + "=" + fieldSource.fieldType + " for field " + r.name + "." + attributeName);
@@ -353,7 +355,7 @@ function erExport(dbs, connection, transaction, erModel) {
                      * Административно-территориальная единица.
                      * Тут исключительно для иллюстрации типа данных Перечисление.
                      */
-                    createEntity(undefined, rdbadapter.relationName2Adapter('GD_PLACE'), false, undefined, undefined, [
+                    createEntity(undefined, rdbadapter.relationName2Adapter('GD_PLACE'), false, undefined, undefined, [gdmn_nlp_1.SemCategory.Place], [
                         new erm.EnumAttribute('PLACETYPE', { ru: { name: 'Тип' } }, true, [
                             {
                                 value: 'Область'
@@ -395,7 +397,7 @@ function erExport(dbs, connection, transaction, erModel) {
                             }
                         ],
                         refresh: true
-                    }, false, 'Company', { ru: { name: 'Организация' } }, [
+                    }, false, 'Company', { ru: { name: 'Организация' } }, [], [
                         new erm.ParentAttribute('PARENT', { ru: { name: 'Входит в папку' } }, [Folder]),
                         new erm.StringAttribute('NAME', { ru: { name: 'Краткое наименование' } }, true, undefined, 60, undefined, true, undefined)
                     ]);
@@ -503,11 +505,11 @@ function erExport(dbs, connection, transaction, erModel) {
                             }]
                     }, false, 'Group', { ru: { name: 'Группа' } });
                     Group.add(new erm.ParentAttribute('PARENT', { ru: { name: 'Входит в папку' } }, [Folder]));
-                    ContactList = Group.add(new erm.SetAttribute('CONTACTLIST', { ru: { name: 'Контакты' } }, false, [Company, Person], 0, {
+                    ContactList = Group.add(new erm.SetAttribute('CONTACTLIST', { ru: { name: 'Контакты' } }, false, [Company, Person], 0, [], {
                         crossRelation: 'GD_CONTACTLIST'
                     }));
                     companyAccount = createEntity(undefined, rdbadapter.relationName2Adapter('GD_COMPANYACCOUNT'));
-                    Company.add(new erm.DetailAttribute('GD_COMPANYACCOUNT', { ru: { name: 'Банковские счета' } }, false, [companyAccount], {
+                    Company.add(new erm.DetailAttribute('GD_COMPANYACCOUNT', { ru: { name: 'Банковские счета' } }, false, [companyAccount], [], {
                         masterLinks: [
                             {
                                 detailRelation: 'GD_COMPANYACCOUNT',
@@ -606,7 +608,7 @@ function erExport(dbs, connection, transaction, erModel) {
                                     var attrName = _a[0], attr = _a[1];
                                     return (attr instanceof erm.SetAttribute) && !!attr.adapter && attr.adapter.crossRelation === crossName;
                                 })) {
-                                    var setAttr_1 = new erm.SetAttribute(atSetField_1 ? atSetField_1[0] : crossName, atSetField_1 ? atSetField_1[1].lName : (atCrossRelation_1 ? atCrossRelation_1.lName : { en: { name: crossName } }), (!!setField_1 && setField_1.notNull) || (!!setFieldSource_1 && setFieldSource_1.notNull), referenceEntities_1, (setFieldSource_1 && setFieldSource_1.fieldType === gdmn_db_1.FieldType.VARCHAR) ? setFieldSource_1.fieldLength : 0, {
+                                    var setAttr_1 = new erm.SetAttribute(atSetField_1 ? atSetField_1[0] : crossName, atSetField_1 ? atSetField_1[1].lName : (atCrossRelation_1 ? atCrossRelation_1.lName : { en: { name: crossName } }), (!!setField_1 && setField_1.notNull) || (!!setFieldSource_1 && setFieldSource_1.notNull), referenceEntities_1, (setFieldSource_1 && setFieldSource_1.fieldType === gdmn_db_1.FieldType.VARCHAR) ? setFieldSource_1.fieldLength : 0, [], {
                                         crossRelation: crossName
                                     });
                                     Object.entries(crossRelation.relationFields).forEach(function (_a) {

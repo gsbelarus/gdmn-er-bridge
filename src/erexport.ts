@@ -19,6 +19,7 @@ import { gedeminTables } from './gdtables';
 import { inspect } from 'util';
 import { INSPECT_MAX_BYTES } from 'buffer';
 import { gdDomains } from './gddomains';
+import { SemCategory } from "gdmn-nlp";
 
 export async function erExport(dbs: DBStructure, connection: AConnection, transaction: ATransaction, erModel: erm.ERModel): Promise<erm.ERModel> {
 
@@ -75,7 +76,7 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
   }
 
   function createEntity(parent: erm.Entity | undefined, adapter: rdbadapter.Entity2RelationMap,
-    abstract?: boolean, entityName?: string, lName?: LName, attributes?: erm.Attribute[]): erm.Entity
+    abstract?: boolean, entityName?: string, lName?: LName, semCategories: SemCategory[]= [], attributes?: erm.Attribute[]): erm.Entity
   {
     if (!abstract) {
       const found = Object.entries(erModel.entities).find(
@@ -102,6 +103,7 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
       setEntityName,
       lName ? lName : (atRelation ? atRelation.lName : {}),
       !!abstract,
+      semCategories,
       JSON.stringify(adapter) !== JSON.stringify(fake) ? adapter : undefined
     );
 
@@ -128,7 +130,7 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
    * Административно-территориальная единица.
    * Тут исключительно для иллюстрации типа данных Перечисление.
    */
-  createEntity(undefined, rdbadapter.relationName2Adapter('GD_PLACE'), false, undefined, undefined,
+  createEntity(undefined, rdbadapter.relationName2Adapter('GD_PLACE'), false, undefined, undefined, [SemCategory.Place],
   [
     new erm.EnumAttribute('PLACETYPE', {ru: {name: 'Тип'}}, true,
       [
@@ -203,7 +205,8 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
       refresh: true
     },
     false,
-    'Company', {ru: {name: 'Организация'}}, [
+    'Company', {ru: {name: 'Организация'}}, [],
+    [
       new erm.ParentAttribute('PARENT', {ru: {name: 'Входит в папку'}}, [Folder]),
       new erm.StringAttribute('NAME', {ru: {name: 'Краткое наименование'}}, true, undefined, 60, undefined, true, undefined)
     ]
@@ -378,7 +381,7 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
   );
   const ContactList =
     Group.add(
-      new erm.SetAttribute('CONTACTLIST', {ru: {name: 'Контакты'}}, false, [Company, Person], 0,
+      new erm.SetAttribute('CONTACTLIST', {ru: {name: 'Контакты'}}, false, [Company, Person], 0, [],
         {
           crossRelation: 'GD_CONTACTLIST'
         }
@@ -388,7 +391,7 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
   const companyAccount = createEntity(undefined, rdbadapter.relationName2Adapter('GD_COMPANYACCOUNT'));
 
   Company.add(
-    new erm.DetailAttribute('GD_COMPANYACCOUNT', {ru: {name: 'Банковские счета'}}, false, [companyAccount],
+    new erm.DetailAttribute('GD_COMPANYACCOUNT', {ru: {name: 'Банковские счета'}}, false, [companyAccount], [],
       {
         masterLinks: [
           {
@@ -472,7 +475,7 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
         });
       }
       header.add(
-        new erm.DetailAttribute(line.name, line.lName, false, [line], { masterLinks })
+        new erm.DetailAttribute(line.name, line.lName, false, [line], [], { masterLinks })
       );
     }
   };
@@ -562,6 +565,7 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
         fieldSource.fieldScale,
         MinValue, MaxValue,
         default2Number(defaultValue),
+        [],
         adapter);
     }
 
@@ -581,12 +585,12 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
             console.warn(`${r.name}.${rf.name}: no entities for table ${refRelationName}${cond ? ', condition: ' + JSON.stringify(cond) : ''}`);
           }
 
-          return new erm.EntityAttribute(attributeName, lName, required, refEntities, adapter);
+          return new erm.EntityAttribute(attributeName, lName, required, refEntities, [], adapter);
         } else {
           return new erm.IntegerAttribute(attributeName, lName, required,
             rdbadapter.MIN_32BIT_INT, rdbadapter.MAX_32BIT_INT,
             default2Int(defaultValue),
-            adapter);
+            [], adapter);
         }
       }
 
@@ -608,7 +612,7 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
           }
 
           if (enumValues.length) {
-            return new erm.EnumAttribute(attributeName, lName, required, enumValues, undefined, adapter);
+            return new erm.EnumAttribute(attributeName, lName, required, enumValues, undefined, [], adapter);
           } else {
             console.warn(`Not processed for ${attributeName}: ${JSON.stringify(fieldSource.validationSource)}`);
           }
@@ -625,22 +629,22 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
         }
 
         return new erm.StringAttribute(attributeName, lName, required, minLength,
-          fieldSource.fieldLength, undefined, true, undefined, adapter);
+          fieldSource.fieldLength, undefined, true, undefined, [], adapter);
       }
 
       case FieldType.TIMESTAMP:
         return new erm.TimeStampAttribute(
-          attributeName, lName, required, undefined, undefined, default2Date(defaultValue), adapter
+          attributeName, lName, required, undefined, undefined, default2Date(defaultValue), [], adapter
         );
 
       case FieldType.DATE:
         return new erm.DateAttribute(
-          attributeName, lName, required, undefined, undefined, default2Date(defaultValue), adapter
+          attributeName, lName, required, undefined, undefined, default2Date(defaultValue), [], adapter
         );
 
       case FieldType.TIME:
         return new erm.TimeAttribute(
-          attributeName, lName, required, undefined, undefined, default2Date(defaultValue), adapter
+          attributeName, lName, required, undefined, undefined, default2Date(defaultValue), [], adapter
         );
 
       case FieldType.FLOAT:
@@ -649,7 +653,7 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
           attributeName, lName, required,
           undefined, undefined,
           default2Number(defaultValue),
-          adapter
+          [], adapter
         );
 
       case FieldType.SMALL_INTEGER:
@@ -657,7 +661,7 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
           attributeName, lName, required,
           rdbadapter.MIN_16BIT_INT, rdbadapter.MAX_16BIT_INT,
           default2Int(defaultValue),
-          adapter
+          [], adapter
         );
 
       case FieldType.BIG_INTEGER:
@@ -665,7 +669,7 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
           attributeName, lName, required,
           rdbadapter.MIN_64BIT_INT, rdbadapter.MAX_64BIT_INT,
           default2Int(defaultValue),
-          adapter
+          [], adapter
         );
 
       case FieldType.BLOB:
@@ -673,10 +677,10 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
           return new erm.StringAttribute(
             attributeName, lName, required, undefined,
             undefined, undefined, false, undefined,
-            adapter
+            [], adapter
           );
         } else {
-          return new erm.BlobAttribute(attributeName, lName, required, adapter);
+          return new erm.BlobAttribute(attributeName, lName, required, [], adapter);
         }
 
       default:
@@ -807,6 +811,7 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
             (!!setField && setField.notNull) || (!!setFieldSource && setFieldSource.notNull),
             referenceEntities,
             (setFieldSource && setFieldSource.fieldType === FieldType.VARCHAR) ? setFieldSource.fieldLength : 0,
+            [],
             {
               crossRelation: crossName
             }

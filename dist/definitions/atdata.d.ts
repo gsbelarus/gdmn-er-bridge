@@ -7,6 +7,7 @@
  */
 import { AConnection, ATransaction } from "gdmn-db";
 import { LName } from "gdmn-orm";
+import { SemCategory } from "gdmn-nlp";
 /**
  * Дополнительная информация по доменам.
  */
@@ -29,6 +30,7 @@ export interface atRelationField {
     fieldSource: string;
     crossTable: string | undefined;
     crossField: string | undefined;
+    semCategories: SemCategory[];
 }
 export interface atRelationFields {
     [fieldName: string]: atRelationField;
@@ -38,6 +40,7 @@ export interface atRelationFields {
  */
 export interface atRelation {
     lName: LName;
+    semCategories: SemCategory[];
     relationFields: atRelationFields;
 }
 export interface atRelations {

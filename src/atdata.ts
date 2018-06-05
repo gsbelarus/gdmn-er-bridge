@@ -8,6 +8,7 @@
 
 import {AConnection, AResultSet, ATransaction} from "gdmn-db";
 import {LName} from "gdmn-orm";
+import { SemCategory, str2SemCategories } from "gdmn-nlp";
 
 /**
  * Дополнительная информация по доменам.
@@ -33,6 +34,7 @@ export interface atRelationField {
   fieldSource: string;
   crossTable: string | undefined;
   crossField: string | undefined;
+  semCategories: SemCategory[];
 }
 
 export interface atRelationFields {
@@ -44,6 +46,7 @@ export interface atRelationFields {
  */
 export interface atRelation {
   lName: LName;
+  semCategories: SemCategory[];
   relationFields: atRelationFields;
 }
 
@@ -94,23 +97,25 @@ export async function load(connection: AConnection, transaction: ATransaction) {
         ID,
         RELATIONNAME,
         LNAME,
-        DESCRIPTION
+        DESCRIPTION,
+        SEMCATEGORY
       FROM
         AT_RELATIONS`,
     callback: async (resultSet) => {
       const relations: atRelations = {};
       while (await resultSet.next()) {
-        const ru = resultSet.getString(2) !== resultSet.getString(3) ?
+        const ru = resultSet.getString('LNAME') !== resultSet.getString(3) ?
           {
-            name: resultSet.getString(2),
-            fullName: resultSet.getString(3)
+            name: resultSet.getString('LNAME'),
+            fullName: resultSet.getString('DESCRIPTION')
           }
           :
           {
-            name: resultSet.getString(2)
+            name: resultSet.getString('LNAME')
           };
-        relations[resultSet.getString(1)] = {
+        relations[resultSet.getString('RELATIONNAME')] = {
           lName: {ru},
+          semCategories: str2SemCategories(resultSet.getString('SEMCATEGORY')),
           relationFields: {}
         };
       }
@@ -128,6 +133,7 @@ export async function load(connection: AConnection, transaction: ATransaction) {
         RELATIONNAME,
         LNAME,
         DESCRIPTION,
+        SEMCATEGORY,
         CROSSTABLE,
         CROSSFIELD
       FROM
@@ -152,7 +158,8 @@ export async function load(connection: AConnection, transaction: ATransaction) {
           lName: {ru},
           fieldSource: getTrimmedString("FIELDSOURCE")!,
           crossTable: getTrimmedString("CROSSTABLE"),
-          crossField: getTrimmedString("CROSSFIELD")
+          crossField: getTrimmedString("CROSSFIELD"),
+          semCategories: str2SemCategories(resultSet.getString("SEMCATEGORY"))
         };
       }
     }
