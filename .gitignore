@@ -64,5 +64,6 @@ dict.opcorpora.txt
 
 dist/*.js.map
 dist/**/*.js.map
+dist/**/test
 testDB.ts
 
