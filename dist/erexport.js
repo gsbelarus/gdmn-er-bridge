@@ -173,7 +173,7 @@ function erExport(dbs, connection, transaction, erModel) {
                 }
             }, true);
         }
-        function createAttribute(r, rf, atRelationField, attrName, adapter) {
+        function createAttribute(r, rf, atRelationField, attrName, semCategories, adapter) {
             var attributeName = rdbadapter.adjustName(attrName);
             var atField = atfields[rf.fieldSource];
             var fieldSource = dbs.fields[rf.fieldSource];
@@ -210,7 +210,7 @@ function erExport(dbs, connection, transaction, erModel) {
                         console.warn("Not processed for " + attributeName + ": " + JSON.stringify(fieldSource.validationSource));
                     }
                 }
-                return new erm.NumericAttribute(attributeName, lName, required, fieldSource.fieldPrecision, fieldSource.fieldScale, MinValue, MaxValue, util_1.default2Number(defaultValue), [], adapter);
+                return new erm.NumericAttribute(attributeName, lName, required, fieldSource.fieldPrecision, fieldSource.fieldScale, MinValue, MaxValue, util_1.default2Number(defaultValue), semCategories, adapter);
             }
             switch (fieldSource.fieldType) {
                 case gdmn_db_1.FieldType.INTEGER:
@@ -226,10 +226,10 @@ function erExport(dbs, connection, transaction, erModel) {
                             if (!refEntities.length) {
                                 console.warn(r.name + "." + rf.name + ": no entities for table " + refRelationName + (cond ? ', condition: ' + JSON.stringify(cond) : ''));
                             }
-                            return new erm.EntityAttribute(attributeName, lName, required, refEntities, [], adapter);
+                            return new erm.EntityAttribute(attributeName, lName, required, refEntities, semCategories, adapter);
                         }
                         else {
-                            return new erm.IntegerAttribute(attributeName, lName, required, rdbadapter.MIN_32BIT_INT, rdbadapter.MAX_32BIT_INT, util_1.default2Int(defaultValue), [], adapter);
+                            return new erm.IntegerAttribute(attributeName, lName, required, rdbadapter.MIN_32BIT_INT, rdbadapter.MAX_32BIT_INT, util_1.default2Int(defaultValue), semCategories, adapter);
                         }
                     }
                 case gdmn_db_1.FieldType.CHAR:
@@ -248,7 +248,7 @@ function erExport(dbs, connection, transaction, erModel) {
                                 }
                             }
                             if (enumValues.length) {
-                                return new erm.EnumAttribute(attributeName, lName, required, enumValues, undefined, [], adapter);
+                                return new erm.EnumAttribute(attributeName, lName, required, enumValues, undefined, semCategories, adapter);
                             }
                             else {
                                 console.warn("Not processed for " + attributeName + ": " + JSON.stringify(fieldSource.validationSource));
@@ -265,27 +265,27 @@ function erExport(dbs, connection, transaction, erModel) {
                                 }
                             }
                         }
-                        return new erm.StringAttribute(attributeName, lName, required, minLength, fieldSource.fieldLength, undefined, true, undefined, [], adapter);
+                        return new erm.StringAttribute(attributeName, lName, required, minLength, fieldSource.fieldLength, undefined, true, undefined, semCategories, adapter);
                     }
                 case gdmn_db_1.FieldType.TIMESTAMP:
-                    return new erm.TimeStampAttribute(attributeName, lName, required, undefined, undefined, util_1.default2Date(defaultValue), [], adapter);
+                    return new erm.TimeStampAttribute(attributeName, lName, required, undefined, undefined, util_1.default2Date(defaultValue), semCategories, adapter);
                 case gdmn_db_1.FieldType.DATE:
-                    return new erm.DateAttribute(attributeName, lName, required, undefined, undefined, util_1.default2Date(defaultValue), [], adapter);
+                    return new erm.DateAttribute(attributeName, lName, required, undefined, undefined, util_1.default2Date(defaultValue), semCategories, adapter);
                 case gdmn_db_1.FieldType.TIME:
-                    return new erm.TimeAttribute(attributeName, lName, required, undefined, undefined, util_1.default2Date(defaultValue), [], adapter);
+                    return new erm.TimeAttribute(attributeName, lName, required, undefined, undefined, util_1.default2Date(defaultValue), semCategories, adapter);
                 case gdmn_db_1.FieldType.FLOAT:
                 case gdmn_db_1.FieldType.DOUBLE:
-                    return new erm.FloatAttribute(attributeName, lName, required, undefined, undefined, util_1.default2Number(defaultValue), [], adapter);
+                    return new erm.FloatAttribute(attributeName, lName, required, undefined, undefined, util_1.default2Number(defaultValue), semCategories, adapter);
                 case gdmn_db_1.FieldType.SMALL_INTEGER:
-                    return new erm.IntegerAttribute(attributeName, lName, required, rdbadapter.MIN_16BIT_INT, rdbadapter.MAX_16BIT_INT, util_1.default2Int(defaultValue), [], adapter);
+                    return new erm.IntegerAttribute(attributeName, lName, required, rdbadapter.MIN_16BIT_INT, rdbadapter.MAX_16BIT_INT, util_1.default2Int(defaultValue), semCategories, adapter);
                 case gdmn_db_1.FieldType.BIG_INTEGER:
-                    return new erm.IntegerAttribute(attributeName, lName, required, rdbadapter.MIN_64BIT_INT, rdbadapter.MAX_64BIT_INT, util_1.default2Int(defaultValue), [], adapter);
+                    return new erm.IntegerAttribute(attributeName, lName, required, rdbadapter.MIN_64BIT_INT, rdbadapter.MAX_64BIT_INT, util_1.default2Int(defaultValue), semCategories, adapter);
                 case gdmn_db_1.FieldType.BLOB:
                     if (fieldSource.fieldSubType === 1) {
-                        return new erm.StringAttribute(attributeName, lName, required, undefined, undefined, undefined, false, undefined, [], adapter);
+                        return new erm.StringAttribute(attributeName, lName, required, undefined, undefined, undefined, false, undefined, semCategories, adapter);
                     }
                     else {
-                        return new erm.BlobAttribute(attributeName, lName, required, [], adapter);
+                        return new erm.BlobAttribute(attributeName, lName, required, semCategories, adapter);
                     }
                 default:
                     throw new Error("Unknown data type " + fieldSource + "=" + fieldSource.fieldType + " for field " + r.name + "." + attributeName);
@@ -316,7 +316,7 @@ function erExport(dbs, connection, transaction, erModel) {
                     var atRelationField = atRelation ? atRelation.relationFields[fn] : undefined;
                     if (atRelationField && atRelationField.crossTable)
                         return;
-                    var attr = createAttribute(r, rf, atRelationField, entity.hasAttribute(fn) ? r.name + "." + fn : fn, relations.length > 1 ? { relation: r.name, field: fn } : undefined);
+                    var attr = createAttribute(r, rf, atRelationField, entity.hasAttribute(fn) ? r.name + "." + fn : fn, atRelationField ? atRelationField.semCategories : [], relations.length > 1 ? { relation: r.name, field: fn } : undefined);
                     if (attr) {
                         entity.add(attr);
                     }
@@ -397,7 +397,7 @@ function erExport(dbs, connection, transaction, erModel) {
                             }
                         ],
                         refresh: true
-                    }, false, 'Company', { ru: { name: 'Организация' } }, [], [
+                    }, false, 'Company', { ru: { name: 'Организация' } }, [gdmn_nlp_1.SemCategory.Company], [
                         new erm.ParentAttribute('PARENT', { ru: { name: 'Входит в папку' } }, [Folder]),
                         new erm.StringAttribute('NAME', { ru: { name: 'Краткое наименование' } }, true, undefined, 60, undefined, true, undefined)
                     ]);
@@ -608,13 +608,13 @@ function erExport(dbs, connection, transaction, erModel) {
                                     var attrName = _a[0], attr = _a[1];
                                     return (attr instanceof erm.SetAttribute) && !!attr.adapter && attr.adapter.crossRelation === crossName;
                                 })) {
-                                    var setAttr_1 = new erm.SetAttribute(atSetField_1 ? atSetField_1[0] : crossName, atSetField_1 ? atSetField_1[1].lName : (atCrossRelation_1 ? atCrossRelation_1.lName : { en: { name: crossName } }), (!!setField_1 && setField_1.notNull) || (!!setFieldSource_1 && setFieldSource_1.notNull), referenceEntities_1, (setFieldSource_1 && setFieldSource_1.fieldType === gdmn_db_1.FieldType.VARCHAR) ? setFieldSource_1.fieldLength : 0, [], {
+                                    var setAttr_1 = new erm.SetAttribute(atSetField_1 ? atSetField_1[0] : crossName, atSetField_1 ? atSetField_1[1].lName : (atCrossRelation_1 ? atCrossRelation_1.lName : { en: { name: crossName } }), (!!setField_1 && setField_1.notNull) || (!!setFieldSource_1 && setFieldSource_1.notNull), referenceEntities_1, (setFieldSource_1 && setFieldSource_1.fieldType === gdmn_db_1.FieldType.VARCHAR) ? setFieldSource_1.fieldLength : 0, atCrossRelation_1.semCategories, {
                                         crossRelation: crossName
                                     });
                                     Object.entries(crossRelation.relationFields).forEach(function (_a) {
                                         var addName = _a[0], addField = _a[1];
                                         if (!crossRelation.primaryKey.fields.find(function (f) { return f === addName; })) {
-                                            setAttr_1.add(createAttribute(crossRelation, addField, atCrossRelation_1 ? atCrossRelation_1.relationFields[addName] : undefined, addName, undefined));
+                                            setAttr_1.add(createAttribute(crossRelation, addField, atCrossRelation_1 ? atCrossRelation_1.relationFields[addName] : undefined, addName, atCrossRelation_1.relationFields[addName].semCategories, undefined));
                                         }
                                     });
                                     e.add(setAttr_1);

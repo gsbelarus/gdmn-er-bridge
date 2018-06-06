@@ -205,7 +205,8 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
       refresh: true
     },
     false,
-    'Company', {ru: {name: 'Организация'}}, [],
+    'Company', {ru: {name: 'Организация'}},
+    [SemCategory.Company],
     [
       new erm.ParentAttribute('PARENT', {ru: {name: 'Входит в папку'}}, [Folder]),
       new erm.StringAttribute('NAME', {ru: {name: 'Краткое наименование'}}, true, undefined, 60, undefined, true, undefined)
@@ -514,6 +515,7 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
     rf: RelationField,
     atRelationField: atRelationField | undefined,
     attrName: string,
+    semCategories: SemCategory[],
     adapter: rdbadapter.Attribute2FieldMap | undefined)
   {
     const attributeName = rdbadapter.adjustName(attrName);
@@ -565,7 +567,7 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
         fieldSource.fieldScale,
         MinValue, MaxValue,
         default2Number(defaultValue),
-        [],
+        semCategories,
         adapter);
     }
 
@@ -585,12 +587,12 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
             console.warn(`${r.name}.${rf.name}: no entities for table ${refRelationName}${cond ? ', condition: ' + JSON.stringify(cond) : ''}`);
           }
 
-          return new erm.EntityAttribute(attributeName, lName, required, refEntities, [], adapter);
+          return new erm.EntityAttribute(attributeName, lName, required, refEntities, semCategories, adapter);
         } else {
           return new erm.IntegerAttribute(attributeName, lName, required,
             rdbadapter.MIN_32BIT_INT, rdbadapter.MAX_32BIT_INT,
             default2Int(defaultValue),
-            [], adapter);
+            semCategories, adapter);
         }
       }
 
@@ -612,7 +614,7 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
           }
 
           if (enumValues.length) {
-            return new erm.EnumAttribute(attributeName, lName, required, enumValues, undefined, [], adapter);
+            return new erm.EnumAttribute(attributeName, lName, required, enumValues, undefined, semCategories, adapter);
           } else {
             console.warn(`Not processed for ${attributeName}: ${JSON.stringify(fieldSource.validationSource)}`);
           }
@@ -629,22 +631,22 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
         }
 
         return new erm.StringAttribute(attributeName, lName, required, minLength,
-          fieldSource.fieldLength, undefined, true, undefined, [], adapter);
+          fieldSource.fieldLength, undefined, true, undefined, semCategories, adapter);
       }
 
       case FieldType.TIMESTAMP:
         return new erm.TimeStampAttribute(
-          attributeName, lName, required, undefined, undefined, default2Date(defaultValue), [], adapter
+          attributeName, lName, required, undefined, undefined, default2Date(defaultValue), semCategories, adapter
         );
 
       case FieldType.DATE:
         return new erm.DateAttribute(
-          attributeName, lName, required, undefined, undefined, default2Date(defaultValue), [], adapter
+          attributeName, lName, required, undefined, undefined, default2Date(defaultValue), semCategories, adapter
         );
 
       case FieldType.TIME:
         return new erm.TimeAttribute(
-          attributeName, lName, required, undefined, undefined, default2Date(defaultValue), [], adapter
+          attributeName, lName, required, undefined, undefined, default2Date(defaultValue), semCategories, adapter
         );
 
       case FieldType.FLOAT:
@@ -653,7 +655,7 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
           attributeName, lName, required,
           undefined, undefined,
           default2Number(defaultValue),
-          [], adapter
+          semCategories, adapter
         );
 
       case FieldType.SMALL_INTEGER:
@@ -661,7 +663,7 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
           attributeName, lName, required,
           rdbadapter.MIN_16BIT_INT, rdbadapter.MAX_16BIT_INT,
           default2Int(defaultValue),
-          [], adapter
+          semCategories, adapter
         );
 
       case FieldType.BIG_INTEGER:
@@ -669,7 +671,7 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
           attributeName, lName, required,
           rdbadapter.MIN_64BIT_INT, rdbadapter.MAX_64BIT_INT,
           default2Int(defaultValue),
-          [], adapter
+          semCategories, adapter
         );
 
       case FieldType.BLOB:
@@ -677,10 +679,10 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
           return new erm.StringAttribute(
             attributeName, lName, required, undefined,
             undefined, undefined, false, undefined,
-            [], adapter
+            semCategories, adapter
           );
         } else {
-          return new erm.BlobAttribute(attributeName, lName, required, [], adapter);
+          return new erm.BlobAttribute(attributeName, lName, required, semCategories, adapter);
         }
 
       default:
@@ -721,6 +723,7 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
         const attr = createAttribute(
           r, rf, atRelationField,
           entity.hasAttribute(fn) ? `${r.name}.${fn}` : fn,
+          atRelationField ? atRelationField.semCategories : [],
           relations.length > 1 ? {relation: r.name, field: fn} : undefined
         );
 
@@ -811,7 +814,7 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
             (!!setField && setField.notNull) || (!!setFieldSource && setFieldSource.notNull),
             referenceEntities,
             (setFieldSource && setFieldSource.fieldType === FieldType.VARCHAR) ? setFieldSource.fieldLength : 0,
-            [],
+            atCrossRelation.semCategories,
             {
               crossRelation: crossName
             }
@@ -825,6 +828,7 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
                   addField,
                   atCrossRelation ? atCrossRelation.relationFields[addName] : undefined,
                   addName,
+                  atCrossRelation.relationFields[addName].semCategories,
                   undefined
                 )
               );
