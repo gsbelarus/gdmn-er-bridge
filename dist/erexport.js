@@ -203,8 +203,13 @@ function erExport(dbs, connection, transaction, erModel) {
                 }
                 if (fieldSource.validationSource) {
                     if (fieldSource.validationSource === 'CHECK(VALUE >= 0)'
-                        || fieldSource.validationSource === 'CHECK(((VALUE IS NULL) OR (VALUE >= 0)))') {
+                        || fieldSource.validationSource === 'CHECK(((VALUE IS NULL) OR (VALUE >= 0)))'
+                        || fieldSource.validationSource === 'CHECK((VALUE IS NULL) OR (VALUE >= 0))') {
                         MinValue = 0;
+                    }
+                    else if (fieldSource.validationSource === 'CHECK ((VALUE IS NULL) OR ((VALUE >= 0) AND (VALUE <=1)))') {
+                        MinValue = 0;
+                        MaxValue = 1;
                     }
                     else {
                         console.warn("Not processed for " + attributeName + ": " + JSON.stringify(fieldSource.validationSource));
