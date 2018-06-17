@@ -5,15 +5,15 @@ import { Attribute2FieldMap } from 'gdmn-orm';
 export type createDomainFunc =
   (attributeName: string, lName: LName, adapter?: Attribute2FieldMap) => erm.Attribute;
 export const gdDomains: { [name: string]: createDomainFunc } = {
-  'DEDITIONDATE': (attributeName: string, lName: LName, adapter?: Attribute2FieldMap) =>
+  'DEDITIONDATE': (attributeName: string, _lName: LName, adapter?: Attribute2FieldMap) =>
     new erm.TimeStampAttribute(attributeName, {ru: {name: 'Изменено'}}, true,
        new Date('2000-01-01'), new Date('2100-12-31'), 'CURRENT_TIMESTAMP(0)',
       [], adapter),
-  'DCREATIONDATE': (attributeName: string, lName: LName, adapter?: Attribute2FieldMap) =>
+  'DCREATIONDATE': (attributeName: string, _lName: LName, adapter?: Attribute2FieldMap) =>
     new erm.TimeStampAttribute(attributeName, {ru: {name: 'Создано'}}, true,
       new Date('2000-01-01'), new Date('2100-12-31'), 'CURRENT_TIMESTAMP(0)',
       [], adapter),
-  'DDOCUMENTDATE': (attributeName: string, lName: LName, adapter?: Attribute2FieldMap) =>
+  'DDOCUMENTDATE': (attributeName: string, _lName: LName, adapter?: Attribute2FieldMap) =>
     new erm.TimeStampAttribute(attributeName, {ru: {name: 'Дата документа'}}, true,
       new Date('1900-01-01'), new Date('2100-12-31'), 'CURRENT_TIMESTAMP(0)',
       [], adapter),

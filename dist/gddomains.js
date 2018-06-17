@@ -9,13 +9,13 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 var erm = __importStar(require("gdmn-orm"));
 exports.gdDomains = {
-    'DEDITIONDATE': function (attributeName, lName, adapter) {
+    'DEDITIONDATE': function (attributeName, _lName, adapter) {
         return new erm.TimeStampAttribute(attributeName, { ru: { name: 'Изменено' } }, true, new Date('2000-01-01'), new Date('2100-12-31'), 'CURRENT_TIMESTAMP(0)', [], adapter);
     },
-    'DCREATIONDATE': function (attributeName, lName, adapter) {
+    'DCREATIONDATE': function (attributeName, _lName, adapter) {
         return new erm.TimeStampAttribute(attributeName, { ru: { name: 'Создано' } }, true, new Date('2000-01-01'), new Date('2100-12-31'), 'CURRENT_TIMESTAMP(0)', [], adapter);
     },
-    'DDOCUMENTDATE': function (attributeName, lName, adapter) {
+    'DDOCUMENTDATE': function (attributeName, _lName, adapter) {
         return new erm.TimeStampAttribute(attributeName, { ru: { name: 'Дата документа' } }, true, new Date('1900-01-01'), new Date('2100-12-31'), 'CURRENT_TIMESTAMP(0)', [], adapter);
     },
     'DQUANTITY': function (attributeName, lName, adapter) {

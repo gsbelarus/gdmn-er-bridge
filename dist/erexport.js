@@ -162,7 +162,7 @@ function erExport(dbs, connection, transaction, erModel) {
         function recursInherited(parentRelation, parentEntity) {
             dbs.forEachRelation(function (inherited) {
                 if (Object.entries(inherited.foreignKeys).find(function (_a) {
-                    var name = _a[0], f = _a[1];
+                    var f = _a[1];
                     return f.fields.join() === inherited.primaryKey.fields.join()
                         && dbs.relationByUqConstraint(f.constNameUq) === parentRelation[parentRelation.length - 1];
                 })) {
@@ -221,7 +221,7 @@ function erExport(dbs, connection, transaction, erModel) {
                 case gdmn_db_1.FieldType.INTEGER:
                     {
                         var fk = Object.entries(r.foreignKeys).find(function (_a) {
-                            var name = _a[0], f = _a[1];
+                            var f = _a[1];
                             return !!f.fields.find(function (fld) { return fld === attributeName; });
                         });
                         if (fk && fk[1].fields.length === 1) {
@@ -331,7 +331,7 @@ function erExport(dbs, connection, transaction, erModel) {
                 });
             });
         }
-        var _a, atfields, atrelations, crossRelationsAdapters, abstractBaseRelations, GDGUnique, GDGOffset, Folder, Company, OurCompany, Bank, Department, Person, Employee, Group, ContactList, companyAccount, TgdcDocument, TgdcDocumentAdapter, documentABC, documentClasses;
+        var _a, atfields, atrelations, crossRelationsAdapters, abstractBaseRelations, GDGUnique, Folder, Company, Department, Person, Employee, Group, companyAccount, TgdcDocument, TgdcDocumentAdapter, documentABC, documentClasses;
         return __generator(this, function (_b) {
             switch (_b.label) {
                 case 0: return [4 /*yield*/, atdata_1.load(connection, transaction)];
@@ -350,7 +350,7 @@ function erExport(dbs, connection, transaction, erModel) {
                         'GD_CONTACT': true
                     };
                     GDGUnique = erModel.addSequence(new erm.Sequence('GD_G_UNIQUE'));
-                    GDGOffset = erModel.addSequence(new erm.Sequence('Offset', { sequence: 'GD_G_OFFSET' }));
+                    erModel.addSequence(new erm.Sequence('Offset', { sequence: 'GD_G_OFFSET' }));
                     ;
                     /**
                      * Простейший случай таблицы. Никаких ссылок.
@@ -406,7 +406,7 @@ function erExport(dbs, connection, transaction, erModel) {
                         new erm.ParentAttribute('PARENT', { ru: { name: 'Входит в папку' } }, [Folder]),
                         new erm.StringAttribute('NAME', { ru: { name: 'Краткое наименование' } }, true, undefined, 60, undefined, true, undefined)
                     ]);
-                    OurCompany = createEntity(Company, {
+                    createEntity(Company, {
                         relation: [
                             {
                                 relationName: 'GD_CONTACT',
@@ -428,7 +428,13 @@ function erExport(dbs, connection, transaction, erModel) {
                         ],
                         refresh: true
                     }, false, 'OurCompany', { ru: { name: 'Рабочая организация' } });
-                    Bank = createEntity(Company, {
+                    /**
+                     * Банк является частным случаем компании (наследуется от компании).
+                     * Все атрибуты компании являются и атрибутами банка и не нуждаются
+                     * в повторном определении, за тем исключением, если мы хотим что-то
+                     * поменять в параметрах атрибута.
+                     */
+                    createEntity(Company, {
                         relation: [
                             {
                                 relationName: 'GD_CONTACT',
@@ -510,7 +516,7 @@ function erExport(dbs, connection, transaction, erModel) {
                             }]
                     }, false, 'Group', { ru: { name: 'Группа' } });
                     Group.add(new erm.ParentAttribute('PARENT', { ru: { name: 'Входит в папку' } }, [Folder]));
-                    ContactList = Group.add(new erm.SetAttribute('CONTACTLIST', { ru: { name: 'Контакты' } }, false, [Company, Person], 0, [], {
+                    Group.add(new erm.SetAttribute('CONTACTLIST', { ru: { name: 'Контакты' } }, false, [Company, Person], 0, [], {
                         crossRelation: 'GD_CONTACTLIST'
                     }));
                     companyAccount = createEntity(undefined, rdbadapter.relationName2Adapter('GD_COMPANYACCOUNT'));
@@ -551,7 +557,7 @@ function erExport(dbs, connection, transaction, erModel) {
                     }, true);
                     ;
                     Object.entries(erModel.entities).forEach(function (_a) {
-                        var name = _a[0], entity = _a[1];
+                        var entity = _a[1];
                         return createAttributes(entity);
                     });
                     /**
@@ -567,13 +573,13 @@ function erExport(dbs, connection, transaction, erModel) {
                         var crossName = _a[0], crossRelation = _a[1];
                         if (crossRelation.primaryKey && crossRelation.primaryKey.fields.length >= 2) {
                             var fkOwner = Object.entries(crossRelation.foreignKeys).find(function (_a) {
-                                var n = _a[0], f = _a[1];
+                                var f = _a[1];
                                 return f.fields.length === 1 && f.fields[0] === crossRelation.primaryKey.fields[0];
                             });
                             if (!fkOwner)
                                 return;
                             var fkReference = Object.entries(crossRelation.foreignKeys).find(function (_a) {
-                                var n = _a[0], f = _a[1];
+                                var f = _a[1];
                                 return f.fields.length === 1 && f.fields[0] === crossRelation.primaryKey.fields[1];
                             });
                             if (!fkReference)
@@ -610,7 +616,7 @@ function erExport(dbs, connection, transaction, erModel) {
                             var atCrossRelation_1 = atrelations[crossName];
                             entitiesOwner.forEach(function (e) {
                                 if (!Object.entries(e.attributes).find(function (_a) {
-                                    var attrName = _a[0], attr = _a[1];
+                                    var attr = _a[1];
                                     return (attr instanceof erm.SetAttribute) && !!attr.adapter && attr.adapter.crossRelation === crossName;
                                 })) {
                                     var setAttr_1 = new erm.SetAttribute(atSetField_1 ? atSetField_1[0] : crossName, atSetField_1 ? atSetField_1[1].lName : (atCrossRelation_1 ? atCrossRelation_1.lName : { en: { name: crossName } }), (!!setField_1 && setField_1.notNull) || (!!setFieldSource_1 && setFieldSource_1.notNull), referenceEntities_1, (setFieldSource_1 && setFieldSource_1.fieldType === gdmn_db_1.FieldType.VARCHAR) ? setFieldSource_1.fieldLength : 0, atCrossRelation_1.semCategories, {

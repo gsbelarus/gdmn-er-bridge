@@ -1,8 +1,7 @@
 import * as fs from "fs";
-import {AConnection, ADriver, Factory, IConnectionOptions} from "gdmn-db";
-import {ERModel, SetAttribute, deserializeERModel} from "gdmn-orm";
+import {AConnection} from "gdmn-db";
+import {ERModel, deserializeERModel} from "gdmn-orm";
 import {erExport} from "..";
-import { adjustName } from "gdmn-orm";
 import { testDB } from "./testDB";
 import { IDBDetail } from "../dbdetail";
 

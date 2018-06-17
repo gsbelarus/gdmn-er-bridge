@@ -1,23 +1,18 @@
 import {
     DBStructure,
-    IRefConstraints,
-    FKConstraint,
     Relation,
     FieldType,
     ATransaction,
     RelationField,
-    Field,
     AConnection
 } from "gdmn-db";
 import * as erm from 'gdmn-orm';
 import * as rdbadapter from 'gdmn-orm';
 import { LName } from 'gdmn-orm';
-import { load, atField, atRelationField } from './atdata';
+import { load, atRelationField } from './atdata';
 import { default2Int, default2Number, default2Date } from './util';
 import { loadDocument } from './document';
 import { gedeminTables } from './gdtables';
-import { inspect } from 'util';
-import { INSPECT_MAX_BYTES } from 'buffer';
 import { gdDomains } from './gddomains';
 import { SemCategory } from "gdmn-nlp";
 
@@ -45,7 +40,7 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
    */
 
   const GDGUnique = erModel.addSequence(new erm.Sequence('GD_G_UNIQUE'));
-  const GDGOffset = erModel.addSequence(new erm.Sequence('Offset', { sequence: 'GD_G_OFFSET' }));
+  erModel.addSequence(new erm.Sequence('Offset', { sequence: 'GD_G_OFFSET' }));
 
   function findEntities(relationName: string, selectors: rdbadapter.EntitySelector[] = []): erm.Entity[] {
     const found = Object.entries(erModel.entities).reduce( (p, e) => {
@@ -213,7 +208,7 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
     ]
   );
 
-  const OurCompany = createEntity(Company,
+  createEntity(Company,
     {
       relation: [
         {
@@ -246,7 +241,7 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
    * в повторном определении, за тем исключением, если мы хотим что-то
    * поменять в параметрах атрибута.
    */
-  const Bank = createEntity(Company,
+  createEntity(Company,
     {
       relation: [
         {
@@ -380,8 +375,7 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
   Group.add(
     new erm.ParentAttribute('PARENT', {ru: {name: 'Входит в папку'}}, [Folder])
   );
-  const ContactList =
-    Group.add(
+  Group.add(
       new erm.SetAttribute('CONTACTLIST', {ru: {name: 'Контакты'}}, false, [Company, Person], 0, [],
         {
           crossRelation: 'GD_CONTACTLIST'
@@ -486,7 +480,7 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
   function recursInherited(parentRelation: Relation[], parentEntity?: erm.Entity) {
     dbs.forEachRelation( inherited => {
       if (Object.entries(inherited.foreignKeys).find(
-        ([name, f]) => f.fields.join() === inherited.primaryKey!.fields.join()
+        ([, f]) => f.fields.join() === inherited.primaryKey!.fields.join()
           && dbs.relationByUqConstraint(f.constNameUq) === parentRelation[parentRelation.length - 1] ))
       {
         const newParent = [...parentRelation, inherited];
@@ -581,7 +575,7 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
       case FieldType.INTEGER:
       {
         const fk = Object.entries(r.foreignKeys).find(
-          ([name, f]) => !!f.fields.find( fld => fld === attributeName )
+          ([, f]) => !!f.fields.find( fld => fld === attributeName )
         );
 
         if (fk && fk[1].fields.length === 1) {
@@ -744,7 +738,7 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
     });
   }
 
-  Object.entries(erModel.entities).forEach( ([name, entity]) => createAttributes(entity) );
+  Object.entries(erModel.entities).forEach( ([, entity]) => createAttributes(entity) );
 
   /**
    * Looking for cross-tables and construct set attributes.
@@ -758,13 +752,13 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
   Object.entries(dbs.relations).forEach( ([crossName, crossRelation]) => {
     if (crossRelation.primaryKey && crossRelation.primaryKey.fields.length >= 2) {
       const fkOwner = Object.entries(crossRelation.foreignKeys).find(
-        ([n, f]) => f.fields.length === 1 && f.fields[0] === crossRelation.primaryKey!.fields[0]
+        ([, f]) => f.fields.length === 1 && f.fields[0] === crossRelation.primaryKey!.fields[0]
       );
 
       if (!fkOwner) return;
 
       const fkReference = Object.entries(crossRelation.foreignKeys).find(
-        ([n, f]) => f.fields.length === 1 && f.fields[0] === crossRelation.primaryKey!.fields[1]
+        ([, f]) => f.fields.length === 1 && f.fields[0] === crossRelation.primaryKey!.fields[1]
       );
 
       if (!fkReference) return;
@@ -811,7 +805,7 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
       const atCrossRelation = atrelations[crossName];
 
       entitiesOwner.forEach( e => {
-        if (!Object.entries(e.attributes).find( ([attrName, attr]) =>
+        if (!Object.entries(e.attributes).find( ([, attr]) =>
           (attr instanceof erm.SetAttribute) && !!attr.adapter && attr.adapter.crossRelation === crossName ))
         {
           const setAttr = new erm.SetAttribute(
