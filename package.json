@@ -5,6 +5,9 @@
   "main": "./dist/index.js",
   "types": "./dist/definitions/index.d.ts",
   "scripts": {
+    "clean": "rimraf dist",
+    "build": "tsc",
+    "rebuild": "npm run clean && npm run build",
     "test": "tsc && jest"
   },
   "repository": {
