@@ -6,8 +6,8 @@
  * все данные в объекты.
  */
 import { AConnection, ATransaction } from "gdmn-db";
-import { LName } from "gdmn-orm";
 import { SemCategory } from "gdmn-nlp";
+import { LName } from "gdmn-orm";
 /**
  * Дополнительная информация по доменам.
  */
@@ -18,6 +18,7 @@ export interface atField {
     setTable: string | undefined;
     setListField: string | undefined;
     setCondition: string | undefined;
+    numeration: string | undefined;
 }
 export interface atFields {
     [fieldName: string]: atField;

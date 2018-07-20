@@ -1,11 +1,14 @@
 "use strict";
-var __assign = (this && this.__assign) || Object.assign || function(t) {
-    for (var s, i = 1, n = arguments.length; i < n; i++) {
-        s = arguments[i];
-        for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
-            t[p] = s[p];
-    }
-    return t;
+var __assign = (this && this.__assign) || function () {
+    __assign = Object.assign || function(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                t[p] = s[p];
+        }
+        return t;
+    };
+    return __assign.apply(this, arguments);
 };
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -42,23 +45,16 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
-    return result;
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 var gdmn_db_1 = require("gdmn-db");
-var erm = __importStar(require("gdmn-orm"));
-var rdbadapter = __importStar(require("gdmn-orm"));
+var gdmn_nlp_1 = require("gdmn-nlp");
+var gdmn_orm_1 = require("gdmn-orm");
+var gddomains_1 = require("../gddomains");
+var util_1 = require("../util");
 var atdata_1 = require("./atdata");
-var util_1 = require("./util");
 var document_1 = require("./document");
 var gdtables_1 = require("./gdtables");
-var gddomains_1 = require("./gddomains");
-var gdmn_nlp_1 = require("gdmn-nlp");
+var idAttrName = "ID";
 function erExport(dbs, connection, transaction, erModel) {
     return __awaiter(this, void 0, void 0, function () {
         function findEntities(relationName, selectors) {
@@ -91,23 +87,22 @@ function erExport(dbs, connection, transaction, erModel) {
         function createEntity(parent, adapter, abstract, entityName, lName, semCategories, attributes) {
             if (semCategories === void 0) { semCategories = []; }
             if (!abstract) {
-                var found = Object.entries(erModel.entities).find(function (e) { return !e[1].isAbstract && rdbadapter.sameAdapter(adapter, e[1].adapter); });
+                var found = Object.entries(erModel.entities).find(function (e) { return !e[1].isAbstract && gdmn_orm_1.sameAdapter(adapter, e[1].adapter); });
                 if (found) {
                     return found[1];
                 }
             }
             var relation = adapter.relation.filter(function (r) { return !r.weak; }).reverse()[0];
             if (!relation || !relation.relationName) {
-                throw new Error('Invalid entity adapter');
+                throw new Error("Invalid entity adapter");
             }
-            var setEntityName = rdbadapter.adjustName(entityName ? entityName : relation.relationName);
+            var setEntityName = gdmn_orm_1.adjustName(entityName ? entityName : relation.relationName);
             var atRelation = atrelations[relation.relationName];
-            var fake = rdbadapter.relationName2Adapter(setEntityName);
-            var entity = new erm.Entity(parent, setEntityName, lName ? lName : (atRelation ? atRelation.lName : {}), !!abstract, semCategories, JSON.stringify(adapter) !== JSON.stringify(fake) ? adapter : undefined);
+            var fake = gdmn_orm_1.relationName2Adapter(setEntityName);
+            var entity = new gdmn_orm_1.Entity(parent, setEntityName, lName ? lName : (atRelation ? atRelation.lName : {}), !!abstract, semCategories, JSON.stringify(adapter) !== JSON.stringify(fake) ? adapter : undefined);
             if (!parent) {
-                entity.add(new erm.SequenceAttribute('ID', { ru: { name: 'Идентификатор' } }, GDGUnique));
+                entity.add(new gdmn_orm_1.SequenceAttribute(idAttrName, { ru: { name: "Идентификатор" } }, GDGUnique));
             }
-            ;
             if (attributes) {
                 attributes.forEach(function (attr) { return entity.add(attr); });
             }
@@ -115,21 +110,21 @@ function erExport(dbs, connection, transaction, erModel) {
         }
         function createDocument(id, ruid, parent_ruid, name, className, hr, lr) {
             var setHR = hr ? hr
-                : id === 800300 ? 'BN_BANKSTATEMENT'
-                    : id === 800350 ? 'BN_BANKCATALOGUE'
-                        : '';
+                : id === 800300 ? "BN_BANKSTATEMENT"
+                    : id === 800350 ? "BN_BANKCATALOGUE"
+                        : "";
             var setLR = lr ? lr
-                : id === 800300 ? 'BN_BANKSTATEMENTLINE'
-                    : id === 800350 ? 'BN_BANKCATALOGUELINE'
-                        : '';
+                : id === 800300 ? "BN_BANKSTATEMENTLINE"
+                    : id === 800350 ? "BN_BANKCATALOGUELINE"
+                        : "";
             var parent = documentClasses[parent_ruid] && documentClasses[parent_ruid].header ? documentClasses[parent_ruid].header
                 : documentABC[className] ? documentABC[className]
                     : TgdcDocument;
             if (!parent) {
                 throw new Error("Unknown doc type " + parent_ruid + " of " + className);
             }
-            var headerAdapter = rdbadapter.appendAdapter(parent.adapter, setHR);
-            headerAdapter.relation[0].selector = { field: 'DOCUMENTTYPEKEY', value: id };
+            var headerAdapter = gdmn_orm_1.appendAdapter(parent.adapter, setHR);
+            headerAdapter.relation[0].selector = { field: "DOCUMENTTYPEKEY", value: id };
             var header = createEntity(parent, headerAdapter, false, "DOC_" + ruid + "_" + setHR, { ru: { name: name } });
             documentClasses[ruid] = { header: header };
             if (setLR) {
@@ -139,24 +134,24 @@ function erExport(dbs, connection, transaction, erModel) {
                 if (!lineParent) {
                     throw new Error("Unknown doc type " + parent_ruid + " of " + className);
                 }
-                var lineAdapter = rdbadapter.appendAdapter(lineParent.adapter, setLR);
-                lineAdapter.relation[0].selector = { field: 'DOCUMENTTYPEKEY', value: id };
+                var lineAdapter = gdmn_orm_1.appendAdapter(lineParent.adapter, setLR);
+                lineAdapter.relation[0].selector = { field: "DOCUMENTTYPEKEY", value: id };
                 var line = createEntity(lineParent, lineAdapter, false, "LINE_" + ruid + "_" + setLR, { ru: { name: "\u041F\u043E\u0437\u0438\u0446\u0438\u044F: " + name } });
-                line.add(new erm.ParentAttribute('PARENT', { ru: { name: 'Шапка документа' } }, [header]));
+                line.add(new gdmn_orm_1.ParentAttribute("PARENT", { ru: { name: "Шапка документа" } }, [header]));
                 documentClasses[ruid] = __assign({}, documentClasses[ruid], { line: line });
                 var masterLinks = [
                     {
-                        detailRelation: 'GD_DOCUMENT',
-                        link2masterField: 'PARENT'
+                        detailRelation: "GD_DOCUMENT",
+                        link2masterField: "PARENT"
                     }
                 ];
-                if (dbs.relations[setLR] && dbs.relations[setLR].relationFields['MASTERKEY']) {
+                if (dbs.relations[setLR] && dbs.relations[setLR].relationFields["MASTERKEY"]) {
                     masterLinks.push({
                         detailRelation: setLR,
-                        link2masterField: 'MASTERKEY'
+                        link2masterField: "MASTERKEY"
                     });
                 }
-                header.add(new erm.DetailAttribute(line.name, line.lName, false, [line], [], { masterLinks: masterLinks }));
+                header.add(new gdmn_orm_1.DetailAttribute(line.name, line.lName, false, [line], [], { masterLinks: masterLinks }));
             }
         }
         function recursInherited(parentRelation, parentEntity) {
@@ -168,129 +163,118 @@ function erExport(dbs, connection, transaction, erModel) {
                 })) {
                     var newParent = parentRelation.concat([inherited]);
                     var parentAdapter = parentEntity ? parentEntity.adapter
-                        : rdbadapter.relationNames2Adapter(parentRelation.map(function (p) { return p.name; }));
-                    recursInherited(newParent, createEntity(parentEntity, rdbadapter.appendAdapter(parentAdapter, inherited.name), false, inherited.name, atrelations[inherited.name] ? atrelations[inherited.name].lName : {}));
+                        : gdmn_orm_1.relationNames2Adapter(parentRelation.map(function (p) { return p.name; }));
+                    recursInherited(newParent, createEntity(parentEntity, gdmn_orm_1.appendAdapter(parentAdapter, inherited.name), false, inherited.name, atrelations[inherited.name] ? atrelations[inherited.name].lName : {}));
                 }
             }, true);
         }
         function createAttribute(r, rf, atRelationField, attrName, semCategories, adapter) {
-            var attributeName = rdbadapter.adjustName(attrName);
+            var attributeName = gdmn_orm_1.adjustName(attrName);
             var atField = atfields[rf.fieldSource];
             var fieldSource = dbs.fields[rf.fieldSource];
             var required = rf.notNull || fieldSource.notNull;
-            var defaultValue = rf.defaultValue || fieldSource.defaultValue;
+            var defaultValue = rf.defaultSource || fieldSource.defaultSource;
             var lName = atRelationField ? atRelationField.lName : (atField ? atField.lName : {});
             var createDomainFunc = gddomains_1.gdDomains[rf.fieldSource];
             if (createDomainFunc) {
                 return createDomainFunc(attributeName, lName, adapter);
             }
-            if (fieldSource.fieldScale < 0) {
-                var factor = Math.pow(10, fieldSource.fieldScale);
-                var MaxValue = void 0;
-                var MinValue = void 0;
+            // numeric and decimal
+            if (fieldSource.fieldSubType === 1 || fieldSource.fieldSubType === 2) {
+                var factor = Math.pow(10, Math.abs(fieldSource.fieldScale));
+                var range = void 0;
                 switch (fieldSource.fieldType) {
                     case gdmn_db_1.FieldType.SMALL_INTEGER:
-                        MaxValue = rdbadapter.MAX_16BIT_INT * factor;
-                        MinValue = rdbadapter.MIN_16BIT_INT * factor;
+                        range = util_1.check2NumberRange(fieldSource.validationSource, {
+                            min: gdmn_orm_1.MIN_16BIT_INT * factor,
+                            max: gdmn_orm_1.MAX_16BIT_INT * factor
+                        });
                         break;
                     case gdmn_db_1.FieldType.INTEGER:
-                        MaxValue = rdbadapter.MAX_32BIT_INT * factor;
-                        MinValue = rdbadapter.MIN_32BIT_INT * factor;
+                        range = util_1.check2NumberRange(fieldSource.validationSource, {
+                            min: gdmn_orm_1.MIN_32BIT_INT * factor,
+                            max: gdmn_orm_1.MAX_32BIT_INT * factor
+                        });
                         break;
-                    default:
-                        MaxValue = rdbadapter.MAX_64BIT_INT * factor;
-                        MinValue = rdbadapter.MIN_64BIT_INT * factor;
+                    case gdmn_db_1.FieldType.BIG_INTEGER:
+                        range = util_1.check2NumberRange(fieldSource.validationSource, {
+                            min: gdmn_orm_1.MIN_64BIT_INT * factor,
+                            max: gdmn_orm_1.MAX_64BIT_INT * factor
+                        });
+                        break;
                 }
-                if (fieldSource.validationSource) {
-                    if (fieldSource.validationSource === 'CHECK(VALUE >= 0)'
-                        || fieldSource.validationSource === 'CHECK(((VALUE IS NULL) OR (VALUE >= 0)))'
-                        || fieldSource.validationSource === 'CHECK((VALUE IS NULL) OR (VALUE >= 0))') {
-                        MinValue = 0;
-                    }
-                    else if (fieldSource.validationSource === 'CHECK ((VALUE IS NULL) OR ((VALUE >= 0) AND (VALUE <=1)))') {
-                        MinValue = 0;
-                        MaxValue = 1;
-                    }
-                    else {
-                        console.warn("Not processed for " + attributeName + ": " + JSON.stringify(fieldSource.validationSource));
-                    }
+                if (range) {
+                    return new gdmn_orm_1.NumericAttribute(attributeName, lName, required, fieldSource.fieldPrecision, Math.abs(fieldSource.fieldScale), range.minValue, range.maxValue, util_1.default2Number(defaultValue), semCategories, adapter);
                 }
-                return new erm.NumericAttribute(attributeName, lName, required, fieldSource.fieldPrecision, fieldSource.fieldScale, MinValue, MaxValue, util_1.default2Number(defaultValue), semCategories, adapter);
             }
             switch (fieldSource.fieldType) {
-                case gdmn_db_1.FieldType.INTEGER:
-                    {
-                        var fk = Object.entries(r.foreignKeys).find(function (_a) {
-                            var f = _a[1];
-                            return !!f.fields.find(function (fld) { return fld === attributeName; });
-                        });
-                        if (fk && fk[1].fields.length === 1) {
-                            var refRelationName = dbs.relationByUqConstraint(fk[1].constNameUq).name;
-                            var cond = atField && atField.refCondition ? rdbadapter.condition2Selectors(atField.refCondition) : undefined;
-                            var refEntities = findEntities(refRelationName, cond);
-                            if (!refEntities.length) {
-                                console.warn(r.name + "." + rf.name + ": no entities for table " + refRelationName + (cond ? ', condition: ' + JSON.stringify(cond) : ''));
-                            }
-                            return new erm.EntityAttribute(attributeName, lName, required, refEntities, semCategories, adapter);
+                case gdmn_db_1.FieldType.INTEGER: {
+                    var fk = Object.entries(r.foreignKeys).find(function (_a) {
+                        var f = _a[1];
+                        return !!f.fields.find(function (fld) { return fld === attributeName; });
+                    });
+                    if (fk && fk[1].fields.length === 1) {
+                        var refRelationName = dbs.relationByUqConstraint(fk[1].constNameUq).name;
+                        var cond = atField && atField.refCondition ? gdmn_orm_1.condition2Selectors(atField.refCondition) : undefined;
+                        var refEntities = findEntities(refRelationName, cond);
+                        if (!refEntities.length) {
+                            console.warn(r.name + "." + rf.name + ": no entities for table " + refRelationName + (cond ? ", condition: " + JSON.stringify(cond) : ""));
                         }
-                        else {
-                            return new erm.IntegerAttribute(attributeName, lName, required, rdbadapter.MIN_32BIT_INT, rdbadapter.MAX_32BIT_INT, util_1.default2Int(defaultValue), semCategories, adapter);
-                        }
-                    }
-                case gdmn_db_1.FieldType.CHAR:
-                case gdmn_db_1.FieldType.VARCHAR:
-                    {
-                        var minLength = undefined;
-                        if (fieldSource.fieldLength === 1 && fieldSource.validationSource) {
-                            var enumValues = [];
-                            var reValueIn = /CHECK\s*\((\(VALUE IS NULL\) OR )?(\(?VALUE\s+IN\s*\(\s*){1}((?:\'[A-Z0-9]\'(?:\,\s*)?)+)\)?\)\)/i;
-                            var match = void 0;
-                            if (match = reValueIn.exec(fieldSource.validationSource)) {
-                                var reEnumValue = /\'([A-Z0-9]{1})\'/g;
-                                var enumValue = void 0;
-                                while (enumValue = reEnumValue.exec(match[3])) {
-                                    enumValues.push({ value: enumValue[1] });
-                                }
-                            }
-                            if (enumValues.length) {
-                                return new erm.EnumAttribute(attributeName, lName, required, enumValues, undefined, semCategories, adapter);
-                            }
-                            else {
-                                console.warn("Not processed for " + attributeName + ": " + JSON.stringify(fieldSource.validationSource));
-                            }
-                        }
-                        else {
-                            if (fieldSource.validationSource) {
-                                if (fieldSource.validationSource === "CHECK (VALUE > '')" ||
-                                    fieldSource.validationSource === "CHECK ((VALUE IS NULL) OR (VALUE > ''))") {
-                                    minLength = 1;
-                                }
-                                else {
-                                    console.warn("Not processed for " + attributeName + ": " + JSON.stringify(fieldSource.validationSource));
-                                }
-                            }
-                        }
-                        return new erm.StringAttribute(attributeName, lName, required, minLength, fieldSource.fieldLength, undefined, true, undefined, semCategories, adapter);
-                    }
-                case gdmn_db_1.FieldType.TIMESTAMP:
-                    return new erm.TimeStampAttribute(attributeName, lName, required, undefined, undefined, util_1.default2Date(defaultValue), semCategories, adapter);
-                case gdmn_db_1.FieldType.DATE:
-                    return new erm.DateAttribute(attributeName, lName, required, undefined, undefined, util_1.default2Date(defaultValue), semCategories, adapter);
-                case gdmn_db_1.FieldType.TIME:
-                    return new erm.TimeAttribute(attributeName, lName, required, undefined, undefined, util_1.default2Date(defaultValue), semCategories, adapter);
-                case gdmn_db_1.FieldType.FLOAT:
-                case gdmn_db_1.FieldType.DOUBLE:
-                    return new erm.FloatAttribute(attributeName, lName, required, undefined, undefined, util_1.default2Number(defaultValue), semCategories, adapter);
-                case gdmn_db_1.FieldType.SMALL_INTEGER:
-                    return new erm.IntegerAttribute(attributeName, lName, required, rdbadapter.MIN_16BIT_INT, rdbadapter.MAX_16BIT_INT, util_1.default2Int(defaultValue), semCategories, adapter);
-                case gdmn_db_1.FieldType.BIG_INTEGER:
-                    return new erm.IntegerAttribute(attributeName, lName, required, rdbadapter.MIN_64BIT_INT, rdbadapter.MAX_64BIT_INT, util_1.default2Int(defaultValue), semCategories, adapter);
-                case gdmn_db_1.FieldType.BLOB:
-                    if (fieldSource.fieldSubType === 1) {
-                        return new erm.StringAttribute(attributeName, lName, required, undefined, undefined, undefined, false, undefined, semCategories, adapter);
+                        return new gdmn_orm_1.EntityAttribute(attributeName, lName, required, refEntities, semCategories, adapter);
                     }
                     else {
-                        return new erm.BlobAttribute(attributeName, lName, required, semCategories, adapter);
+                        var iRange = util_1.check2NumberRange(fieldSource.validationSource, { min: gdmn_orm_1.MIN_32BIT_INT, max: gdmn_orm_1.MAX_32BIT_INT });
+                        return new gdmn_orm_1.IntegerAttribute(attributeName, lName, required, iRange.minValue, iRange.maxValue, util_1.default2Int(defaultValue), semCategories, adapter);
+                    }
+                }
+                case gdmn_db_1.FieldType.CHAR:
+                case gdmn_db_1.FieldType.VARCHAR: {
+                    if (fieldSource.fieldLength === 1) {
+                        var values = util_1.check2Enum(fieldSource.validationSource);
+                        if (values.length) {
+                            var dif = atField.numeration ? atField.numeration.split("#13#10") : [];
+                            var mapValues_1 = dif.reduce(function (map, item) {
+                                var _a = item.split("="), key = _a[0], value = _a[1];
+                                map[key] = value;
+                                return map;
+                            }, {});
+                            return new gdmn_orm_1.EnumAttribute(attributeName, lName, required, values.map(function (value) { return ({
+                                value: value,
+                                lName: mapValues_1[value] ? { ru: { name: mapValues_1[value] } } : undefined
+                            }); }), util_1.default2String(defaultValue), semCategories, adapter);
+                        }
+                    }
+                    var minLength = util_1.check2StrMin(fieldSource.validationSource);
+                    return new gdmn_orm_1.StringAttribute(attributeName, lName, required, minLength, fieldSource.fieldLength, util_1.default2String(defaultValue), true, undefined, semCategories, adapter);
+                }
+                case gdmn_db_1.FieldType.TIMESTAMP:
+                    var tsRange = util_1.check2TimestampRange(fieldSource.validationSource);
+                    return new gdmn_orm_1.TimeStampAttribute(attributeName, lName, required, tsRange.minValue, tsRange.maxValue, util_1.default2Timestamp(defaultValue), semCategories, adapter);
+                case gdmn_db_1.FieldType.DATE:
+                    var dRange = util_1.check2DateRange(fieldSource.validationSource);
+                    return new gdmn_orm_1.DateAttribute(attributeName, lName, required, dRange.minValue, dRange.maxValue, util_1.default2Date(defaultValue), semCategories, adapter);
+                case gdmn_db_1.FieldType.TIME:
+                    var tRange = util_1.check2TimeRange(fieldSource.validationSource);
+                    return new gdmn_orm_1.TimeAttribute(attributeName, lName, required, tRange.minValue, tRange.maxValue, util_1.default2Time(defaultValue), semCategories, adapter);
+                case gdmn_db_1.FieldType.FLOAT:
+                case gdmn_db_1.FieldType.DOUBLE:
+                    var fRange = util_1.check2NumberRange(fieldSource.validationSource);
+                    return new gdmn_orm_1.FloatAttribute(attributeName, lName, required, fRange.minValue, fRange.maxValue, util_1.default2Number(defaultValue), semCategories, adapter);
+                case gdmn_db_1.FieldType.SMALL_INTEGER:
+                    if (util_1.isCheckForBoolean(fieldSource.validationSource)) {
+                        return new gdmn_orm_1.BooleanAttribute(attributeName, lName, required, util_1.default2Boolean(defaultValue), semCategories, adapter);
+                    }
+                    var siRange = util_1.check2NumberRange(fieldSource.validationSource, { min: gdmn_orm_1.MIN_16BIT_INT, max: gdmn_orm_1.MAX_16BIT_INT });
+                    return new gdmn_orm_1.IntegerAttribute(attributeName, lName, required, siRange.minValue, siRange.maxValue, util_1.default2Int(defaultValue), semCategories, adapter);
+                case gdmn_db_1.FieldType.BIG_INTEGER:
+                    var biRange = util_1.check2NumberRange(fieldSource.validationSource, { min: gdmn_orm_1.MIN_64BIT_INT, max: gdmn_orm_1.MAX_64BIT_INT });
+                    return new gdmn_orm_1.IntegerAttribute(attributeName, lName, required, biRange.minValue, biRange.maxValue, util_1.default2Int(defaultValue), semCategories, adapter);
+                case gdmn_db_1.FieldType.BLOB:
+                    if (fieldSource.fieldSubType === 1) {
+                        return new gdmn_orm_1.StringAttribute(attributeName, lName, required, 0, undefined, util_1.default2String(defaultValue), false, undefined, semCategories, adapter);
+                    }
+                    else {
+                        return new gdmn_orm_1.BlobAttribute(attributeName, lName, required, semCategories, adapter);
                     }
                 default:
                     throw new Error("Unknown data type " + fieldSource + "=" + fieldSource.fieldType + " for field " + r.name + "." + attributeName);
@@ -306,13 +290,13 @@ function erExport(dbs, connection, transaction, erModel) {
                     var fn = _a[0], rf = _a[1];
                     if (r.primaryKey.fields.find(function (f) { return f === fn; }))
                         return;
-                    if (fn === 'LB' || fn === 'RB')
+                    if (fn === "LB" || fn === "RB")
                         return;
                     if (entity.hasAttribute(fn))
                         return;
-                    if (!rdbadapter.hasField(entity.adapter, r.name, fn)
-                        && !rdbadapter.systemFields.find(function (sf) { return sf === fn; })
-                        && !rdbadapter.isUserDefined(fn)) {
+                    if (!gdmn_orm_1.hasField(entity.adapter, r.name, fn)
+                        && !gdmn_orm_1.systemFields.find(function (sf) { return sf === fn; })
+                        && !gdmn_orm_1.isUserDefined(fn)) {
                         return;
                     }
                     if (entity.adapter.relation[0].selector && entity.adapter.relation[0].selector.field === fn) {
@@ -338,96 +322,96 @@ function erExport(dbs, connection, transaction, erModel) {
                 case 1:
                     _a = _b.sent(), atfields = _a.atfields, atrelations = _a.atrelations;
                     crossRelationsAdapters = {
-                        'GD_CONTACTLIST': {
-                            owner: 'GD_CONTACT',
+                        "GD_CONTACTLIST": {
+                            owner: "GD_CONTACT",
                             selector: {
-                                field: 'CONTACTTYPE',
+                                field: "CONTACTTYPE",
                                 value: 1
                             }
                         }
                     };
                     abstractBaseRelations = {
-                        'GD_CONTACT': true
+                        "GD_CONTACT": true
                     };
-                    GDGUnique = erModel.addSequence(new erm.Sequence('GD_G_UNIQUE'));
-                    erModel.addSequence(new erm.Sequence('Offset', { sequence: 'GD_G_OFFSET' }));
-                    ;
+                    GDGUnique = erModel.addSequence(new gdmn_orm_1.Sequence("GD_G_UNIQUE"));
+                    erModel.addSequence(new gdmn_orm_1.Sequence("Offset", { sequence: "GD_G_OFFSET" }));
+                    createEntity(undefined, gdmn_orm_1.relationName2Adapter("TEST")); // TODO
                     /**
                      * Простейший случай таблицы. Никаких ссылок.
                      */
-                    createEntity(undefined, rdbadapter.relationName2Adapter('WG_HOLIDAY'));
+                    createEntity(undefined, gdmn_orm_1.relationName2Adapter("WG_HOLIDAY"));
                     /**
                      * Административно-территориальная единица.
                      * Тут исключительно для иллюстрации типа данных Перечисление.
                      */
-                    createEntity(undefined, rdbadapter.relationName2Adapter('GD_PLACE'), false, undefined, undefined, [gdmn_nlp_1.SemCategory.Place], [
-                        new erm.EnumAttribute('PLACETYPE', { ru: { name: 'Тип' } }, true, [
+                    createEntity(undefined, gdmn_orm_1.relationName2Adapter("GD_PLACE"), false, undefined, undefined, [gdmn_nlp_1.SemCategory.Place], [
+                        new gdmn_orm_1.EnumAttribute("PLACETYPE", { ru: { name: "Тип" } }, true, [
                             {
-                                value: 'Область'
+                                value: "Область"
                             },
                             {
-                                value: 'Район'
-                            },
-                        ], 'Область')
+                                value: "Район"
+                            }
+                        ], "Область")
                     ]);
                     Folder = createEntity(undefined, {
                         relation: [{
-                                relationName: 'GD_CONTACT',
+                                relationName: "GD_CONTACT",
                                 selector: {
-                                    field: 'CONTACTTYPE',
-                                    value: 0,
+                                    field: "CONTACTTYPE",
+                                    value: 0
                                 },
                                 fields: [
-                                    'PARENT',
-                                    'NAME'
+                                    "PARENT",
+                                    "NAME"
                                 ]
                             }]
-                    }, false, 'Folder', { ru: { name: 'Папка' } });
-                    Folder.add(new erm.ParentAttribute('PARENT', { ru: { name: 'Входит в папку' } }, [Folder]));
+                    }, false, "Folder", { ru: { name: "Папка" } });
+                    Folder.add(new gdmn_orm_1.ParentAttribute("PARENT", { ru: { name: "Входит в папку" } }, [Folder]));
                     Company = createEntity(undefined, {
                         relation: [
                             {
-                                relationName: 'GD_CONTACT',
+                                relationName: "GD_CONTACT",
                                 selector: {
-                                    field: 'CONTACTTYPE',
+                                    field: "CONTACTTYPE",
                                     value: 3
                                 }
                             },
                             {
-                                relationName: 'GD_COMPANY'
+                                relationName: "GD_COMPANY"
                             },
                             {
-                                relationName: 'GD_COMPANYCODE',
+                                relationName: "GD_COMPANYCODE",
                                 weak: true
                             }
                         ],
                         refresh: true
-                    }, false, 'Company', { ru: { name: 'Организация' } }, [gdmn_nlp_1.SemCategory.Company], [
-                        new erm.ParentAttribute('PARENT', { ru: { name: 'Входит в папку' } }, [Folder]),
-                        new erm.StringAttribute('NAME', { ru: { name: 'Краткое наименование' } }, true, undefined, 60, undefined, true, undefined)
+                    }, false, "Company", { ru: { name: "Организация" } }, [gdmn_nlp_1.SemCategory.Company], [
+                        new gdmn_orm_1.ParentAttribute("PARENT", { ru: { name: "Входит в папку" } }, [Folder]),
+                        new gdmn_orm_1.StringAttribute("NAME", { ru: { name: "Краткое наименование" } }, true, undefined, 60, undefined, true, undefined)
                     ]);
                     createEntity(Company, {
                         relation: [
                             {
-                                relationName: 'GD_CONTACT',
+                                relationName: "GD_CONTACT",
                                 selector: {
-                                    field: 'CONTACTTYPE',
+                                    field: "CONTACTTYPE",
                                     value: 3
                                 }
                             },
                             {
-                                relationName: 'GD_COMPANY'
+                                relationName: "GD_COMPANY"
                             },
                             {
-                                relationName: 'GD_COMPANYCODE',
+                                relationName: "GD_COMPANYCODE",
                                 weak: true
                             },
                             {
-                                relationName: 'GD_OURCOMPANY'
+                                relationName: "GD_OURCOMPANY"
                             }
                         ],
                         refresh: true
-                    }, false, 'OurCompany', { ru: { name: 'Рабочая организация' } });
+                    }, false, "OurCompany", { ru: { name: "Рабочая организация" } });
                     /**
                      * Банк является частным случаем компании (наследуется от компании).
                      * Все атрибуты компании являются и атрибутами банка и не нуждаются
@@ -437,125 +421,122 @@ function erExport(dbs, connection, transaction, erModel) {
                     createEntity(Company, {
                         relation: [
                             {
-                                relationName: 'GD_CONTACT',
+                                relationName: "GD_CONTACT",
                                 selector: {
-                                    field: 'CONTACTTYPE',
+                                    field: "CONTACTTYPE",
                                     value: 5
                                 }
                             },
                             {
-                                relationName: 'GD_COMPANY'
+                                relationName: "GD_COMPANY"
                             },
                             {
-                                relationName: 'GD_COMPANYCODE',
+                                relationName: "GD_COMPANYCODE",
                                 weak: true
                             },
                             {
-                                relationName: 'GD_BANK'
+                                relationName: "GD_BANK"
                             }
                         ],
                         refresh: true
-                    }, false, 'Bank', { ru: { name: 'Банк' } });
+                    }, false, "Bank", { ru: { name: "Банк" } });
                     Department = createEntity(undefined, {
                         relation: [{
-                                relationName: 'GD_CONTACT',
+                                relationName: "GD_CONTACT",
                                 selector: {
-                                    field: 'CONTACTTYPE',
+                                    field: "CONTACTTYPE",
                                     value: 4
                                 }
                             }]
-                    }, false, 'Department', { ru: { name: 'Подразделение' } });
-                    Department.add(new erm.ParentAttribute('PARENT', { ru: { name: 'Входит в организацию (подразделение)' } }, [Company, Department]));
-                    Department.add(new erm.StringAttribute('NAME', { ru: { name: 'Наименование' } }, true, undefined, 60, undefined, true, undefined));
+                    }, false, "Department", { ru: { name: "Подразделение" } });
+                    Department.add(new gdmn_orm_1.ParentAttribute("PARENT", { ru: { name: "Входит в организацию (подразделение)" } }, [Company, Department]));
+                    Department.add(new gdmn_orm_1.StringAttribute("NAME", { ru: { name: "Наименование" } }, true, undefined, 60, undefined, true, undefined));
                     Person = createEntity(undefined, {
                         relation: [
                             {
-                                relationName: 'GD_CONTACT',
+                                relationName: "GD_CONTACT",
                                 selector: {
-                                    field: 'CONTACTTYPE',
+                                    field: "CONTACTTYPE",
                                     value: 2
                                 }
                             },
                             {
-                                relationName: 'GD_PEOPLE'
+                                relationName: "GD_PEOPLE"
                             }
                         ],
                         refresh: true
-                    }, false, 'Person', { ru: { name: 'Физическое лицо' } });
-                    Person.add(new erm.ParentAttribute('PARENT', { ru: { name: 'Входит в папку' } }, [Folder]));
-                    Person.add(new erm.StringAttribute('NAME', { ru: { name: 'ФИО' } }, true, undefined, 60, undefined, true, undefined));
+                    }, false, "Person", { ru: { name: "Физическое лицо" } });
+                    Person.add(new gdmn_orm_1.ParentAttribute("PARENT", { ru: { name: "Входит в папку" } }, [Folder]));
+                    Person.add(new gdmn_orm_1.StringAttribute("NAME", { ru: { name: "ФИО" } }, true, undefined, 60, undefined, true, undefined));
                     Employee = createEntity(Person, {
                         relation: [
                             {
-                                relationName: 'GD_CONTACT',
+                                relationName: "GD_CONTACT",
                                 selector: {
-                                    field: 'CONTACTTYPE',
+                                    field: "CONTACTTYPE",
                                     value: 2
                                 }
                             },
                             {
-                                relationName: 'GD_PEOPLE'
+                                relationName: "GD_PEOPLE"
                             },
                             {
-                                relationName: 'GD_EMPLOYEE'
+                                relationName: "GD_EMPLOYEE"
                             }
                         ]
-                    }, false, 'Employee', { ru: { name: 'Сотрудник предприятия' } });
-                    Employee.add(new erm.ParentAttribute('PARENT', { ru: { name: 'Организация или подразделение' } }, [Company, Department]));
+                    }, false, "Employee", { ru: { name: "Сотрудник предприятия" } });
+                    Employee.add(new gdmn_orm_1.ParentAttribute("PARENT", { ru: { name: "Организация или подразделение" } }, [Company, Department]));
                     Group = createEntity(undefined, {
                         relation: [{
-                                relationName: 'GD_CONTACT',
+                                relationName: "GD_CONTACT",
                                 selector: {
-                                    field: 'CONTACTTYPE',
+                                    field: "CONTACTTYPE",
                                     value: 1
                                 },
                                 fields: [
-                                    'PARENT',
-                                    'NAME'
+                                    "PARENT",
+                                    "NAME"
                                 ]
                             }]
-                    }, false, 'Group', { ru: { name: 'Группа' } });
-                    Group.add(new erm.ParentAttribute('PARENT', { ru: { name: 'Входит в папку' } }, [Folder]));
-                    Group.add(new erm.SetAttribute('CONTACTLIST', { ru: { name: 'Контакты' } }, false, [Company, Person], 0, [], {
-                        crossRelation: 'GD_CONTACTLIST'
+                    }, false, "Group", { ru: { name: "Группа" } });
+                    Group.add(new gdmn_orm_1.ParentAttribute("PARENT", { ru: { name: "Входит в папку" } }, [Folder]));
+                    Group.add(new gdmn_orm_1.SetAttribute("CONTACTLIST", { ru: { name: "Контакты" } }, false, [Company, Person], 0, [], {
+                        crossRelation: "GD_CONTACTLIST"
                     }));
-                    companyAccount = createEntity(undefined, rdbadapter.relationName2Adapter('GD_COMPANYACCOUNT'));
-                    Company.add(new erm.DetailAttribute('GD_COMPANYACCOUNT', { ru: { name: 'Банковские счета' } }, false, [companyAccount], [], {
+                    companyAccount = createEntity(undefined, gdmn_orm_1.relationName2Adapter("GD_COMPANYACCOUNT"));
+                    Company.add(new gdmn_orm_1.DetailAttribute("GD_COMPANYACCOUNT", { ru: { name: "Банковские счета" } }, false, [companyAccount], [], {
                         masterLinks: [
                             {
-                                detailRelation: 'GD_COMPANYACCOUNT',
-                                link2masterField: 'COMPANYKEY'
+                                detailRelation: "GD_COMPANYACCOUNT",
+                                link2masterField: "COMPANYKEY"
                             }
                         ]
                     }));
-                    gdtables_1.gedeminTables.forEach(function (t) { return createEntity(undefined, rdbadapter.relationName2Adapter(t)); });
-                    createEntity(undefined, rdbadapter.relationName2Adapter('INV_CARD'));
-                    TgdcDocument = createEntity(undefined, rdbadapter.relationName2Adapter('GD_DOCUMENT'), true, 'TgdcDocument');
-                    TgdcDocumentAdapter = rdbadapter.relationName2Adapter('GD_DOCUMENT');
+                    gdtables_1.gedeminTables.forEach(function (t) { return createEntity(undefined, gdmn_orm_1.relationName2Adapter(t)); });
+                    createEntity(undefined, gdmn_orm_1.relationName2Adapter("INV_CARD"));
+                    TgdcDocument = createEntity(undefined, gdmn_orm_1.relationName2Adapter("GD_DOCUMENT"), true, "TgdcDocument");
+                    TgdcDocumentAdapter = gdmn_orm_1.relationName2Adapter("GD_DOCUMENT");
                     documentABC = {
-                        'TgdcDocumentType': TgdcDocument,
-                        'TgdcUserDocumentType': createEntity(TgdcDocument, TgdcDocumentAdapter, true, 'TgdcUserDocument', { ru: { name: 'Пользовательские документы' } }),
-                        'TgdcInvDocumentType': createEntity(TgdcDocument, TgdcDocumentAdapter, true, 'TgdcInvDocument', { ru: { name: 'Складские документы' } }),
-                        'TgdcInvPriceListType': createEntity(TgdcDocument, TgdcDocumentAdapter, true, 'TgdcInvPriceList', { ru: { name: 'Прайс-листы' } })
+                        "TgdcDocumentType": TgdcDocument,
+                        "TgdcUserDocumentType": createEntity(TgdcDocument, TgdcDocumentAdapter, true, "TgdcUserDocument", { ru: { name: "Пользовательские документы" } }),
+                        "TgdcInvDocumentType": createEntity(TgdcDocument, TgdcDocumentAdapter, true, "TgdcInvDocument", { ru: { name: "Складские документы" } }),
+                        "TgdcInvPriceListType": createEntity(TgdcDocument, TgdcDocumentAdapter, true, "TgdcInvPriceList", { ru: { name: "Прайс-листы" } })
                     };
                     documentClasses = {};
-                    ;
                     return [4 /*yield*/, document_1.loadDocument(connection, transaction, createDocument)];
                 case 2:
                     _b.sent();
-                    ;
                     dbs.forEachRelation(function (r) {
-                        if (r.primaryKey.fields.join() === 'ID' && /^USR\$.+$/.test(r.name)
-                            && !Object.entries(r.foreignKeys).find(function (fk) { return fk[1].fields.join() === 'ID'; })) {
+                        if (r.primaryKey.fields.join() === idAttrName && /^USR\$.+$/.test(r.name)
+                            && !Object.entries(r.foreignKeys).find(function (fk) { return fk[1].fields.join() === idAttrName; })) {
                             if (abstractBaseRelations[r.name]) {
                                 recursInherited([r]);
                             }
                             else {
-                                recursInherited([r], createEntity(undefined, rdbadapter.relationName2Adapter(r.name)));
+                                recursInherited([r], createEntity(undefined, gdmn_orm_1.relationName2Adapter(r.name)));
                             }
                         }
                     }, true);
-                    ;
                     Object.entries(erModel.entities).forEach(function (_a) {
                         var entity = _a[1];
                         return createAttributes(entity);
@@ -605,7 +586,7 @@ function erExport(dbs, connection, transaction, erModel) {
                             var atSetField_1 = Object.entries(atRelOwner.relationFields).find(function (rf) { return rf[1].crossTable === crossName; });
                             var atSetFieldSource = atSetField_1 ? atfields[atSetField_1[1].fieldSource] : undefined;
                             if (atSetFieldSource && atSetFieldSource.setTable === relReference.name && atSetFieldSource.setCondition) {
-                                cond = rdbadapter.condition2Selectors(atSetFieldSource.setCondition);
+                                cond = gdmn_orm_1.condition2Selectors(atSetFieldSource.setCondition);
                             }
                             var referenceEntities_1 = findEntities(relReference.name, cond);
                             if (!referenceEntities_1.length) {
@@ -617,9 +598,9 @@ function erExport(dbs, connection, transaction, erModel) {
                             entitiesOwner.forEach(function (e) {
                                 if (!Object.entries(e.attributes).find(function (_a) {
                                     var attr = _a[1];
-                                    return (attr instanceof erm.SetAttribute) && !!attr.adapter && attr.adapter.crossRelation === crossName;
+                                    return (attr instanceof gdmn_orm_1.SetAttribute) && !!attr.adapter && attr.adapter.crossRelation === crossName;
                                 })) {
-                                    var setAttr_1 = new erm.SetAttribute(atSetField_1 ? atSetField_1[0] : crossName, atSetField_1 ? atSetField_1[1].lName : (atCrossRelation_1 ? atCrossRelation_1.lName : { en: { name: crossName } }), (!!setField_1 && setField_1.notNull) || (!!setFieldSource_1 && setFieldSource_1.notNull), referenceEntities_1, (setFieldSource_1 && setFieldSource_1.fieldType === gdmn_db_1.FieldType.VARCHAR) ? setFieldSource_1.fieldLength : 0, atCrossRelation_1.semCategories, {
+                                    var setAttr_1 = new gdmn_orm_1.SetAttribute(atSetField_1 ? atSetField_1[0] : crossName, atSetField_1 ? atSetField_1[1].lName : (atCrossRelation_1 ? atCrossRelation_1.lName : { en: { name: crossName } }), (!!setField_1 && setField_1.notNull) || (!!setFieldSource_1 && setFieldSource_1.notNull), referenceEntities_1, (setFieldSource_1 && setFieldSource_1.fieldType === gdmn_db_1.FieldType.VARCHAR) ? setFieldSource_1.fieldLength : 0, atCrossRelation_1.semCategories, {
                                         crossRelation: crossName
                                     });
                                     Object.entries(crossRelation.relationFields).forEach(function (_a) {

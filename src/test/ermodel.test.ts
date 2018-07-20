@@ -3,7 +3,7 @@ import {AConnection} from "gdmn-db";
 import {ERModel, deserializeERModel} from "gdmn-orm";
 import {erExport} from "..";
 import { testDB } from "./testDB";
-import { IDBDetail } from "../dbdetail";
+import { IDBDetail } from "../export/dbdetail";
 
 async function loadERModel(dbDetail: IDBDetail) {
   const {driver, options}: IDBDetail = dbDetail;
@@ -36,7 +36,7 @@ async function loadERModel(dbDetail: IDBDetail) {
 }
 
 test("erModel", async () => {
-  const result = await loadERModel(testDB[1]);
+  const result = await loadERModel(testDB);
   const serialized = result.erModel.serialize();
   const deserialized = deserializeERModel(serialized);
 

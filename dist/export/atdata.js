@@ -56,28 +56,37 @@ function load(connection, transaction) {
                 case 0: return [4 /*yield*/, gdmn_db_1.AConnection.executeQueryResultSet({
                         connection: connection,
                         transaction: transaction,
-                        sql: "\n      SELECT\n        FIELDNAME,\n        LNAME,\n        REFTABLE,\n        REFCONDITION,\n        SETTABLE,\n        SETLISTFIELD,\n        SETCONDITION\n      FROM\n        AT_FIELDS",
+                        sql: "\n      SELECT\n        FIELDNAME,\n        LNAME,\n        DESCRIPTION,\n        REFTABLE,\n        REFCONDITION,\n        SETTABLE,\n        SETLISTFIELD,\n        SETCONDITION,\n        NUMERATION\n      FROM\n        AT_FIELDS",
                         callback: function (resultSet) { return __awaiter(_this, void 0, void 0, function () {
-                            var getTrimmedString, fields;
-                            return __generator(this, function (_a) {
-                                switch (_a.label) {
+                            var getTrimmedString, fields, name, fullName, ru, _a, _b, _c;
+                            return __generator(this, function (_d) {
+                                switch (_d.label) {
                                     case 0:
                                         getTrimmedString = getTrimmedStringFunc(resultSet);
                                         fields = {};
-                                        _a.label = 1;
+                                        _d.label = 1;
                                     case 1: return [4 /*yield*/, resultSet.next()];
                                     case 2:
-                                        if (!_a.sent()) return [3 /*break*/, 3];
-                                        fields[resultSet.getString("FIELDNAME")] = {
-                                            lName: { ru: { name: resultSet.getString("LNAME") } },
+                                        if (!_d.sent()) return [3 /*break*/, 4];
+                                        name = resultSet.getString("LNAME");
+                                        fullName = getTrimmedString("DESCRIPTION");
+                                        ru = { name: name, fullName: fullName };
+                                        _a = fields;
+                                        _b = resultSet.getString("FIELDNAME");
+                                        _c = {
+                                            lName: { ru: ru },
                                             refTable: getTrimmedString("REFTABLE"),
                                             refCondition: getTrimmedString("REFCONDITION"),
                                             setTable: getTrimmedString("SETTABLE"),
                                             setListField: getTrimmedString("SETLISTFIELD"),
                                             setCondition: getTrimmedString("SETCONDITION")
                                         };
+                                        return [4 /*yield*/, resultSet.getBlob("NUMERATION").asString()];
+                                    case 3:
+                                        _a[_b] = (_c.numeration = _d.sent(),
+                                            _c);
                                         return [3 /*break*/, 1];
-                                    case 3: return [2 /*return*/, fields];
+                                    case 4: return [2 /*return*/, fields];
                                 }
                             });
                         }); }
@@ -89,27 +98,22 @@ function load(connection, transaction) {
                             transaction: transaction,
                             sql: "\n      SELECT\n        ID,\n        RELATIONNAME,\n        LNAME,\n        DESCRIPTION,\n        SEMCATEGORY\n      FROM\n        AT_RELATIONS",
                             callback: function (resultSet) { return __awaiter(_this, void 0, void 0, function () {
-                                var relations, ru;
+                                var getTrimmedString, relations, name, fullName, ru;
                                 return __generator(this, function (_a) {
                                     switch (_a.label) {
                                         case 0:
+                                            getTrimmedString = getTrimmedStringFunc(resultSet);
                                             relations = {};
                                             _a.label = 1;
                                         case 1: return [4 /*yield*/, resultSet.next()];
                                         case 2:
                                             if (!_a.sent()) return [3 /*break*/, 3];
-                                            ru = resultSet.getString('LNAME') !== resultSet.getString(3) ?
-                                                {
-                                                    name: resultSet.getString('LNAME'),
-                                                    fullName: resultSet.getString('DESCRIPTION')
-                                                }
-                                                :
-                                                    {
-                                                        name: resultSet.getString('LNAME')
-                                                    };
-                                            relations[resultSet.getString('RELATIONNAME')] = {
+                                            name = resultSet.getString("LNAME");
+                                            fullName = getTrimmedString("DESCRIPTION");
+                                            ru = { name: name, fullName: fullName };
+                                            relations[resultSet.getString("RELATIONNAME")] = {
                                                 lName: { ru: ru },
-                                                semCategories: gdmn_nlp_1.str2SemCategories(resultSet.getString('SEMCATEGORY')),
+                                                semCategories: gdmn_nlp_1.str2SemCategories(resultSet.getString("SEMCATEGORY")),
                                                 relationFields: {}
                                             };
                                             return [3 /*break*/, 1];
@@ -143,8 +147,8 @@ function load(connection, transaction) {
                                             }
                                             fieldName = resultSet.getString("FIELDNAME");
                                             name = resultSet.getString("LNAME");
-                                            fullName = resultSet.getString("DESCRIPTION");
-                                            ru = fullName && fullName !== name && fullName !== fieldName ? { name: name, fullName: fullName } : { name: name };
+                                            fullName = getTrimmedString("DESCRIPTION");
+                                            ru = { name: name, fullName: fullName };
                                             rel.relationFields[fieldName] = {
                                                 lName: { ru: ru },
                                                 fieldSource: getTrimmedString("FIELDSOURCE"),

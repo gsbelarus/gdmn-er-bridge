@@ -7,8 +7,8 @@
  */
 
 import {AConnection, AResultSet, ATransaction} from "gdmn-db";
+import {SemCategory, str2SemCategories} from "gdmn-nlp";
 import {LName} from "gdmn-orm";
-import { SemCategory, str2SemCategories } from "gdmn-nlp";
 
 /**
  * Дополнительная информация по доменам.
@@ -20,6 +20,7 @@ export interface atField {
   setTable: string | undefined;
   setListField: string | undefined;
   setCondition: string | undefined;
+  numeration: string | undefined;
 }
 
 export interface atFields {
@@ -65,24 +66,30 @@ export async function load(connection: AConnection, transaction: ATransaction) {
       SELECT
         FIELDNAME,
         LNAME,
+        DESCRIPTION,
         REFTABLE,
         REFCONDITION,
         SETTABLE,
         SETLISTFIELD,
-        SETCONDITION
+        SETCONDITION,
+        NUMERATION
       FROM
         AT_FIELDS`,
     callback: async (resultSet) => {
       const getTrimmedString = getTrimmedStringFunc(resultSet);
       const fields: atFields = {};
       while (await resultSet.next()) {
+        const name = resultSet.getString("LNAME");
+        const fullName = getTrimmedString("DESCRIPTION");
+        const ru = {name, fullName};
         fields[resultSet.getString("FIELDNAME")] = {
-          lName: {ru: {name: resultSet.getString("LNAME")}},
+          lName: {ru},
           refTable: getTrimmedString("REFTABLE"),
           refCondition: getTrimmedString("REFCONDITION"),
           setTable: getTrimmedString("SETTABLE"),
           setListField: getTrimmedString("SETLISTFIELD"),
-          setCondition: getTrimmedString("SETCONDITION")
+          setCondition: getTrimmedString("SETCONDITION"),
+          numeration: await resultSet.getBlob("NUMERATION").asString()
         };
       }
       return fields;
@@ -102,20 +109,15 @@ export async function load(connection: AConnection, transaction: ATransaction) {
       FROM
         AT_RELATIONS`,
     callback: async (resultSet) => {
+      const getTrimmedString = getTrimmedStringFunc(resultSet);
       const relations: atRelations = {};
       while (await resultSet.next()) {
-        const ru = resultSet.getString('LNAME') !== resultSet.getString(3) ?
-          {
-            name: resultSet.getString('LNAME'),
-            fullName: resultSet.getString('DESCRIPTION')
-          }
-          :
-          {
-            name: resultSet.getString('LNAME')
-          };
-        relations[resultSet.getString('RELATIONNAME')] = {
+        const name = resultSet.getString("LNAME");
+        const fullName = getTrimmedString("DESCRIPTION");
+        const ru = {name, fullName};
+        relations[resultSet.getString("RELATIONNAME")] = {
           lName: {ru},
-          semCategories: str2SemCategories(resultSet.getString('SEMCATEGORY')),
+          semCategories: str2SemCategories(resultSet.getString("SEMCATEGORY")),
           relationFields: {}
         };
       }
@@ -152,8 +154,8 @@ export async function load(connection: AConnection, transaction: ATransaction) {
         }
         const fieldName = resultSet.getString("FIELDNAME");
         const name = resultSet.getString("LNAME");
-        const fullName = resultSet.getString("DESCRIPTION");
-        const ru = fullName && fullName !== name && fullName !== fieldName ? {name, fullName} : {name};
+        const fullName = getTrimmedString("DESCRIPTION");
+        const ru = {name, fullName};
         rel!.relationFields[fieldName] = {
           lName: {ru},
           fieldSource: getTrimmedString("FIELDSOURCE")!,
@@ -165,5 +167,5 @@ export async function load(connection: AConnection, transaction: ATransaction) {
     }
   });
 
-  return { atfields, atrelations };
+  return {atfields, atrelations};
 }
