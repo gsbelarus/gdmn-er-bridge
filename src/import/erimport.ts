@@ -15,6 +15,12 @@ import {
   isStringAttribute,
   isTimeAttribute,
   isTimeStampAttribute,
+  MAX_16BIT_INT,
+  MAX_32BIT_INT,
+  MAX_64BIT_INT,
+  MIN_16BIT_INT,
+  MIN_32BIT_INT,
+  MIN_64BIT_INT,
   ScalarAttribute
 } from "gdmn-orm";
 import {date2Str, dateTime2Str, time2Str} from "../util";
@@ -136,7 +142,7 @@ function getType(attr: ScalarAttribute): string {
   } else if (isSequenceAttribute(attr)) {
     expr = `INTEGER`;
   } else if (isIntegerAttribute(attr)) {
-    expr = `INTEGER`;
+    expr = getIntTypeByRange(attr.minValue, attr.maxValue);
   } else if (isNumericAttribute(attr)) {
     expr = `NUMERIC(${attr.precision}, ${attr.scale})`;
   } else if (isFloatAttribute(attr)) {
@@ -156,14 +162,14 @@ function getType(attr: ScalarAttribute): string {
 function getChecker(attr: ScalarAttribute): string {
   let expr = "";
   if (isNumberAttribute(attr)) {
-    const minCond = attr.minValue !== undefined ? `VALUE >= ${val2Str(attr, attr.minValue)}` : undefined;
-    const maxCond = attr.maxValue !== undefined ? `VALUE <= ${val2Str(attr, attr.maxValue)}` : undefined;
+    const minCond = attr.minValue !== undefined ? val2Str(attr, attr.minValue) : undefined;
+    const maxCond = attr.maxValue !== undefined ? val2Str(attr, attr.maxValue) : undefined;
     if (minCond && maxCond) {
-      expr = `CHECK(${minCond} AND ${maxCond})`;
+      expr = `CHECK(VALUE BETWEEN ${minCond} AND ${maxCond})`;
     } else if (minCond) {
-      expr = `CHECK(${minCond})`;
+      expr = `CHECK(VALUE >= ${minCond})`;
     } else if (maxCond) {
-      expr = `CHECK(${maxCond})`;
+      expr = `CHECK(VALUE <= ${maxCond})`;
     }
   } else if (isStringAttribute(attr)) {
     const minCond = attr.minLength !== undefined ? `CHAR_LENGTH(VALUE) >= ${attr.minLength}` : undefined;
@@ -209,5 +215,25 @@ function val2Str(attr: ScalarAttribute, value: any): string | undefined {
     return `${+value}`;
   } else if (isEnumAttribute(attr)) {
     return `'${value}'`;
+  }
+}
+
+export function getIntTypeByRange(min: number = MIN_32BIT_INT, max: number = MAX_32BIT_INT): string {
+  const minR = [MIN_16BIT_INT, MIN_32BIT_INT, MIN_64BIT_INT];
+  const maxR = [MAX_16BIT_INT, MAX_32BIT_INT, MAX_64BIT_INT];
+
+  const start = minR.find((b) => b <= min);
+  const end = maxR.find((b) => b >= max);
+  if (start === undefined) throw new Error("Out of range");
+  if (end === undefined) throw new Error("Out of range");
+
+  switch (minR[Math.max(minR.indexOf(start), maxR.indexOf(end))]) {
+    case MIN_64BIT_INT:
+      return "BIGINT";
+    case MIN_16BIT_INT:
+      return "SMALLINT";
+    case MIN_32BIT_INT:
+    default:
+      return "INTEGER";
   }
 }

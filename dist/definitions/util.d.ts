@@ -1,4 +1,6 @@
 import { ContextVariables } from "gdmn-orm";
+export declare const MIN_TIMESTAMP: Date;
+export declare const MAX_TIMESTAMP: Date;
 export interface IRange<T> {
     minValue: T | undefined;
     maxValue: T | undefined;

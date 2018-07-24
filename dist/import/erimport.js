@@ -238,7 +238,7 @@ function getType(attr) {
         expr = "INTEGER";
     }
     else if (gdmn_orm_1.isIntegerAttribute(attr)) {
-        expr = "INTEGER";
+        expr = getIntTypeByRange(attr.minValue, attr.maxValue);
     }
     else if (gdmn_orm_1.isNumericAttribute(attr)) {
         expr = "NUMERIC(" + attr.precision + ", " + attr.scale + ")";
@@ -263,16 +263,16 @@ function getType(attr) {
 function getChecker(attr) {
     var expr = "";
     if (gdmn_orm_1.isNumberAttribute(attr)) {
-        var minCond = attr.minValue !== undefined ? "VALUE >= " + val2Str(attr, attr.minValue) : undefined;
-        var maxCond = attr.maxValue !== undefined ? "VALUE <= " + val2Str(attr, attr.maxValue) : undefined;
+        var minCond = attr.minValue !== undefined ? val2Str(attr, attr.minValue) : undefined;
+        var maxCond = attr.maxValue !== undefined ? val2Str(attr, attr.maxValue) : undefined;
         if (minCond && maxCond) {
-            expr = "CHECK(" + minCond + " AND " + maxCond + ")";
+            expr = "CHECK(VALUE BETWEEN " + minCond + " AND " + maxCond + ")";
         }
         else if (minCond) {
-            expr = "CHECK(" + minCond + ")";
+            expr = "CHECK(VALUE >= " + minCond + ")";
         }
         else if (maxCond) {
-            expr = "CHECK(" + maxCond + ")";
+            expr = "CHECK(VALUE <= " + maxCond + ")";
         }
     }
     else if (gdmn_orm_1.isStringAttribute(attr)) {
@@ -326,4 +326,26 @@ function val2Str(attr, value) {
         return "'" + value + "'";
     }
 }
+function getIntTypeByRange(min, max) {
+    if (min === void 0) { min = gdmn_orm_1.MIN_32BIT_INT; }
+    if (max === void 0) { max = gdmn_orm_1.MAX_32BIT_INT; }
+    var minR = [gdmn_orm_1.MIN_16BIT_INT, gdmn_orm_1.MIN_32BIT_INT, gdmn_orm_1.MIN_64BIT_INT];
+    var maxR = [gdmn_orm_1.MAX_16BIT_INT, gdmn_orm_1.MAX_32BIT_INT, gdmn_orm_1.MAX_64BIT_INT];
+    var start = minR.find(function (b) { return b <= min; });
+    var end = maxR.find(function (b) { return b >= max; });
+    if (start === undefined)
+        throw new Error("Out of range");
+    if (end === undefined)
+        throw new Error("Out of range");
+    switch (minR[Math.max(minR.indexOf(start), maxR.indexOf(end))]) {
+        case gdmn_orm_1.MIN_64BIT_INT:
+            return "BIGINT";
+        case gdmn_orm_1.MIN_16BIT_INT:
+            return "SMALLINT";
+        case gdmn_orm_1.MIN_32BIT_INT:
+        default:
+            return "INTEGER";
+    }
+}
+exports.getIntTypeByRange = getIntTypeByRange;
 //# sourceMappingURL=erimport.js.map

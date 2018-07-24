@@ -10,7 +10,6 @@ import {
   ERModel,
   FloatAttribute,
   IntegerAttribute,
-  MIN_32BIT_INT,
   NumericAttribute,
   Sequence,
   SequenceAttribute,
@@ -43,28 +42,30 @@ test("erimport", async () => {
     false);
   entity.add(new SequenceAttribute("ID", {ru: {name: "Идентификатор"}}, gdcUnique));
   entity.add(new IntegerAttribute("FIELD2", {ru: {name: "Поле 2", fullName: "FULLNAME"}}, true,
-    MIN_32BIT_INT, 0, -100));
-  entity.add(new NumericAttribute("FIELD3", {ru: {name: "Поле 3"}}, true,
+    -150, 10, -100));
+  entity.add(new IntegerAttribute("FIELD3", {ru: {name: "Поле 3", fullName: "FULLNAME"}}, true,
+    -150, 1000000000000, -10000));
+  entity.add(new NumericAttribute("FIELD4", {ru: {name: "Поле 4"}}, true,
     4, 2, 40, 1000, 40));
-  entity.add(new BlobAttribute("FIELD4", {ru: {name: "Поле 4"}}, false));
-  entity.add(new BooleanAttribute("FIELD5", {ru: {name: "Поле 5"}}, false, true));
-  entity.add(new StringAttribute("FIELD6", {ru: {name: "Поле 6"}}, true,
+  entity.add(new BlobAttribute("FIELD5", {ru: {name: "Поле 5"}}, false));
+  entity.add(new BooleanAttribute("FIELD6", {ru: {name: "Поле 6"}}, false, true));
+  entity.add(new StringAttribute("FIELD7", {ru: {name: "Поле 7"}}, true,
     5, 30, "test", true, undefined));
-  entity.add(new DateAttribute("FIELD7", {ru: {name: "Поле 7"}}, true,
+  entity.add(new DateAttribute("FIELD8", {ru: {name: "Поле 8"}}, true,
     new Date(1999, 10, 10, 0, 0, 0, 0),
     new Date(2099, 1, 1, 0, 0, 0, 0),
     moment().hour(0).minute(0).second(0).millisecond(0).toDate()));
-  entity.add(new TimeAttribute("FIELD8", {ru: {name: "Поле 8"}}, true,
+  entity.add(new TimeAttribute("FIELD9", {ru: {name: "Поле 9"}}, true,
     new Date(2000, 1, 1, 0, 0, 0, 0),
     new Date(2000, 1, 1, 23, 59, 59, 999),
     new Date(2000, 1, 1)));
-  entity.add(new TimeStampAttribute("FIELD9", {ru: {name: "Поле 9"}}, true,
+  entity.add(new TimeStampAttribute("FIELD10", {ru: {name: "Поле 10"}}, true,
     new Date(1999, 10, 10, 0, 0, 0, 0),
     new Date(2099, 1, 1, 23, 59, 59, 999),
     new Date()));
-  entity.add(new FloatAttribute("FIELD10", {ru: {name: "Поле 10"}}, true,
+  entity.add(new FloatAttribute("FIELD11", {ru: {name: "Поле 11"}}, true,
     -123, 123123123123123123123123, 40));
-  entity.add(new EnumAttribute("FIELD11", {ru: {name: "Поле 11"}}, true, [
+  entity.add(new EnumAttribute("FIELD12", {ru: {name: "Поле 12"}}, true, [
     {
       value: "Z",
       lName: {ru: {name: "Перечисление Z"}}

@@ -1,6 +1,9 @@
 import {ContextVariables} from "gdmn-orm";
 import moment from "moment";
 
+export const MIN_TIMESTAMP = new Date(1900, 0, 1, 0, 0, 0, 0);
+export const MAX_TIMESTAMP = new Date(9999, 11, 31, 23, 59, 99, 999);
+
 const TIME_TEMPLATE = "HH:mm:ss.SSS";
 const DATE_TEMPLATE = "DD.MM.YYYY";
 const TIMESTAMP_TEMPLATE = "DD.MM.YYYY HH:mm:ss.SSS";
@@ -11,19 +14,30 @@ export interface IRange<T> {
 }
 
 export function isCheckForBoolean(validationSource: string | null): boolean {
-  const booleanCheckTemplate = /^CHECK ?\((VALUE IN \(0, ?1\))\)$/i;
-  return !!validationSource && booleanCheckTemplate.test(validationSource);
+  if (validationSource) {
+    switch (validationSource) {
+      // custom formats
+      default:
+        const template = /^CHECK\s*\((\(?VALUE \s*IS \s*NULL\)?\s*OR\s*)?\(?VALUE \s*IN\s*\(0,\s*1\)\)?\)$/i;
+        if (template.test(validationSource)) {
+          return true;
+        }
+        break;
+    }
+  }
+  return false;
 }
 
 export function check2Enum(validationSource: string | null): string [] {
+  // TODO CHECK((VALUE IS NULL) OR (VALUE = 'M') OR (VALUE = 'F') OR ...)
   const enumValues = [];
   if (validationSource) {
-    const reValueIn = /CHECK\s*\((\(VALUE IS NULL\) OR )?(\(?VALUE\s+IN\s*\(\s*){1}((?:\'[A-Z0-9]\'(?:\,\s*)?)+)\)?\)\)/i;
+    const valuesTemplate = /CHECK\s*\((\(?VALUE\s+IS\s+NULL\)?\s*OR\s*)?(\(?VALUE\s+IN\s*\(\s*){1}((?:\'[A-Z0-9]\'(?:\,\s*)?)+)\)?\)\)/i;
     let match;
-    if (match = reValueIn.exec(validationSource)) {
-      const reEnumValue = /\'([A-Z0-9]{1})\'/g;
+    if (match = valuesTemplate.exec(validationSource)) {
+      const valueTemplate = /\'([A-Z0-9]{1})\'/g;
       let enumValue;
-      while (enumValue = reEnumValue.exec(match[3])) {
+      while (enumValue = valueTemplate.exec(match[3])) {
         enumValues.push(enumValue[1]);
       }
     }
@@ -34,13 +48,14 @@ export function check2Enum(validationSource: string | null): string [] {
 export function check2StrMin(validationSource: string | null): number | undefined {
   if (validationSource) {
     switch (validationSource) {
+      // custom formats
       case "CHECK (VALUE > '')":
       case "CHECK ((VALUE IS NULL) OR (VALUE > ''))":
         return 1;
       default:
-        const minTemplate = /^CHECK ?\((CHAR_LENGTH\(VALUE\) ?>= ?(.+))\)$/i;
-        if (minTemplate.test(validationSource)) {
-          return Number(validationSource.replace(minTemplate, "$2"));
+        const template = /^CHECK\s*\((\(?VALUE \s*IS \s*NULL\)?\s*OR\s*)?\(?CHAR_LENGTH\s*\(VALUE\)\s*>=\s*(.+?)\)?\)$/i;
+        if (template.test(validationSource)) {
+          return Number(validationSource.replace(template, "$2"));
         }
         console.warn(`Not processed: ${validationSource}`);
         break;
@@ -66,11 +81,17 @@ export function check2NumberRange(validationSource: string | null,
 
 export function check2TimestampRange(validationSource: string | null): IRange<Date> {
   const range = checkRange(validationSource);
-  const minDate = moment(range.min, TIMESTAMP_TEMPLATE);
-  const maxDate = moment(range.max, TIMESTAMP_TEMPLATE);
+  let minDate = moment(range.min, TIMESTAMP_TEMPLATE);
+  let maxDate = moment(range.max, TIMESTAMP_TEMPLATE);
+  if (minDate.isValid() && minDate.isBefore(MIN_TIMESTAMP)) {
+    minDate = moment(MIN_TIMESTAMP);
+  }
+  if (maxDate.isValid() && maxDate.isAfter(MAX_TIMESTAMP)) {
+    maxDate = moment(MAX_TIMESTAMP);
+  }
   return {
-    minValue: minDate.isValid() ? minDate.toDate() : undefined,
-    maxValue: maxDate.isValid() ? maxDate.toDate() : undefined
+    minValue: minDate.isValid() ? minDate.toDate() : MIN_TIMESTAMP,
+    maxValue: maxDate.isValid() ? maxDate.toDate() : MAX_TIMESTAMP
   };
 }
 
@@ -86,40 +107,49 @@ export function check2TimeRange(validationSource: string | null): IRange<Date> {
 
 export function check2DateRange(validationSource: string | null): IRange<Date> {
   const range = checkRange(validationSource);
-  const minDate = moment(range.min, DATE_TEMPLATE);
-  const maxDate = moment(range.max, DATE_TEMPLATE);
+  let minDate = moment(range.min, DATE_TEMPLATE);
+  let maxDate = moment(range.max, DATE_TEMPLATE);
+  if (minDate.isValid() && minDate.isBefore(MIN_TIMESTAMP)) {
+    minDate = moment(MIN_TIMESTAMP);
+  }
+  if (maxDate.isValid() && maxDate.isAfter(MAX_TIMESTAMP)) {
+    maxDate = moment(MAX_TIMESTAMP);
+  }
   return {
-    minValue: minDate.isValid() ? minDate.toDate() : undefined,
-    maxValue: maxDate.isValid() ? maxDate.toDate() : undefined
+    minValue: minDate.isValid() ? minDate.toDate() : MIN_TIMESTAMP,
+    maxValue: maxDate.isValid() ? maxDate.toDate() : MAX_TIMESTAMP
   };
 }
 
 export function checkRange(validationSource: string | null): { min: string | undefined, max: string | undefined } {
   if (validationSource) {
-    // for gedemin's decimal and numeric
     switch (validationSource) {
-      case "CHECK(VALUE >= 0)":
-      case "CHECK(((VALUE IS NULL) OR (VALUE >= 0)))":
-      case "CHECK((VALUE IS NULL) OR (VALUE >= 0))":
+      // custom formats
+      case "CHECK(((VALUE IS NULL) OR (VALUE >= 0)))":  // двойные общие скобки
         return {min: "0", max: undefined};
-      case "CHECK ((VALUE IS NULL) OR ((VALUE >= 0) AND (VALUE <=1)))":
-        return {min: "0", max: "1"};
       default:
-        const fullRangeTemplate = /^CHECK ?\((VALUE ?>= ?(.+) AND VALUE ?<= ?(.+))\)$/i;
-        const minTemplate = /^CHECK ?\((VALUE ?>= ?(.+))\)$/i;
-        const maxTemplate = /^CHECK ?\((VALUE ?<= ?(.+))\)$/i;
-        if (fullRangeTemplate.test(validationSource)) {
+        const template = /^CHECK\s*\((\(?VALUE\s+IS\s+NULL\)?\s*OR\s*)?\(?VALUE\s+BETWEEN\s+(.+?)\s+AND\s+(.+?)\)?\)$/i;
+        if (template.test(validationSource)) {
           return {
-            min: validationSource.replace(fullRangeTemplate, "$2"),
-            max: validationSource.replace(fullRangeTemplate, "$3")
+            min: validationSource.replace(template, "$2"),
+            max: validationSource.replace(template, "$3")
           };
         }
+        const template2 = /^CHECK\s*\((\(?VALUE\s+IS\s+NULL\)?\s*OR\s*)?\(?\(?VALUE\s*>=\s*(.+?)\)?\s*AND\s*\(?VALUE\s*<=\s*(.+?)\)?\)?\)$/i;
+        if (template2.test(validationSource)) {
+          return {
+            min: validationSource.replace(template2, "$2"),
+            max: validationSource.replace(template2, "$3")
+          };
+        }
+        const minTemplate = /^CHECK\s*\((\(?VALUE\s+IS\s+NULL\)?\s*OR\s*)?\(?VALUE\s*>=\s*(.+?)\)?\)$/i;
         if (minTemplate.test(validationSource)) {
           return {
             min: validationSource.replace(minTemplate, "$2"),
             max: undefined
           };
         }
+        const maxTemplate = /^CHECK\s*\((\(?VALUE\s+IS\s+NULL\)?\s*OR\s*)?\(?VALUE\s*<=\s*(.+?)\)?\)$/i;
         if (maxTemplate.test(validationSource)) {
           return {
             min: undefined,
@@ -137,7 +167,7 @@ export function cropDefault(defaultSource: string | null): string | null {
   if (defaultSource) {
     return defaultSource
       .replace(/DEFAULT /i, "")
-      .replace(/^'(.+(?='$))'$/, "$1");
+      .replace(/^'(.+(?='$))'$/i, "$1");
   }
   return defaultSource;
 }
@@ -169,7 +199,7 @@ export function default2String(defaultSource: string | null): string | undefined
 export function default2Time(defaultSource: string | null): Date | ContextVariables | undefined {
   defaultSource = cropDefault(defaultSource);
   if (defaultSource === "CURRENT_TIME") {
-    return "CURRENT_TIME";
+    return defaultSource;
   }
   const mDate = moment(defaultSource!, TIME_TEMPLATE);
   if (mDate.isValid()) {
@@ -179,8 +209,11 @@ export function default2Time(defaultSource: string | null): Date | ContextVariab
 
 export function default2Timestamp(defaultSource: string | null): Date | ContextVariables | undefined {
   defaultSource = cropDefault(defaultSource);
+  if (defaultSource === "CURRENT_TIMESTAMP") {
+    return defaultSource;
+  }
   if (defaultSource === "CURRENT_TIMESTAMP(0)") {
-    return "CURRENT_TIMESTAMP(0)";
+    return defaultSource;
   }
   const mDate = moment(defaultSource!, TIMESTAMP_TEMPLATE);
   if (mDate.isValid()) {
@@ -191,7 +224,7 @@ export function default2Timestamp(defaultSource: string | null): Date | ContextV
 export function default2Date(defaultSource: string | null): Date | ContextVariables | undefined {
   defaultSource = cropDefault(defaultSource);
   if (defaultSource === "CURRENT_DATE") {
-    return "CURRENT_DATE";
+    return defaultSource;
   }
   const mDate = moment(defaultSource!, DATE_TEMPLATE);
   if (mDate.isValid()) {
