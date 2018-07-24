@@ -70,12 +70,12 @@ function erImport(connection, erModel) {
                     return [4 /*yield*/, gdmn_db_1.AConnection.executeTransaction({
                             connection: connection,
                             callback: function (transaction) { return __awaiter(_this, void 0, void 0, function () {
-                                var _i, _a, sequence, sequenceName, atRelationsStatement, atFieldsStatement, atRelFieldsStatement, _b, _c, entity, params, tableName, fields, attrs, _d, attrs_1, attr, domainName, numeration, sql_1, sql, pk, pkSql, _e, _f, attr;
-                                return __generator(this, function (_g) {
-                                    switch (_g.label) {
+                                var _i, _a, sequence, sequenceName, atRelationsStatement, atFieldsStatement, atRelFieldsStatement, _b, _c, entity, params, tableName, fields, attrs, _d, attrs_1, attr, domainName, numeration, sql_1, sql, pk, pkSql;
+                                return __generator(this, function (_e) {
+                                    switch (_e.label) {
                                         case 0:
                                             _i = 0, _a = Object.values(erModel.sequencies);
-                                            _g.label = 1;
+                                            _e.label = 1;
                                         case 1:
                                             if (!(_i < _a.length)) return [3 /*break*/, 5];
                                             sequence = _a[_i];
@@ -83,39 +83,39 @@ function erImport(connection, erModel) {
                                             if (!(sequenceName !== "GD_G_UNIQUE")) return [3 /*break*/, 4];
                                             return [4 /*yield*/, connection.execute(transaction, "CREATE SEQUENCE " + sequenceName)];
                                         case 2:
-                                            _g.sent();
+                                            _e.sent();
                                             return [4 /*yield*/, connection.execute(transaction, "ALTER SEQUENCE " + sequenceName + " RESTART WITH 0")];
                                         case 3:
-                                            _g.sent();
-                                            _g.label = 4;
+                                            _e.sent();
+                                            _e.label = 4;
                                         case 4:
                                             _i++;
                                             return [3 /*break*/, 1];
                                         case 5: return [4 /*yield*/, connection.prepare(transaction, "\n        INSERT INTO AT_RELATIONS (RELATIONNAME, LNAME, DESCRIPTION)\n        VALUES (:tableName, :lName, :description)\n      ")];
                                         case 6:
-                                            atRelationsStatement = _g.sent();
+                                            atRelationsStatement = _e.sent();
                                             return [4 /*yield*/, connection.prepare(transaction, "\n        INSERT INTO AT_FIELDS (FIELDNAME, LNAME, DESCRIPTION, NUMERATION)\n        VALUES (:fieldName, :lName, :description, :numeration)\n      ")];
                                         case 7:
-                                            atFieldsStatement = _g.sent();
+                                            atFieldsStatement = _e.sent();
                                             return [4 /*yield*/, connection.prepare(transaction, "\n        INSERT INTO AT_RELATION_FIELDS (FIELDNAME, RELATIONNAME, LNAME, DESCRIPTION)\n        VALUES (:fieldName, :relationName, :lName, :description)\n      ")];
                                         case 8:
-                                            atRelFieldsStatement = _g.sent();
-                                            _g.label = 9;
+                                            atRelFieldsStatement = _e.sent();
+                                            _e.label = 9;
                                         case 9:
-                                            _g.trys.push([9, , 25, 32]);
+                                            _e.trys.push([9, , 23, 27]);
                                             _b = 0, _c = Object.values(erModel.entities);
-                                            _g.label = 10;
+                                            _e.label = 10;
                                         case 10:
-                                            if (!(_b < _c.length)) return [3 /*break*/, 24];
+                                            if (!(_b < _c.length)) return [3 /*break*/, 22];
                                             entity = _c[_b];
                                             params = {};
                                             tableName = entity.name;
                                             fields = [];
                                             attrs = Object.values(entity.attributes).filter(function (attr) { return gdmn_orm_1.isScalarAttribute(attr); });
                                             _d = 0, attrs_1 = attrs;
-                                            _g.label = 11;
+                                            _e.label = 11;
                                         case 11:
-                                            if (!(_d < attrs_1.length)) return [3 /*break*/, 15];
+                                            if (!(_d < attrs_1.length)) return [3 /*break*/, 16];
                                             attr = attrs_1[_d];
                                             domainName = "DF_" + entity.name + (attrs.indexOf(attr) + 1);
                                             numeration = gdmn_orm_1.isEnumAttribute(attr)
@@ -131,82 +131,65 @@ function erImport(connection, erModel) {
                                                     numeration: numeration ? Buffer.from(numeration) : undefined
                                                 })];
                                         case 12:
-                                            _g.sent();
-                                            sql_1 = ("CREATE DOMAIN " + domainName + " AS " + getType(attr)).padEnd(62) +
-                                                getDefaultValue(attr) +
-                                                getNullFlag(attr) +
-                                                getChecker(attr);
-                                            console.debug(sql_1);
-                                            return [4 /*yield*/, connection.execute(transaction, sql_1)];
-                                        case 13:
-                                            _g.sent();
-                                            fields.push(attr.name.padEnd(31) + " " + domainName);
-                                            _g.label = 14;
-                                        case 14:
-                                            _d++;
-                                            return [3 /*break*/, 11];
-                                        case 15:
-                                            sql = "CREATE TABLE " + tableName + " (\n  " + fields.join(",\n  ") + "\n)";
-                                            console.debug(sql);
-                                            return [4 /*yield*/, connection.execute(transaction, sql, params)];
-                                        case 16:
-                                            _g.sent();
-                                            pk = entity.pk.map(function (pk) { return pk.name; });
-                                            if (!pk.length) return [3 /*break*/, 18];
-                                            pkSql = "ALTER TABLE " + tableName + " ADD CONSTRAINT PK_" + tableName + " PRIMARY KEY (" + pk.join(", ") + ")";
-                                            console.debug(pkSql);
-                                            return [4 /*yield*/, connection.execute(transaction, pkSql)];
-                                        case 17:
-                                            _g.sent();
-                                            _g.label = 18;
-                                        case 18: return [4 /*yield*/, atRelationsStatement.execute({
-                                                tableName: tableName,
-                                                lName: entity.lName.ru ? entity.lName.ru.name : entity.name,
-                                                description: entity.lName.ru ? entity.lName.ru.fullName : entity.name
-                                            })];
-                                        case 19:
-                                            _g.sent();
-                                            _e = 0, _f = Object.values(entity.attributes).filter(function (attr) { return gdmn_orm_1.isScalarAttribute(attr); });
-                                            _g.label = 20;
-                                        case 20:
-                                            if (!(_e < _f.length)) return [3 /*break*/, 23];
-                                            attr = _f[_e];
+                                            _e.sent();
                                             return [4 /*yield*/, atRelFieldsStatement.execute({
                                                     fieldName: attr.name,
                                                     relationName: tableName,
                                                     lName: attr.lName.ru ? attr.lName.ru.name : attr.name,
                                                     description: attr.lName.ru ? attr.lName.ru.fullName : attr.name
                                                 })];
+                                        case 13:
+                                            _e.sent();
+                                            sql_1 = ("CREATE DOMAIN " + domainName + " AS " + getType(attr)).padEnd(62) +
+                                                getDefaultValue(attr) +
+                                                getNullFlag(attr) +
+                                                getChecker(attr);
+                                            console.debug(sql_1);
+                                            return [4 /*yield*/, connection.execute(transaction, sql_1)];
+                                        case 14:
+                                            _e.sent();
+                                            fields.push(attr.name.padEnd(31) + " " + domainName);
+                                            _e.label = 15;
+                                        case 15:
+                                            _d++;
+                                            return [3 /*break*/, 11];
+                                        case 16:
+                                            sql = "CREATE TABLE " + tableName + " (\n  " + fields.join(",\n  ") + "\n)";
+                                            console.debug(sql);
+                                            return [4 /*yield*/, connection.execute(transaction, sql, params)];
+                                        case 17:
+                                            _e.sent();
+                                            pk = entity.pk.map(function (pk) { return pk.name; });
+                                            if (!pk.length) return [3 /*break*/, 19];
+                                            pkSql = "ALTER TABLE " + tableName + " ADD CONSTRAINT PK_" + tableName + " PRIMARY KEY (" + pk.join(", ") + ")";
+                                            console.debug(pkSql);
+                                            return [4 /*yield*/, connection.execute(transaction, pkSql)];
+                                        case 18:
+                                            _e.sent();
+                                            _e.label = 19;
+                                        case 19: return [4 /*yield*/, atRelationsStatement.execute({
+                                                tableName: tableName,
+                                                lName: entity.lName.ru ? entity.lName.ru.name : entity.name,
+                                                description: entity.lName.ru ? entity.lName.ru.fullName : entity.name
+                                            })];
+                                        case 20:
+                                            _e.sent();
+                                            _e.label = 21;
                                         case 21:
-                                            _g.sent();
-                                            _g.label = 22;
-                                        case 22:
-                                            _e++;
-                                            return [3 /*break*/, 20];
-                                        case 23:
                                             _b++;
                                             return [3 /*break*/, 10];
-                                        case 24: return [3 /*break*/, 32];
-                                        case 25:
-                                            if (!!atRelationsStatement.disposed) return [3 /*break*/, 27];
-                                            return [4 /*yield*/, atRelationsStatement.dispose()];
-                                        case 26:
-                                            _g.sent();
-                                            _g.label = 27;
-                                        case 27:
-                                            if (!!atFieldsStatement.disposed) return [3 /*break*/, 29];
+                                        case 22: return [3 /*break*/, 27];
+                                        case 23: return [4 /*yield*/, atRelationsStatement.dispose()];
+                                        case 24:
+                                            _e.sent();
                                             return [4 /*yield*/, atFieldsStatement.dispose()];
-                                        case 28:
-                                            _g.sent();
-                                            _g.label = 29;
-                                        case 29:
-                                            if (!!atRelFieldsStatement.disposed) return [3 /*break*/, 31];
+                                        case 25:
+                                            _e.sent();
                                             return [4 /*yield*/, atRelFieldsStatement.dispose()];
-                                        case 30:
-                                            _g.sent();
-                                            _g.label = 31;
-                                        case 31: return [7 /*endfinally*/];
-                                        case 32: return [2 /*return*/];
+                                        case 26:
+                                            _e.sent();
+                                            return [7 /*endfinally*/];
+                                        case 27: return [2 /*return*/];
                                     }
                                 });
                             }); }

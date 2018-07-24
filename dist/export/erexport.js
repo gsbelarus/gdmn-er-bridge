@@ -335,7 +335,7 @@ function erExport(dbs, connection, transaction, erModel) {
                     };
                     GDGUnique = erModel.addSequence(new gdmn_orm_1.Sequence("GD_G_UNIQUE"));
                     erModel.addSequence(new gdmn_orm_1.Sequence("Offset", { sequence: "GD_G_OFFSET" }));
-                    createEntity(undefined, gdmn_orm_1.relationName2Adapter("TEST")); // TODO
+                    Object.keys(atrelations).forEach(function (item) { return createEntity(undefined, gdmn_orm_1.relationName2Adapter(item)); });
                     /**
                      * Простейший случай таблицы. Никаких ссылок.
                      */

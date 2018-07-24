@@ -163,7 +163,7 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
     return erModel.add(entity);
   }
 
-  createEntity(undefined, relationName2Adapter("TEST"));  // TODO
+  Object.keys(atrelations).forEach((item) => createEntity(undefined, relationName2Adapter(item)));
 
   /**
    * Простейший случай таблицы. Никаких ссылок.

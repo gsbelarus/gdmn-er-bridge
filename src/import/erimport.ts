@@ -73,12 +73,21 @@ export async function erImport(connection: AConnection, erModel: ERModel): Promi
             const numeration = isEnumAttribute(attr)
               ? attr.values.map(({value, lName}) => `${value}=${lName && lName.ru ? lName.ru.name : ""}`).join("#13#10")
               : undefined;
+
             await atFieldsStatement.execute({
               fieldName: domainName,
               lName: attr.lName.ru ? attr.lName.ru.name : attr.name,
               description: attr.lName.ru ? attr.lName.ru.fullName : attr.name,
               numeration: numeration ? Buffer.from(numeration) : undefined
             });
+
+            await atRelFieldsStatement.execute({
+              fieldName: attr.name,
+              relationName: tableName,
+              lName: attr.lName.ru ? attr.lName.ru.name : attr.name,
+              description: attr.lName.ru ? attr.lName.ru.fullName : attr.name
+            });
+
             const sql = `CREATE DOMAIN ${domainName} AS ${getType(attr)}`.padEnd(62) +
               getDefaultValue(attr) +
               getNullFlag(attr) +
@@ -103,26 +112,11 @@ export async function erImport(connection: AConnection, erModel: ERModel): Promi
             lName: entity.lName.ru ? entity.lName.ru.name : entity.name,
             description: entity.lName.ru ? entity.lName.ru.fullName : entity.name
           });
-
-          for (const attr of Object.values(entity.attributes).filter((attr) => isScalarAttribute(attr))) {
-            await atRelFieldsStatement.execute({
-              fieldName: attr.name,
-              relationName: tableName,
-              lName: attr.lName.ru ? attr.lName.ru.name : attr.name,
-              description: attr.lName.ru ? attr.lName.ru.fullName : attr.name
-            });
-          }
         }
       } finally {
-        if (!atRelationsStatement.disposed) {
-          await atRelationsStatement.dispose();
-        }
-        if (!atFieldsStatement.disposed) {
-          await atFieldsStatement.dispose();
-        }
-        if (!atRelFieldsStatement.disposed) {
-          await atRelFieldsStatement.dispose();
-        }
+        await atRelationsStatement.dispose();
+        await atFieldsStatement.dispose();
+        await atRelFieldsStatement.dispose();
       }
     }
   });
