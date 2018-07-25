@@ -1,4 +1,5 @@
-import {AConnection, ATransaction} from "gdmn-db";
+import {AConnection, AStatement, ATransaction} from "gdmn-db";
+import {G_UNIQUE_DDL_NAME} from "./import/createDefaultGenerators";
 import {IDomainOptions} from "./import/DomainResolver";
 import {Prefix} from "./import/Prefix";
 
@@ -12,6 +13,8 @@ export class DDLHelper {
   private readonly _connection: AConnection;
   private readonly _transaction: ATransaction;
 
+  private _nextUnique: AStatement | undefined;
+
   private _logs: string[] = [];
 
   constructor(connection: AConnection, transaction: ATransaction) {
@@ -21,6 +24,17 @@ export class DDLHelper {
 
   get logs(): string[] {
     return this._logs;
+  }
+
+  public async prepare(): Promise<void> {
+    this._nextUnique = await this._connection.prepare(this._transaction,
+      `SELECT NEXT VALUE FOR ${Prefix.join(G_UNIQUE_DDL_NAME, Prefix.GDMN, Prefix.GENERATOR)} FROM RDB$DATABASE`);
+  }
+
+  public async dispose(): Promise<void> {
+    if (this._nextUnique) {
+      await this._nextUnique.dispose();
+    }
   }
 
   public async addSequence(sequenceName: string): Promise<void> {
@@ -48,5 +62,14 @@ export class DDLHelper {
       options.check.padEnd(62);
     this._logs.push(sql);
     await this._connection.execute(this._transaction, sql);
+  }
+
+  public async nextUnique(): Promise<number> {
+    if (this._nextUnique) {
+      const result = await this._nextUnique.executeReturning();
+      return (await result.getAll())[0];
+    } else {
+      throw new Error("nextUnique is undefined");
+    }
   }
 }

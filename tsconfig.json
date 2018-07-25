@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "module": "commonjs",
-    "target": "es5",
+    "target": "esnext",
     "lib": ["esnext"],
     "sourceMap": true,
     "esModuleInterop": true,

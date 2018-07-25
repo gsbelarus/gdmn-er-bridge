@@ -1,122 +1,56 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-var __generator = (this && this.__generator) || function (thisArg, body) {
-    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
-    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
-    function verb(n) { return function (v) { return step([n, v]); }; }
-    function step(op) {
-        if (f) throw new TypeError("Generator is already executing.");
-        while (_) try {
-            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
-            if (y = 0, t) op = [op[0] & 2, t.value];
-            switch (op[0]) {
-                case 0: case 1: t = op; break;
-                case 4: _.label++; return { value: op[1], done: false };
-                case 5: _.label++; y = op[1]; op = [0]; continue;
-                case 7: op = _.ops.pop(); _.trys.pop(); continue;
-                default:
-                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
-                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
-                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
-                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
-                    if (t[2]) _.ops.pop();
-                    _.trys.pop(); continue;
-            }
-            op = body.call(thisArg, _);
-        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
-        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
-    }
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-var Prefix_1 = require("./import/Prefix");
-var DDLHelper = /** @class */ (function () {
-    function DDLHelper(connection, transaction) {
+const createDefaultGenerators_1 = require("./import/createDefaultGenerators");
+const Prefix_1 = require("./import/Prefix");
+class DDLHelper {
+    constructor(connection, transaction) {
         this._logs = [];
         this._connection = connection;
         this._transaction = transaction;
     }
-    Object.defineProperty(DDLHelper.prototype, "logs", {
-        get: function () {
-            return this._logs;
-        },
-        enumerable: true,
-        configurable: true
-    });
-    DDLHelper.prototype.addSequence = function (sequenceName) {
-        return __awaiter(this, void 0, void 0, function () {
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0: return [4 /*yield*/, this._connection.execute(this._transaction, "CREATE SEQUENCE " + sequenceName)];
-                    case 1:
-                        _a.sent();
-                        return [4 /*yield*/, this._connection.execute(this._transaction, "ALTER SEQUENCE " + sequenceName + " RESTART WITH 0")];
-                    case 2:
-                        _a.sent();
-                        return [2 /*return*/];
-                }
-            });
-        });
-    };
-    DDLHelper.prototype.addTable = function (tableName, scalarFields) {
-        return __awaiter(this, void 0, void 0, function () {
-            var fields, sql;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        fields = scalarFields.map(function (item) { return item.name.padEnd(31) + " " + item.domain; });
-                        sql = "CREATE TABLE " + tableName + " (\n  " + fields.join(",\n  ") + "\n)";
-                        this._logs.push(sql);
-                        return [4 /*yield*/, this._connection.execute(this._transaction, sql)];
-                    case 1:
-                        _a.sent();
-                        return [2 /*return*/];
-                }
-            });
-        });
-    };
-    DDLHelper.prototype.addPrimaryKey = function (tableName, fieldNames) {
-        return __awaiter(this, void 0, void 0, function () {
-            var sql;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        sql = "ALTER TABLE " + tableName + " ADD CONSTRAINT " + Prefix_1.Prefix.join(tableName, Prefix_1.Prefix.PK) + " PRIMARY KEY (" + fieldNames.join(", ") + ")";
-                        this._logs.push(sql);
-                        return [4 /*yield*/, this._connection.execute(this._transaction, sql)];
-                    case 1:
-                        _a.sent();
-                        return [2 /*return*/];
-                }
-            });
-        });
-    };
-    DDLHelper.prototype.addScalarDomain = function (domainName, options) {
-        return __awaiter(this, void 0, void 0, function () {
-            var sql;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        sql = ("CREATE DOMAIN " + domainName + " AS " + options.type).padEnd(62) +
-                            options.default.padEnd(40) +
-                            options.nullable.padEnd(10) +
-                            options.check.padEnd(62);
-                        this._logs.push(sql);
-                        return [4 /*yield*/, this._connection.execute(this._transaction, sql)];
-                    case 1:
-                        _a.sent();
-                        return [2 /*return*/];
-                }
-            });
-        });
-    };
-    return DDLHelper;
-}());
+    get logs() {
+        return this._logs;
+    }
+    async prepare() {
+        this._nextUnique = await this._connection.prepare(this._transaction, `SELECT NEXT VALUE FOR ${Prefix_1.Prefix.join(createDefaultGenerators_1.G_UNIQUE_DDL_NAME, Prefix_1.Prefix.GDMN, Prefix_1.Prefix.GENERATOR)} FROM RDB$DATABASE`);
+    }
+    async dispose() {
+        if (this._nextUnique) {
+            await this._nextUnique.dispose();
+        }
+    }
+    async addSequence(sequenceName) {
+        await this._connection.execute(this._transaction, `CREATE SEQUENCE ${sequenceName}`);
+        await this._connection.execute(this._transaction, `ALTER SEQUENCE ${sequenceName} RESTART WITH 0`);
+    }
+    async addTable(tableName, scalarFields) {
+        const fields = scalarFields.map((item) => `${item.name.padEnd(31)} ${item.domain}`);
+        const sql = `CREATE TABLE ${tableName} (\n  ` + fields.join(",\n  ") + `\n)`;
+        this._logs.push(sql);
+        await this._connection.execute(this._transaction, sql);
+    }
+    async addPrimaryKey(tableName, fieldNames) {
+        const sql = `ALTER TABLE ${tableName} ADD CONSTRAINT ${Prefix_1.Prefix.join(tableName, Prefix_1.Prefix.PK)} PRIMARY KEY (${fieldNames.join(", ")})`;
+        this._logs.push(sql);
+        await this._connection.execute(this._transaction, sql);
+    }
+    async addScalarDomain(domainName, options) {
+        const sql = `CREATE DOMAIN ${domainName} AS ${options.type}`.padEnd(62) +
+            options.default.padEnd(40) +
+            options.nullable.padEnd(10) +
+            options.check.padEnd(62);
+        this._logs.push(sql);
+        await this._connection.execute(this._transaction, sql);
+    }
+    async nextUnique() {
+        if (this._nextUnique) {
+            const result = await this._nextUnique.executeReturning();
+            return (await result.getAll())[0];
+        }
+        else {
+            throw new Error("nextUnique is undefined");
+        }
+    }
+}
 exports.DDLHelper = DDLHelper;
 //# sourceMappingURL=DDLHelper.js.map

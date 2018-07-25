@@ -8,12 +8,12 @@ export declare class ERImport {
     private _createATRelationField;
     private _ddlHelper;
     constructor(connection: AConnection, erModel: ERModel);
-    private static _tableName;
-    private static _fieldName;
     execute(): Promise<void>;
     _prepareStatements(transaction: ATransaction): Promise<void>;
     _disposeStatements(): Promise<void>;
-    private _createDefaultSchema;
+    private _getDDLHelper;
+    private _scalarFieldName;
+    private _tableName;
     private _createERSchema;
     private _addEntity;
     private _addScalarDomain;

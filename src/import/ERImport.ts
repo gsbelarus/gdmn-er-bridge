@@ -31,17 +31,16 @@ export class ERImport {
     this._erModel = erModel;
   }
 
-  private static _tableName(entity: Entity): string {
-    return entity.name;
-  }
-
-  private static _fieldName(attr: ScalarAttribute): string {
-    const attrAdapter = attr.adapter as Attribute2FieldMap;
-    return attrAdapter ? attrAdapter.field : attr.name;
-  }
-
   public async execute(): Promise<void> {
-    await this._createDefaultSchema();
+    await AConnection.executeTransaction({
+      connection: this._connection,
+      callback: async (transaction) => {
+        await createDefaultGenerators(this._connection, transaction);
+        await createDefaultDomains(this._connection, transaction);
+        await createATStructure(this._connection, transaction);
+        await createDocStructure(this._connection, transaction);
+      }
+    });
 
     await AConnection.executeTransaction({
       connection: this._connection,
@@ -59,6 +58,9 @@ export class ERImport {
   }
 
   public async _prepareStatements(transaction: ATransaction): Promise<void> {
+    if (this._ddlHelper) {
+      await this._ddlHelper.prepare();
+    }
     this._createATField = await this._connection.prepare(transaction, `
       INSERT INTO AT_FIELDS (FIELDNAME, LNAME, DESCRIPTION, NUMERATION)
       VALUES (:fieldName, :lName, :description, :numeration)
@@ -74,6 +76,9 @@ export class ERImport {
   }
 
   public async _disposeStatements(): Promise<void> {
+    if (this._ddlHelper) {
+      await this._ddlHelper.dispose();
+    }
     if (this._createATField) {
       await this._createATField.dispose();
     }
@@ -85,25 +90,26 @@ export class ERImport {
     }
   }
 
-  private async _createDefaultSchema(): Promise<void> {
-    await AConnection.executeTransaction({
-      connection: this._connection,
-      callback: async (transaction) => {
-        await createDefaultGenerators(this._connection, transaction);
-        await createDefaultDomains(this._connection, transaction);
-        await createATStructure(this._connection, transaction);
-        await createDocStructure(this._connection, transaction);
-      }
-    });
+  private _getDDLHelper(): DDLHelper {
+    if (this._ddlHelper) return this._ddlHelper;
+    throw new Error("ddlHelper is undefined");
+  }
+
+  private async _scalarFieldName(attr: ScalarAttribute): Promise<string> {
+    const attrAdapter = attr.adapter as Attribute2FieldMap;
+    return attrAdapter ? attrAdapter.field : Prefix.join(`${await this._getDDLHelper().nextUnique()}`, Prefix.FIELD);
+  }
+
+  private async _tableName(entity: Entity): Promise<string> {
+    // TODO adapter
+    return entity.name;
   }
 
   private async _createERSchema(): Promise<void> {
     for (const sequence of Object.values(this._erModel.sequencies)) {
       const sequenceName = sequence.adapter ? (sequence.adapter as any).sequence : sequence.name;
       if (sequenceName !== Prefix.join(G_UNIQUE_NAME, Prefix.GDMN, Prefix.GENERATOR)) {
-        if (this._ddlHelper) {
-          await this._ddlHelper.addSequence(sequenceName);
-        }
+        await this._getDDLHelper().addSequence(sequenceName);
       }
     }
 
@@ -113,32 +119,34 @@ export class ERImport {
   }
 
   private async _addEntity(entity: Entity): Promise<void> {
-    const tableName = ERImport._tableName(entity);
+    const tableName = await this._tableName(entity);
 
     const fields: IScalarField[] = [];
+    const pkFields: IScalarField[] = [];
     for (const attr of Object.values(entity.attributes).filter((attr) => isScalarAttribute(attr))) {
-      const domainName = await this._addScalarDomain(entity, attr);
-      await this._bindATAttr(entity, attr, domainName);
-      fields.push({
-        name: ERImport._fieldName(attr),
+      const domainName = await this._addScalarDomain(attr);
+      const fieldName = await this._scalarFieldName(attr);
+      await this._bindATAttr(attr, tableName, fieldName, domainName);
+      const field = {
+        name: fieldName,
         domain: domainName
-      });
+      };
+      fields.push(field);
+      if (entity.pk.includes(attr)) {
+        pkFields.push(field);
+      }
     }
     if (this._ddlHelper) {
       await this._ddlHelper.addTable(tableName, fields);
-      await this._ddlHelper.addPrimaryKey(tableName, entity.pk.map((item) => item.name));
+      await this._ddlHelper.addPrimaryKey(tableName, pkFields.map((i) => i.name));
     }
 
     await this._bindATEntity(entity, tableName);
   }
 
-  private async _addScalarDomain(entity: Entity, attr: ScalarAttribute): Promise<string> {
-    // TODO possible name conflicts
-    const domainName = Prefix.join(`${entity.name}_F${Object.keys(entity.attributes).indexOf(attr.name) + 1}`,
-      Prefix.DOMAIN);
-    if (this._ddlHelper) {
-      await this._ddlHelper.addScalarDomain(domainName, DomainResolver.resolveScalar(attr));
-    }
+  private async _addScalarDomain(attr: ScalarAttribute): Promise<string> {
+    const domainName = Prefix.join(`${await this._getDDLHelper().nextUnique()}`, Prefix.DOMAIN);
+    await this._getDDLHelper().addScalarDomain(domainName, DomainResolver.resolveScalar(attr));
     return domainName;
   }
 
@@ -149,10 +157,12 @@ export class ERImport {
         lName: entity.lName.ru ? entity.lName.ru.name : entity.name,
         description: entity.lName.ru ? entity.lName.ru.fullName : entity.name
       });
+    } else {
+      throw new Error("createATRelation is undefined");
     }
   }
 
-  private async _bindATAttr(entity: Entity, attr: Attribute, domainName: string): Promise<void> {
+  private async _bindATAttr(attr: Attribute, tableName: string, fieldName: string, domainName: string): Promise<void> {
     const numeration = isEnumAttribute(attr)
       ? attr.values.map(({value, lName}) => `${value}=${lName && lName.ru ? lName.ru.name : ""}`).join("#13#10")
       : undefined;
@@ -164,17 +174,20 @@ export class ERImport {
         description: attr.lName.ru ? attr.lName.ru.fullName : attr.name,
         numeration: numeration ? Buffer.from(numeration) : undefined
       });
+    } else {
+      throw new Error("createATField is undefined");
     }
 
     if (this._createATRelationField) {
-      const fieldName = ERImport._fieldName(attr);
       await this._createATRelationField.execute({
         fieldName: fieldName,
-        relationName: ERImport._tableName(entity),
+        relationName: tableName,
         attrName: fieldName !== attr.name ? attr.name : null,
         lName: attr.lName.ru ? attr.lName.ru.name : attr.name,
         description: attr.lName.ru ? attr.lName.ru.fullName : attr.name
       });
+    } else {
+      throw new Error("createATRelationField is undefined");
     }
   }
 }
