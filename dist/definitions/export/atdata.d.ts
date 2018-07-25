@@ -27,6 +27,7 @@ export interface atFields {
  * Дополнительная информация по полям таблиц.
  */
 export interface atRelationField {
+    attrName: string | undefined;
     lName: LName;
     fieldSource: string;
     crossTable: string | undefined;

@@ -35,14 +35,16 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-function createDocStructure(connection, transaction) {
+var Prefix_1 = require("./Prefix");
+exports.G_UNIQUE_NAME = "UNIQUE";
+function createDefaultGenerators(connection, transaction) {
     return __awaiter(this, void 0, void 0, function () {
         return __generator(this, function (_a) {
             switch (_a.label) {
-                case 0: return [4 /*yield*/, connection.execute(transaction, "\n    CREATE TABLE GD_DOCUMENTTYPE (\n      ID                  DINTKEY                                 PRIMARY KEY,\n      RUID                DRUID,\n      DOCUMENTTYPE        DDOCUMENTTYPE       DEFAULT 'D',\n      NAME                DNAME,\n      CLASSNAME           DCLASSNAME,\n      PARENT              DPARENT,\n      LB                  DLB,\n      RB                  DRB,\n      HEADERRELKEY        DFOREIGNKEY,\n      LINERELKEY          DFOREIGNKEY\n    )\n  ")];
+                case 0: return [4 /*yield*/, connection.execute(transaction, "CREATE SEQUENCE " + Prefix_1.Prefix.join(exports.G_UNIQUE_NAME, Prefix_1.Prefix.GDMN, Prefix_1.Prefix.GENERATOR))];
                 case 1:
                     _a.sent();
-                    return [4 /*yield*/, connection.execute(transaction, "\n    CREATE TRIGGER GD_BI_DOCUMENTTYPE FOR GD_DOCUMENTTYPE\n    ACTIVE BEFORE INSERT POSITION 0\n    AS\n    BEGIN\n      IF (NEW.ID IS NULL) THEN NEW.ID = GEN_ID(GD_G_UNIQUE, 1);\n    END\n  ")];
+                    return [4 /*yield*/, connection.execute(transaction, "ALTER SEQUENCE " + Prefix_1.Prefix.join(exports.G_UNIQUE_NAME, Prefix_1.Prefix.GDMN, Prefix_1.Prefix.GENERATOR) + " RESTART WITH 0")];
                 case 2:
                     _a.sent();
                     return [2 /*return*/];
@@ -50,5 +52,5 @@ function createDocStructure(connection, transaction) {
         });
     });
 }
-exports.createDocStructure = createDocStructure;
-//# sourceMappingURL=document.js.map
+exports.createDefaultGenerators = createDefaultGenerators;
+//# sourceMappingURL=createDefaultGenerators.js.map

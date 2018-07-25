@@ -37,298 +37,312 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 Object.defineProperty(exports, "__esModule", { value: true });
 var gdmn_db_1 = require("gdmn-db");
 var gdmn_orm_1 = require("gdmn-orm");
-var util_1 = require("../util");
-var atdata_1 = require("./atdata");
-var document_1 = require("./document");
-var domains_1 = require("./domains");
-function erImport(connection, erModel) {
-    return __awaiter(this, void 0, void 0, function () {
-        var _this = this;
-        return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0: return [4 /*yield*/, gdmn_db_1.AConnection.executeTransaction({
-                        connection: connection,
-                        callback: function (transaction) { return __awaiter(_this, void 0, void 0, function () {
-                            return __generator(this, function (_a) {
-                                switch (_a.label) {
-                                    case 0: return [4 /*yield*/, domains_1.createDomains(connection, transaction)];
-                                    case 1:
-                                        _a.sent();
-                                        return [4 /*yield*/, atdata_1.createATStructure(connection, transaction)];
-                                    case 2:
-                                        _a.sent();
-                                        return [4 /*yield*/, document_1.createDocStructure(connection, transaction)];
-                                    case 3:
-                                        _a.sent();
-                                        return [2 /*return*/];
-                                }
-                            });
-                        }); }
-                    })];
-                case 1:
-                    _a.sent();
-                    return [4 /*yield*/, gdmn_db_1.AConnection.executeTransaction({
-                            connection: connection,
+var DDLHelper_1 = require("../DDLHelper");
+var createATStructure_1 = require("./createATStructure");
+var createDefaultDomains_1 = require("./createDefaultDomains");
+var createDefaultGenerators_1 = require("./createDefaultGenerators");
+var createDocStructure_1 = require("./createDocStructure");
+var DomainResolver_1 = require("./DomainResolver");
+var Prefix_1 = require("./Prefix");
+var ERImport = /** @class */ (function () {
+    function ERImport(connection, erModel) {
+        this._connection = connection;
+        this._erModel = erModel;
+    }
+    ERImport._tableName = function (entity) {
+        return entity.name;
+    };
+    ERImport._fieldName = function (attr) {
+        var attrAdapter = attr.adapter;
+        return attrAdapter ? attrAdapter.field : attr.name;
+    };
+    ERImport.prototype.execute = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            var _this = this;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, this._createDefaultSchema()];
+                    case 1:
+                        _a.sent();
+                        return [4 /*yield*/, gdmn_db_1.AConnection.executeTransaction({
+                                connection: this._connection,
+                                callback: function (transaction) { return __awaiter(_this, void 0, void 0, function () {
+                                    return __generator(this, function (_a) {
+                                        switch (_a.label) {
+                                            case 0:
+                                                this._ddlHelper = new DDLHelper_1.DDLHelper(this._connection, transaction);
+                                                _a.label = 1;
+                                            case 1:
+                                                _a.trys.push([1, , 5, 6]);
+                                                return [4 /*yield*/, this._prepareStatements(transaction)];
+                                            case 2:
+                                                _a.sent();
+                                                return [4 /*yield*/, this._createERSchema()];
+                                            case 3:
+                                                _a.sent();
+                                                return [4 /*yield*/, this._disposeStatements()];
+                                            case 4:
+                                                _a.sent();
+                                                return [3 /*break*/, 6];
+                                            case 5:
+                                                console.debug(this._ddlHelper.logs.join("\n"));
+                                                return [7 /*endfinally*/];
+                                            case 6: return [2 /*return*/];
+                                        }
+                                    });
+                                }); }
+                            })];
+                    case 2:
+                        _a.sent();
+                        return [2 /*return*/];
+                }
+            });
+        });
+    };
+    ERImport.prototype._prepareStatements = function (transaction) {
+        return __awaiter(this, void 0, void 0, function () {
+            var _a, _b, _c;
+            return __generator(this, function (_d) {
+                switch (_d.label) {
+                    case 0:
+                        _a = this;
+                        return [4 /*yield*/, this._connection.prepare(transaction, "\n      INSERT INTO AT_FIELDS (FIELDNAME, LNAME, DESCRIPTION, NUMERATION)\n      VALUES (:fieldName, :lName, :description, :numeration)\n    ")];
+                    case 1:
+                        _a._createATField = _d.sent();
+                        _b = this;
+                        return [4 /*yield*/, this._connection.prepare(transaction, "\n      INSERT INTO AT_RELATIONS (RELATIONNAME, LNAME, DESCRIPTION)\n      VALUES (:tableName, :lName, :description)\n    ")];
+                    case 2:
+                        _b._createATRelation = _d.sent();
+                        _c = this;
+                        return [4 /*yield*/, this._connection.prepare(transaction, "\n      INSERT INTO AT_RELATION_FIELDS (FIELDNAME, RELATIONNAME, ATTRNAME, LNAME, DESCRIPTION)\n      VALUES (:fieldName, :relationName, :attrName, :lName, :description)\n    ")];
+                    case 3:
+                        _c._createATRelationField = _d.sent();
+                        return [2 /*return*/];
+                }
+            });
+        });
+    };
+    ERImport.prototype._disposeStatements = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        if (!this._createATField) return [3 /*break*/, 2];
+                        return [4 /*yield*/, this._createATField.dispose()];
+                    case 1:
+                        _a.sent();
+                        _a.label = 2;
+                    case 2:
+                        if (!this._createATRelation) return [3 /*break*/, 4];
+                        return [4 /*yield*/, this._createATRelation.dispose()];
+                    case 3:
+                        _a.sent();
+                        _a.label = 4;
+                    case 4:
+                        if (!this._createATRelationField) return [3 /*break*/, 6];
+                        return [4 /*yield*/, this._createATRelationField.dispose()];
+                    case 5:
+                        _a.sent();
+                        _a.label = 6;
+                    case 6: return [2 /*return*/];
+                }
+            });
+        });
+    };
+    ERImport.prototype._createDefaultSchema = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            var _this = this;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, gdmn_db_1.AConnection.executeTransaction({
+                            connection: this._connection,
                             callback: function (transaction) { return __awaiter(_this, void 0, void 0, function () {
-                                var _i, _a, sequence, sequenceName, atRelationsStatement, atFieldsStatement, atRelFieldsStatement, _b, _c, entity, params, tableName, fields, attrs, _d, attrs_1, attr, domainName, numeration, sql_1, sql, pk, pkSql;
-                                return __generator(this, function (_e) {
-                                    switch (_e.label) {
-                                        case 0:
-                                            _i = 0, _a = Object.values(erModel.sequencies);
-                                            _e.label = 1;
+                                return __generator(this, function (_a) {
+                                    switch (_a.label) {
+                                        case 0: return [4 /*yield*/, createDefaultGenerators_1.createDefaultGenerators(this._connection, transaction)];
                                         case 1:
-                                            if (!(_i < _a.length)) return [3 /*break*/, 5];
-                                            sequence = _a[_i];
-                                            sequenceName = sequence.adapter ? sequence.adapter.sequence : sequence.name;
-                                            if (!(sequenceName !== "GD_G_UNIQUE")) return [3 /*break*/, 4];
-                                            return [4 /*yield*/, connection.execute(transaction, "CREATE SEQUENCE " + sequenceName)];
+                                            _a.sent();
+                                            return [4 /*yield*/, createDefaultDomains_1.createDefaultDomains(this._connection, transaction)];
                                         case 2:
-                                            _e.sent();
-                                            return [4 /*yield*/, connection.execute(transaction, "ALTER SEQUENCE " + sequenceName + " RESTART WITH 0")];
+                                            _a.sent();
+                                            return [4 /*yield*/, createATStructure_1.createATStructure(this._connection, transaction)];
                                         case 3:
-                                            _e.sent();
-                                            _e.label = 4;
+                                            _a.sent();
+                                            return [4 /*yield*/, createDocStructure_1.createDocStructure(this._connection, transaction)];
                                         case 4:
-                                            _i++;
-                                            return [3 /*break*/, 1];
-                                        case 5: return [4 /*yield*/, connection.prepare(transaction, "\n        INSERT INTO AT_RELATIONS (RELATIONNAME, LNAME, DESCRIPTION)\n        VALUES (:tableName, :lName, :description)\n      ")];
-                                        case 6:
-                                            atRelationsStatement = _e.sent();
-                                            return [4 /*yield*/, connection.prepare(transaction, "\n        INSERT INTO AT_FIELDS (FIELDNAME, LNAME, DESCRIPTION, NUMERATION)\n        VALUES (:fieldName, :lName, :description, :numeration)\n      ")];
-                                        case 7:
-                                            atFieldsStatement = _e.sent();
-                                            return [4 /*yield*/, connection.prepare(transaction, "\n        INSERT INTO AT_RELATION_FIELDS (FIELDNAME, RELATIONNAME, LNAME, DESCRIPTION)\n        VALUES (:fieldName, :relationName, :lName, :description)\n      ")];
-                                        case 8:
-                                            atRelFieldsStatement = _e.sent();
-                                            _e.label = 9;
-                                        case 9:
-                                            _e.trys.push([9, , 23, 27]);
-                                            _b = 0, _c = Object.values(erModel.entities);
-                                            _e.label = 10;
-                                        case 10:
-                                            if (!(_b < _c.length)) return [3 /*break*/, 22];
-                                            entity = _c[_b];
-                                            params = {};
-                                            tableName = entity.name;
-                                            fields = [];
-                                            attrs = Object.values(entity.attributes).filter(function (attr) { return gdmn_orm_1.isScalarAttribute(attr); });
-                                            _d = 0, attrs_1 = attrs;
-                                            _e.label = 11;
-                                        case 11:
-                                            if (!(_d < attrs_1.length)) return [3 /*break*/, 16];
-                                            attr = attrs_1[_d];
-                                            domainName = "DF_" + entity.name + (attrs.indexOf(attr) + 1);
-                                            numeration = gdmn_orm_1.isEnumAttribute(attr)
-                                                ? attr.values.map(function (_a) {
-                                                    var value = _a.value, lName = _a.lName;
-                                                    return value + "=" + (lName && lName.ru ? lName.ru.name : "");
-                                                }).join("#13#10")
-                                                : undefined;
-                                            return [4 /*yield*/, atFieldsStatement.execute({
-                                                    fieldName: domainName,
-                                                    lName: attr.lName.ru ? attr.lName.ru.name : attr.name,
-                                                    description: attr.lName.ru ? attr.lName.ru.fullName : attr.name,
-                                                    numeration: numeration ? Buffer.from(numeration) : undefined
-                                                })];
-                                        case 12:
-                                            _e.sent();
-                                            return [4 /*yield*/, atRelFieldsStatement.execute({
-                                                    fieldName: attr.name,
-                                                    relationName: tableName,
-                                                    lName: attr.lName.ru ? attr.lName.ru.name : attr.name,
-                                                    description: attr.lName.ru ? attr.lName.ru.fullName : attr.name
-                                                })];
-                                        case 13:
-                                            _e.sent();
-                                            sql_1 = ("CREATE DOMAIN " + domainName + " AS " + getType(attr)).padEnd(62) +
-                                                getDefaultValue(attr) +
-                                                getNullFlag(attr) +
-                                                getChecker(attr);
-                                            console.debug(sql_1);
-                                            return [4 /*yield*/, connection.execute(transaction, sql_1)];
-                                        case 14:
-                                            _e.sent();
-                                            fields.push(attr.name.padEnd(31) + " " + domainName);
-                                            _e.label = 15;
-                                        case 15:
-                                            _d++;
-                                            return [3 /*break*/, 11];
-                                        case 16:
-                                            sql = "CREATE TABLE " + tableName + " (\n  " + fields.join(",\n  ") + "\n)";
-                                            console.debug(sql);
-                                            return [4 /*yield*/, connection.execute(transaction, sql, params)];
-                                        case 17:
-                                            _e.sent();
-                                            pk = entity.pk.map(function (pk) { return pk.name; });
-                                            if (!pk.length) return [3 /*break*/, 19];
-                                            pkSql = "ALTER TABLE " + tableName + " ADD CONSTRAINT PK_" + tableName + " PRIMARY KEY (" + pk.join(", ") + ")";
-                                            console.debug(pkSql);
-                                            return [4 /*yield*/, connection.execute(transaction, pkSql)];
-                                        case 18:
-                                            _e.sent();
-                                            _e.label = 19;
-                                        case 19: return [4 /*yield*/, atRelationsStatement.execute({
-                                                tableName: tableName,
-                                                lName: entity.lName.ru ? entity.lName.ru.name : entity.name,
-                                                description: entity.lName.ru ? entity.lName.ru.fullName : entity.name
-                                            })];
-                                        case 20:
-                                            _e.sent();
-                                            _e.label = 21;
-                                        case 21:
-                                            _b++;
-                                            return [3 /*break*/, 10];
-                                        case 22: return [3 /*break*/, 27];
-                                        case 23: return [4 /*yield*/, atRelationsStatement.dispose()];
-                                        case 24:
-                                            _e.sent();
-                                            return [4 /*yield*/, atFieldsStatement.dispose()];
-                                        case 25:
-                                            _e.sent();
-                                            return [4 /*yield*/, atRelFieldsStatement.dispose()];
-                                        case 26:
-                                            _e.sent();
-                                            return [7 /*endfinally*/];
-                                        case 27: return [2 /*return*/];
+                                            _a.sent();
+                                            return [2 /*return*/];
                                     }
                                 });
                             }); }
                         })];
-                case 2:
-                    _a.sent();
-                    return [2 /*return*/];
-            }
+                    case 1:
+                        _a.sent();
+                        return [2 /*return*/];
+                }
+            });
         });
-    });
-}
-exports.erImport = erImport;
-function getType(attr) {
-    var expr = "";
-    // TODO TimeIntervalAttribute
-    if (gdmn_orm_1.isEnumAttribute(attr)) {
-        expr = "VARCHAR(1)";
-    }
-    else if (gdmn_orm_1.isDateAttribute(attr)) {
-        expr = "DATE";
-    }
-    else if (gdmn_orm_1.isTimeAttribute(attr)) {
-        expr = "TIME";
-    }
-    else if (gdmn_orm_1.isTimeStampAttribute(attr)) {
-        expr = "TIMESTAMP";
-    }
-    else if (gdmn_orm_1.isSequenceAttribute(attr)) {
-        expr = "INTEGER";
-    }
-    else if (gdmn_orm_1.isIntegerAttribute(attr)) {
-        expr = getIntTypeByRange(attr.minValue, attr.maxValue);
-    }
-    else if (gdmn_orm_1.isNumericAttribute(attr)) {
-        expr = "NUMERIC(" + attr.precision + ", " + attr.scale + ")";
-    }
-    else if (gdmn_orm_1.isFloatAttribute(attr)) {
-        expr = "FLOAT";
-    }
-    else if (gdmn_orm_1.isBooleanAttribute(attr)) {
-        expr = "SMALLINT";
-    }
-    else if (gdmn_orm_1.isStringAttribute(attr)) {
-        expr = "VARCHAR(" + attr.maxLength + ")";
-    }
-    else if (gdmn_orm_1.isBlobAttribute(attr)) {
-        expr = "BLOB";
-    }
-    else {
-        expr = "BLOB SUB_TYPE TEXT";
-    }
-    return expr;
-}
-function getChecker(attr) {
-    var expr = "";
-    if (gdmn_orm_1.isNumberAttribute(attr)) {
-        var minCond = attr.minValue !== undefined ? val2Str(attr, attr.minValue) : undefined;
-        var maxCond = attr.maxValue !== undefined ? val2Str(attr, attr.maxValue) : undefined;
-        if (minCond && maxCond) {
-            expr = "CHECK(VALUE BETWEEN " + minCond + " AND " + maxCond + ")";
-        }
-        else if (minCond) {
-            expr = "CHECK(VALUE >= " + minCond + ")";
-        }
-        else if (maxCond) {
-            expr = "CHECK(VALUE <= " + maxCond + ")";
-        }
-    }
-    else if (gdmn_orm_1.isStringAttribute(attr)) {
-        var minCond = attr.minLength !== undefined ? "CHAR_LENGTH(VALUE) >= " + attr.minLength : undefined;
-        if (minCond) {
-            expr = "CHECK(" + minCond + ")";
-        }
-    }
-    else if (gdmn_orm_1.isEnumAttribute(attr)) {
-        expr = "CHECK(VALUE IN (" + attr.values.map(function (item) { return "'" + item.value + "'"; }).join(", ") + "))";
-    }
-    else if (gdmn_orm_1.isBooleanAttribute(attr)) {
-        expr = "CHECK(VALUE IN (0, 1))";
-    }
-    return expr.padEnd(62);
-}
-function getNullFlag(attr) {
-    var expr = "";
-    if (attr.required) {
-        expr = "NOT NULL";
-    }
-    return expr.padEnd(10);
-}
-function getDefaultValue(attr) {
-    var expr = "";
-    if (attr.defaultValue !== undefined) {
-        expr = "DEFAULT " + val2Str(attr, attr.defaultValue);
-    }
-    return expr.padEnd(40);
-}
-function val2Str(attr, value) {
-    if (gdmn_orm_1.isDateAttribute(attr)) {
-        return util_1.date2Str(value);
-    }
-    else if (gdmn_orm_1.isTimeAttribute(attr)) {
-        return util_1.time2Str(value);
-    }
-    else if (gdmn_orm_1.isTimeStampAttribute(attr)) {
-        return util_1.dateTime2Str(value);
-    }
-    else if (gdmn_orm_1.isNumberAttribute(attr)) {
-        return "" + value;
-    }
-    else if (gdmn_orm_1.isStringAttribute(attr)) {
-        return "'" + value + "'";
-    }
-    else if (gdmn_orm_1.isBooleanAttribute(attr)) {
-        return "" + +value;
-    }
-    else if (gdmn_orm_1.isEnumAttribute(attr)) {
-        return "'" + value + "'";
-    }
-}
-function getIntTypeByRange(min, max) {
-    if (min === void 0) { min = gdmn_orm_1.MIN_32BIT_INT; }
-    if (max === void 0) { max = gdmn_orm_1.MAX_32BIT_INT; }
-    var minR = [gdmn_orm_1.MIN_16BIT_INT, gdmn_orm_1.MIN_32BIT_INT, gdmn_orm_1.MIN_64BIT_INT];
-    var maxR = [gdmn_orm_1.MAX_16BIT_INT, gdmn_orm_1.MAX_32BIT_INT, gdmn_orm_1.MAX_64BIT_INT];
-    var start = minR.find(function (b) { return b <= min; });
-    var end = maxR.find(function (b) { return b >= max; });
-    if (start === undefined)
-        throw new Error("Out of range");
-    if (end === undefined)
-        throw new Error("Out of range");
-    switch (minR[Math.max(minR.indexOf(start), maxR.indexOf(end))]) {
-        case gdmn_orm_1.MIN_64BIT_INT:
-            return "BIGINT";
-        case gdmn_orm_1.MIN_16BIT_INT:
-            return "SMALLINT";
-        case gdmn_orm_1.MIN_32BIT_INT:
-        default:
-            return "INTEGER";
-    }
-}
-exports.getIntTypeByRange = getIntTypeByRange;
-//# sourceMappingURL=erimport.js.map
+    };
+    ERImport.prototype._createERSchema = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            var _i, _a, sequence, sequenceName, _b, _c, entity;
+            return __generator(this, function (_d) {
+                switch (_d.label) {
+                    case 0:
+                        _i = 0, _a = Object.values(this._erModel.sequencies);
+                        _d.label = 1;
+                    case 1:
+                        if (!(_i < _a.length)) return [3 /*break*/, 4];
+                        sequence = _a[_i];
+                        sequenceName = sequence.adapter ? sequence.adapter.sequence : sequence.name;
+                        if (!(sequenceName !== Prefix_1.Prefix.join(createDefaultGenerators_1.G_UNIQUE_NAME, Prefix_1.Prefix.GDMN, Prefix_1.Prefix.GENERATOR))) return [3 /*break*/, 3];
+                        if (!this._ddlHelper) return [3 /*break*/, 3];
+                        return [4 /*yield*/, this._ddlHelper.addSequence(sequenceName)];
+                    case 2:
+                        _d.sent();
+                        _d.label = 3;
+                    case 3:
+                        _i++;
+                        return [3 /*break*/, 1];
+                    case 4:
+                        _b = 0, _c = Object.values(this._erModel.entities);
+                        _d.label = 5;
+                    case 5:
+                        if (!(_b < _c.length)) return [3 /*break*/, 8];
+                        entity = _c[_b];
+                        return [4 /*yield*/, this._addEntity(entity)];
+                    case 6:
+                        _d.sent();
+                        _d.label = 7;
+                    case 7:
+                        _b++;
+                        return [3 /*break*/, 5];
+                    case 8: return [2 /*return*/];
+                }
+            });
+        });
+    };
+    ERImport.prototype._addEntity = function (entity) {
+        return __awaiter(this, void 0, void 0, function () {
+            var tableName, fields, _i, _a, attr, domainName;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0:
+                        tableName = ERImport._tableName(entity);
+                        fields = [];
+                        _i = 0, _a = Object.values(entity.attributes).filter(function (attr) { return gdmn_orm_1.isScalarAttribute(attr); });
+                        _b.label = 1;
+                    case 1:
+                        if (!(_i < _a.length)) return [3 /*break*/, 5];
+                        attr = _a[_i];
+                        return [4 /*yield*/, this._addScalarDomain(entity, attr)];
+                    case 2:
+                        domainName = _b.sent();
+                        return [4 /*yield*/, this._bindATAttr(entity, attr, domainName)];
+                    case 3:
+                        _b.sent();
+                        fields.push({
+                            name: ERImport._fieldName(attr),
+                            domain: domainName
+                        });
+                        _b.label = 4;
+                    case 4:
+                        _i++;
+                        return [3 /*break*/, 1];
+                    case 5:
+                        if (!this._ddlHelper) return [3 /*break*/, 8];
+                        return [4 /*yield*/, this._ddlHelper.addTable(tableName, fields)];
+                    case 6:
+                        _b.sent();
+                        return [4 /*yield*/, this._ddlHelper.addPrimaryKey(tableName, entity.pk.map(function (item) { return item.name; }))];
+                    case 7:
+                        _b.sent();
+                        _b.label = 8;
+                    case 8: return [4 /*yield*/, this._bindATEntity(entity, tableName)];
+                    case 9:
+                        _b.sent();
+                        return [2 /*return*/];
+                }
+            });
+        });
+    };
+    ERImport.prototype._addScalarDomain = function (entity, attr) {
+        return __awaiter(this, void 0, void 0, function () {
+            var domainName;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        domainName = Prefix_1.Prefix.join(entity.name + "_F" + (Object.keys(entity.attributes).indexOf(attr.name) + 1), Prefix_1.Prefix.DOMAIN);
+                        if (!this._ddlHelper) return [3 /*break*/, 2];
+                        return [4 /*yield*/, this._ddlHelper.addScalarDomain(domainName, DomainResolver_1.DomainResolver.resolveScalar(attr))];
+                    case 1:
+                        _a.sent();
+                        _a.label = 2;
+                    case 2: return [2 /*return*/, domainName];
+                }
+            });
+        });
+    };
+    ERImport.prototype._bindATEntity = function (entity, tableName) {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        if (!this._createATRelation) return [3 /*break*/, 2];
+                        return [4 /*yield*/, this._createATRelation.execute({
+                                tableName: tableName,
+                                lName: entity.lName.ru ? entity.lName.ru.name : entity.name,
+                                description: entity.lName.ru ? entity.lName.ru.fullName : entity.name
+                            })];
+                    case 1:
+                        _a.sent();
+                        _a.label = 2;
+                    case 2: return [2 /*return*/];
+                }
+            });
+        });
+    };
+    ERImport.prototype._bindATAttr = function (entity, attr, domainName) {
+        return __awaiter(this, void 0, void 0, function () {
+            var numeration, fieldName;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        numeration = gdmn_orm_1.isEnumAttribute(attr)
+                            ? attr.values.map(function (_a) {
+                                var value = _a.value, lName = _a.lName;
+                                return value + "=" + (lName && lName.ru ? lName.ru.name : "");
+                            }).join("#13#10")
+                            : undefined;
+                        if (!this._createATField) return [3 /*break*/, 2];
+                        return [4 /*yield*/, this._createATField.execute({
+                                fieldName: domainName,
+                                lName: attr.lName.ru ? attr.lName.ru.name : attr.name,
+                                description: attr.lName.ru ? attr.lName.ru.fullName : attr.name,
+                                numeration: numeration ? Buffer.from(numeration) : undefined
+                            })];
+                    case 1:
+                        _a.sent();
+                        _a.label = 2;
+                    case 2:
+                        if (!this._createATRelationField) return [3 /*break*/, 4];
+                        fieldName = ERImport._fieldName(attr);
+                        return [4 /*yield*/, this._createATRelationField.execute({
+                                fieldName: fieldName,
+                                relationName: ERImport._tableName(entity),
+                                attrName: fieldName !== attr.name ? attr.name : null,
+                                lName: attr.lName.ru ? attr.lName.ru.name : attr.name,
+                                description: attr.lName.ru ? attr.lName.ru.fullName : attr.name
+                            })];
+                    case 3:
+                        _a.sent();
+                        _a.label = 4;
+                    case 4: return [2 /*return*/];
+                }
+            });
+        });
+    };
+    return ERImport;
+}());
+exports.ERImport = ERImport;
+//# sourceMappingURL=ERImport.js.map

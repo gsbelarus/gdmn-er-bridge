@@ -18,8 +18,7 @@ import {
   TimeStampAttribute
 } from "gdmn-orm";
 import moment from "moment";
-import {erExport} from "../export/erexport";
-import {erImport} from "../import/erimport";
+import {ERBridge} from "../ERBridge";
 import {testDB} from "./testDB";
 
 test("erimport", async () => {
@@ -31,6 +30,7 @@ test("erimport", async () => {
 
   const connection = driver.newConnection();
   await connection.createDatabase(options);
+  const erBridge = new ERBridge(connection);
 
   const erModel = new ERModel();
   const gdcUnique = erModel.addSequence(new Sequence("GD_G_UNIQUE"));
@@ -42,7 +42,7 @@ test("erimport", async () => {
     false);
   entity.add(new SequenceAttribute("ID", {ru: {name: "Идентификатор"}}, gdcUnique));
   entity.add(new IntegerAttribute("FIELD2", {ru: {name: "Поле 2", fullName: "FULLNAME"}}, true,
-    -150, 10, -100));
+    -150, 10, -100, [], {field: "TESTFIELD"}));
   entity.add(new IntegerAttribute("FIELD3", {ru: {name: "Поле 3", fullName: "FULLNAME"}}, true,
     -150, 1000000000000, -10000));
   entity.add(new NumericAttribute("FIELD4", {ru: {name: "Поле 4"}}, true,
@@ -81,13 +81,13 @@ test("erimport", async () => {
   ], "Z"));
   erModel.add(entity);
 
-  await erImport(connection, erModel);
+  await erBridge.importToDatabase(erModel);
 
   const loadedERModel = await AConnection.executeTransaction({
     connection,
     callback: async (transaction) => {
       const dbStructure = await driver.readDBStructure(connection, transaction);
-      return erExport(dbStructure, connection, transaction, new ERModel());
+      return erBridge.exportFromDatabase(dbStructure, transaction, new ERModel());
     }
   });
 

@@ -1,4 +1,22 @@
-import { AConnection } from "gdmn-db";
+import { AConnection, ATransaction } from "gdmn-db";
 import { ERModel } from "gdmn-orm";
-export declare function erImport(connection: AConnection, erModel: ERModel): Promise<void>;
-export declare function getIntTypeByRange(min?: number, max?: number): string;
+export declare class ERImport {
+    private readonly _connection;
+    private readonly _erModel;
+    private _createATField;
+    private _createATRelation;
+    private _createATRelationField;
+    private _ddlHelper;
+    constructor(connection: AConnection, erModel: ERModel);
+    private static _tableName;
+    private static _fieldName;
+    execute(): Promise<void>;
+    _prepareStatements(transaction: ATransaction): Promise<void>;
+    _disposeStatements(): Promise<void>;
+    private _createDefaultSchema;
+    private _createERSchema;
+    private _addEntity;
+    private _addScalarDomain;
+    private _bindATEntity;
+    private _bindATAttr;
+}

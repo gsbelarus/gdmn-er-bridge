@@ -35,7 +35,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-function createDomains(connection, transaction) {
+function createDefaultDomains(connection, transaction) {
     return __awaiter(this, void 0, void 0, function () {
         return __generator(this, function (_a) {
             switch (_a.label) {
@@ -92,5 +92,5 @@ function createDomains(connection, transaction) {
         });
     });
 }
-exports.createDomains = createDomains;
-//# sourceMappingURL=domains.js.map
+exports.createDefaultDomains = createDefaultDomains;
+//# sourceMappingURL=createDefaultDomains.js.map

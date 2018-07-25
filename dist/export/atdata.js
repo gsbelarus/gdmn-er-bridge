@@ -127,9 +127,9 @@ function load(connection, transaction) {
                     return [4 /*yield*/, gdmn_db_1.AConnection.executeQueryResultSet({
                             connection: connection,
                             transaction: transaction,
-                            sql: "\n      SELECT\n        FIELDNAME,\n        FIELDSOURCE,\n        RELATIONNAME,\n        LNAME,\n        DESCRIPTION,\n        SEMCATEGORY,\n        CROSSTABLE,\n        CROSSFIELD\n      FROM\n        AT_RELATION_FIELDS\n      ORDER BY\n        RELATIONNAME",
+                            sql: "\n      SELECT\n        FIELDNAME,\n        FIELDSOURCE,\n        RELATIONNAME,\n        ATTRNAME,\n        LNAME,\n        DESCRIPTION,\n        SEMCATEGORY,\n        CROSSTABLE,\n        CROSSFIELD\n      FROM\n        AT_RELATION_FIELDS\n      ORDER BY\n        RELATIONNAME",
                             callback: function (resultSet) { return __awaiter(_this, void 0, void 0, function () {
-                                var getTrimmedString, relationName, rel, fieldName, name, fullName, ru;
+                                var getTrimmedString, relationName, rel, fieldName, attrName, name, fullName, ru;
                                 return __generator(this, function (_a) {
                                     switch (_a.label) {
                                         case 0:
@@ -146,10 +146,12 @@ function load(connection, transaction) {
                                                     throw new Error("Unknown relation " + relationName);
                                             }
                                             fieldName = resultSet.getString("FIELDNAME");
+                                            attrName = getTrimmedString("ATTRNAME");
                                             name = resultSet.getString("LNAME");
                                             fullName = getTrimmedString("DESCRIPTION");
                                             ru = { name: name, fullName: fullName };
                                             rel.relationFields[fieldName] = {
+                                                attrName: attrName,
                                                 lName: { ru: ru },
                                                 fieldSource: getTrimmedString("FIELDSOURCE"),
                                                 crossTable: getTrimmedString("CROSSTABLE"),

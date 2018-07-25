@@ -1,8 +1,6 @@
 import {AConnection, ATransaction} from "gdmn-db";
 
 export async function createATStructure(connection: AConnection, transaction: ATransaction): Promise<void> {
-  await connection.execute(transaction, `CREATE SEQUENCE GD_G_UNIQUE`);
-  await connection.execute(transaction, `ALTER SEQUENCE GD_G_UNIQUE RESTART WITH 0`);
   // -----------------------------------------------------------AT_FIELDS
   await connection.execute(transaction, `
     CREATE TABLE AT_FIELDS (
@@ -50,6 +48,7 @@ export async function createATStructure(connection: AConnection, transaction: AT
       ID                  DINTKEY                                 PRIMARY KEY,
       FIELDNAME           DFIELDNAME          NOT NULL,
       RELATIONNAME        DTABLENAME          NOT NULL,
+      ATTRNAME            DFIELDNAME,
       FIELDSOURCE         DFIELDNAME,
       LNAME               DNAME,
       DESCRIPTION         DTEXT180,

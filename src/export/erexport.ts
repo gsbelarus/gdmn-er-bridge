@@ -561,7 +561,8 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
                            attrName: string,
                            semCategories: SemCategory[],
                            adapter: Attribute2FieldMap | undefined) {
-    const attributeName = adjustName(attrName);
+    const attributeName = atRelationField && atRelationField.attrName !== undefined
+      ? atRelationField.attrName : adjustName(attrName);
     const atField = atfields[rf.fieldSource];
     const fieldSource = dbs.fields[rf.fieldSource];
     const required: boolean = rf.notNull || fieldSource.notNull;

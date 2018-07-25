@@ -31,6 +31,7 @@ export interface atFields {
  * Дополнительная информация по полям таблиц.
  */
 export interface atRelationField {
+  attrName: string | undefined;
   lName: LName;
   fieldSource: string;
   crossTable: string | undefined;
@@ -133,6 +134,7 @@ export async function load(connection: AConnection, transaction: ATransaction) {
         FIELDNAME,
         FIELDSOURCE,
         RELATIONNAME,
+        ATTRNAME,
         LNAME,
         DESCRIPTION,
         SEMCATEGORY,
@@ -153,10 +155,12 @@ export async function load(connection: AConnection, transaction: ATransaction) {
           if (!rel) throw new Error(`Unknown relation ${relationName}`);
         }
         const fieldName = resultSet.getString("FIELDNAME");
+        const attrName = getTrimmedString("ATTRNAME");
         const name = resultSet.getString("LNAME");
         const fullName = getTrimmedString("DESCRIPTION");
         const ru = {name, fullName};
         rel!.relationFields[fieldName] = {
+          attrName,
           lName: {ru},
           fieldSource: getTrimmedString("FIELDSOURCE")!,
           crossTable: getTrimmedString("CROSSTABLE"),

@@ -39,35 +39,30 @@ function createATStructure(connection, transaction) {
     return __awaiter(this, void 0, void 0, function () {
         return __generator(this, function (_a) {
             switch (_a.label) {
-                case 0: return [4 /*yield*/, connection.execute(transaction, "CREATE SEQUENCE GD_G_UNIQUE")];
+                case 0: 
+                // -----------------------------------------------------------AT_FIELDS
+                return [4 /*yield*/, connection.execute(transaction, "\n    CREATE TABLE AT_FIELDS (\n      ID                  DINTKEY                                 PRIMARY KEY,\n      FIELDNAME           DFIELDNAME          NOT NULL,\n      LNAME               DNAME,\n      DESCRIPTION         DTEXT180,\n      REFTABLE            DTABLENAME,\n      REFCONDITION        DTEXT255,\n      SETTABLE            DTABLENAME,\n      SETLISTFIELD        DFIELDNAME,\n      SETCONDITION        DTEXT255,\n      NUMERATION          DNUMERATIONBLOB\n    )\n  ")];
                 case 1:
-                    _a.sent();
-                    return [4 /*yield*/, connection.execute(transaction, "ALTER SEQUENCE GD_G_UNIQUE RESTART WITH 0")];
-                case 2:
-                    _a.sent();
-                    // -----------------------------------------------------------AT_FIELDS
-                    return [4 /*yield*/, connection.execute(transaction, "\n    CREATE TABLE AT_FIELDS (\n      ID                  DINTKEY                                 PRIMARY KEY,\n      FIELDNAME           DFIELDNAME          NOT NULL,\n      LNAME               DNAME,\n      DESCRIPTION         DTEXT180,\n      REFTABLE            DTABLENAME,\n      REFCONDITION        DTEXT255,\n      SETTABLE            DTABLENAME,\n      SETLISTFIELD        DFIELDNAME,\n      SETCONDITION        DTEXT255,\n      NUMERATION          DNUMERATIONBLOB\n    )\n  ")];
-                case 3:
                     // -----------------------------------------------------------AT_FIELDS
                     _a.sent();
                     return [4 /*yield*/, connection.execute(transaction, "\n    CREATE TRIGGER AT_BI_FIELDS FOR AT_FIELDS\n    ACTIVE BEFORE INSERT POSITION 0\n    AS\n    BEGIN\n      IF (NEW.ID IS NULL) THEN NEW.ID = GEN_ID(GD_G_UNIQUE, 1);\n    END\n  ")];
-                case 4:
+                case 2:
                     _a.sent();
                     // -----------------------------------------------------------AT_RELATIONS
                     return [4 /*yield*/, connection.execute(transaction, "\n    CREATE TABLE AT_RELATIONS (\n      ID                  DINTKEY                                 PRIMARY KEY,\n      RELATIONNAME        DTABLENAME          NOT NULL,\n      LNAME               DNAME,\n      DESCRIPTION         DTEXT180,\n      SEMCATEGORY         DTEXT60\n    )\n  ")];
-                case 5:
+                case 3:
                     // -----------------------------------------------------------AT_RELATIONS
                     _a.sent();
                     return [4 /*yield*/, connection.execute(transaction, "\n    CREATE TRIGGER AT_BI_RELATIONS FOR AT_RELATIONS\n    ACTIVE BEFORE INSERT POSITION 0\n    AS\n    BEGIN\n      IF (NEW.ID IS NULL) THEN NEW.ID = GEN_ID(GD_G_UNIQUE, 1);\n    END\n  ")];
-                case 6:
+                case 4:
                     _a.sent();
                     // -----------------------------------------------------------AT_RELATION_FIELDS
-                    return [4 /*yield*/, connection.execute(transaction, "\n    CREATE TABLE AT_RELATION_FIELDS (\n      ID                  DINTKEY                                 PRIMARY KEY,\n      FIELDNAME           DFIELDNAME          NOT NULL,\n      RELATIONNAME        DTABLENAME          NOT NULL,\n      FIELDSOURCE         DFIELDNAME,\n      LNAME               DNAME,\n      DESCRIPTION         DTEXT180,\n      SEMCATEGORY         DTEXT60,\n      CROSSTABLE          DTABLENAME,\n      CROSSFIELD          DFIELDNAME\n    )\n  ")];
-                case 7:
+                    return [4 /*yield*/, connection.execute(transaction, "\n    CREATE TABLE AT_RELATION_FIELDS (\n      ID                  DINTKEY                                 PRIMARY KEY,\n      FIELDNAME           DFIELDNAME          NOT NULL,\n      RELATIONNAME        DTABLENAME          NOT NULL,\n      ATTRNAME            DFIELDNAME,\n      FIELDSOURCE         DFIELDNAME,\n      LNAME               DNAME,\n      DESCRIPTION         DTEXT180,\n      SEMCATEGORY         DTEXT60,\n      CROSSTABLE          DTABLENAME,\n      CROSSFIELD          DFIELDNAME\n    )\n  ")];
+                case 5:
                     // -----------------------------------------------------------AT_RELATION_FIELDS
                     _a.sent();
                     return [4 /*yield*/, connection.execute(transaction, "\n    CREATE TRIGGER AT_BI_RELATION_FIELDS FOR AT_RELATION_FIELDS\n    ACTIVE BEFORE INSERT POSITION 0\n    AS\n    BEGIN\n      IF (NEW.ID IS NULL) THEN NEW.ID = GEN_ID(GD_G_UNIQUE, 1);\n    END\n  ")];
-                case 8:
+                case 6:
                     _a.sent();
                     return [2 /*return*/];
             }
@@ -75,4 +70,4 @@ function createATStructure(connection, transaction) {
     });
 }
 exports.createATStructure = createATStructure;
-//# sourceMappingURL=atdata.js.map
+//# sourceMappingURL=createATStructure.js.map

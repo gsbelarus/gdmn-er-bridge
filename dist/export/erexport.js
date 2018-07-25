@@ -169,7 +169,8 @@ function erExport(dbs, connection, transaction, erModel) {
             }, true);
         }
         function createAttribute(r, rf, atRelationField, attrName, semCategories, adapter) {
-            var attributeName = gdmn_orm_1.adjustName(attrName);
+            var attributeName = atRelationField && atRelationField.attrName !== undefined
+                ? atRelationField.attrName : gdmn_orm_1.adjustName(attrName);
             var atField = atfields[rf.fieldSource];
             var fieldSource = dbs.fields[rf.fieldSource];
             var required = rf.notNull || fieldSource.notNull;

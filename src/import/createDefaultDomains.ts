@@ -1,6 +1,6 @@
 import {AConnection, ATransaction} from "gdmn-db";
 
-export async function createDomains(connection: AConnection, transaction: ATransaction): Promise<void> {
+export async function createDefaultDomains(connection: AConnection, transaction: ATransaction): Promise<void> {
   await connection.execute(transaction, `
     CREATE DOMAIN DINTKEY AS INTEGER
 	    CHECK (VALUE > 0) NOT NULL
