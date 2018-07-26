@@ -1,5 +1,6 @@
 import {existsSync, unlinkSync} from "fs";
 import {AConnection} from "gdmn-db";
+import {SemCategory} from "gdmn-nlp";
 import {
   BlobAttribute,
   BooleanAttribute,
@@ -9,6 +10,10 @@ import {
   ERModel,
   FloatAttribute,
   IntegerAttribute,
+  MAX_16BIT_INT,
+  MAX_32BIT_INT,
+  MIN_16BIT_INT,
+  MIN_32BIT_INT,
   NumericAttribute,
   Sequence,
   SequenceAttribute,
@@ -16,75 +21,39 @@ import {
   TimeAttribute,
   TimeStampAttribute
 } from "gdmn-orm";
+import {Entity2RelationMap} from "gdmn-orm/src/rdbadapter";
+import {LName} from "gdmn-orm/src/types";
 import moment from "moment";
 import {ERBridge} from "../ERBridge";
+import {MAX_TIMESTAMP, MIN_TIMESTAMP, TIME_TEMPLATE} from "../util";
 import {importTestDBDetail} from "./testDB";
 
-test("ERImport", async () => {
+describe("ERImport", () => {
   const {driver, options} = importTestDBDetail;
-
-  if (existsSync(options.path)) {
-    unlinkSync(options.path);
-  }
-
   const connection = driver.newConnection();
-  await connection.createDatabase(options);
   const erBridge = new ERBridge(connection);
 
-  const erModel = new ERModel();
-  const gdcUnique = erModel.addSequence(new Sequence("GD_G_UNIQUE"));
-
-  const relation = "TEST";
-  const entity = new Entity(
-    undefined,
-    relation,
-    {ru: {name: "тест", fullName: "FULLNAME"}},
-    false);
-  entity.add(new SequenceAttribute("ID", {ru: {name: "Идентификатор"}}, gdcUnique,
-    {relation: relation, field: "ID"}));
-  entity.add(new IntegerAttribute("FIELD2", {ru: {name: "Поле 2", fullName: "FULLNAME"}}, true,
-    -150, 10, -100, [], {relation: relation, field: "FIELD_ADAPTER"}));
-  entity.add(new IntegerAttribute("FIELD3", {ru: {name: "Поле 3", fullName: "FULLNAME"}}, true,
-    -150, 1000000000000, -10000, []));
-  entity.add(new NumericAttribute("FIELD4", {ru: {name: "Поле 4"}}, true,
-    4, 2, 40, 1000, 40));
-  entity.add(new BlobAttribute("FIELD5", {ru: {name: "Поле 5"}}, false));
-  entity.add(new BooleanAttribute("FIELD6", {ru: {name: "Поле 6"}}, false, true));
-  entity.add(new StringAttribute("FIELD7", {ru: {name: "Поле 7"}}, true,
-    5, 30, "test", true, undefined));
-  entity.add(new DateAttribute("FIELD8", {ru: {name: "Поле 8"}}, true,
-    new Date(1999, 10, 10, 0, 0, 0, 0),
-    new Date(2099, 1, 1, 0, 0, 0, 0),
-    moment().hour(0).minute(0).second(0).millisecond(0).toDate()));
-  entity.add(new TimeAttribute("FIELD9", {ru: {name: "Поле 9"}}, true,
-    new Date(2000, 1, 1, 0, 0, 0, 0),
-    new Date(2000, 1, 1, 23, 59, 59, 999),
-    new Date(2000, 1, 1)));
-  entity.add(new TimeStampAttribute("FIELD10", {ru: {name: "Поле 10"}}, true,
-    new Date(1999, 10, 10, 0, 0, 0, 0),
-    new Date(2099, 1, 1, 23, 59, 59, 999),
-    new Date()));
-  entity.add(new FloatAttribute("FIELD11", {ru: {name: "Поле 11"}}, true,
-    -123, 123123123123123123123123, 40));
-  entity.add(new EnumAttribute("FIELD12", {ru: {name: "Поле 12"}}, true, [
-    {
-      value: "Z",
-      lName: {ru: {name: "Перечисление Z"}}
-    },
-    {
-      value: "X",
-      lName: {ru: {name: "Перечисление X"}}
-    },
-    {
-      value: "Y",
-      lName: {ru: {name: "Перечисление Y"}}
+  const createERModel = () => {
+    const erModel = new ERModel();
+    erModel.addSequence(new Sequence("GD_G_UNIQUE"));
+    return erModel;
+  };
+  const createEntity = (erModel: ERModel,
+                        parent: Entity | undefined,
+                        name: string,
+                        lName: LName,
+                        isAbstract: boolean,
+                        semCategories: SemCategory[] = [],
+                        adapter?: Entity2RelationMap) => {
+    const entity = new Entity(parent, name, lName, isAbstract, semCategories, adapter);
+    // auto added field
+    if (!parent) {
+      entity.add(new SequenceAttribute("ID", {ru: {name: "Идентификатор"}}, erModel.sequencies.GD_G_UNIQUE));
     }
-  ], "Z"));
-  erModel.add(entity);
-
-  await erBridge.importToDatabase(erModel);
-
-  const loadedERModel = await AConnection.executeTransaction({
+    erModel.add(entity);
+    return entity;
+  };
+  const loadERModel = () => AConnection.executeTransaction({
     connection,
     callback: async (transaction) => {
       const dbStructure = await driver.readDBStructure(connection, transaction);
@@ -92,9 +61,279 @@ test("ERImport", async () => {
     }
   });
 
-  const loadEntity = loadedERModel.entity("TEST");
-  expect(loadEntity).toEqual(entity);
+  beforeEach(async () => {
+    if (existsSync(options.path)) {
+      unlinkSync(options.path);
+    }
+    await connection.createDatabase(options);
+  });
 
-  await connection.dropDatabase();
+  afterEach(async () => {
+    await connection.dropDatabase();
+  });
 
-}, 120000);
+  it("empty entity", async () => {
+    const erModel = createERModel();
+    const entity = createEntity(erModel,
+      undefined,
+      "TEST",
+      {ru: {name: "entity name", fullName: "full entity name"}},
+      false);
+
+    await erBridge.importToDatabase(erModel);
+
+    const loadedERModel = await loadERModel();
+    const loadEntity = loadedERModel.entity("TEST");
+    expect(loadEntity).toEqual(entity);
+  });
+
+  it("integer", async () => {
+    const erModel = createERModel();
+    const entity = createEntity(erModel,
+      undefined,
+      "TEST",
+      {ru: {name: "entity name", fullName: "full entity name"}},
+      false);
+    entity.add(new IntegerAttribute("FIELD1", {ru: {name: "Поле 1", fullName: "FULLNAME"}}, true,
+      MIN_16BIT_INT, MAX_16BIT_INT, -100, [], {relation: "TEST", field: "FIELD_ADAPTER"}));
+    entity.add(new IntegerAttribute("FIELD2", {ru: {name: "Поле 2", fullName: "FULLNAME"}}, true,
+      MIN_32BIT_INT, MAX_32BIT_INT, -10000, []));
+    // entity.add(new IntegerAttribute("FIELD3", {ru: {name: "Поле 3", fullName: "FULLNAME"}}, true,
+    //   MIN_64BIT_INT, MAX_64BIT_INT, -100000000000000, []));
+    entity.add(new IntegerAttribute("FIELD4", {ru: {name: "Поле 4", fullName: "FULLNAME"}}, false,
+      MIN_16BIT_INT, MAX_16BIT_INT + 1, 0, []));
+    entity.add(new IntegerAttribute("FIELD5", {ru: {name: "Поле 5", fullName: "FULLNAME"}}, false,
+      MIN_16BIT_INT, MAX_16BIT_INT + 1, undefined));
+
+    await erBridge.importToDatabase(erModel);
+
+    const loadedERModel = await loadERModel();
+    const loadEntity = loadedERModel.entity("TEST");
+    expect(loadEntity).toEqual(entity);
+  });
+
+  it("numeric", async () => {
+    const erModel = createERModel();
+    const entity = createEntity(erModel,
+      undefined,
+      "TEST",
+      {ru: {name: "entity name", fullName: "full entity name"}},
+      false);
+    entity.add(new NumericAttribute("FIELD1", {ru: {name: "Поле 1"}}, true,
+      4, 2, 40, 1000, 40.36, [], {relation: "TEST", field: "FIELD_ADAPTER"}));
+    entity.add(new NumericAttribute("FIELD2", {ru: {name: "Поле 2"}}, false,
+      4, 2, 40, 1000, 40.36));
+    entity.add(new NumericAttribute("FIELD3", {ru: {name: "Поле 3"}}, false,
+      4, 2, 40, 1000, undefined));
+
+    await erBridge.importToDatabase(erModel);
+
+    const loadedERModel = await loadERModel();
+    const loadEntity = loadedERModel.entity("TEST");
+    expect(loadEntity).toEqual(entity);
+  });
+
+  it("blob", async () => {
+    const erModel = createERModel();
+    const entity = createEntity(erModel,
+      undefined,
+      "TEST",
+      {ru: {name: "entity name", fullName: "full entity name"}},
+      false);
+    entity.add(new BlobAttribute("FIELD1", {ru: {name: "Поле 1"}}, true,
+      [], {relation: "TEST", field: "FIELD_ADAPTER"}));
+    entity.add(new BlobAttribute("FIELD2", {ru: {name: "Поле 2"}}, false));
+
+    await erBridge.importToDatabase(erModel);
+
+    const loadedERModel = await loadERModel();
+    const loadEntity = loadedERModel.entity("TEST");
+    expect(loadEntity).toEqual(entity);
+  });
+
+  it("boolean", async () => {
+    const erModel = createERModel();
+    const entity = createEntity(erModel,
+      undefined,
+      "TEST",
+      {ru: {name: "entity name", fullName: "full entity name"}},
+      false);
+    entity.add(new BooleanAttribute("FIELD1", {ru: {name: "Поле 1"}}, true, true,
+      [], {relation: "TEST", field: "FIELD_ADAPTER"}));
+    entity.add(new BooleanAttribute("FIELD2", {ru: {name: "Поле 2"}}, false, false));
+
+    await erBridge.importToDatabase(erModel);
+
+    const loadedERModel = await loadERModel();
+    const loadEntity = loadedERModel.entity("TEST");
+    expect(loadEntity).toEqual(entity);
+  });
+
+  it("string", async () => {
+    const erModel = createERModel();
+    const entity = createEntity(erModel,
+      undefined,
+      "TEST",
+      {ru: {name: "entity name", fullName: "full entity name"}},
+      false);
+    entity.add(new StringAttribute("FIELD1", {ru: {name: "Поле 1"}}, true,
+      5, 30, "test default", true, undefined,
+      [], {relation: "TEST", field: "FIELD_ADAPTER"}));
+    entity.add(new StringAttribute("FIELD2", {ru: {name: "Поле 2"}}, false,
+      1, 160, "test default", true, undefined));
+    entity.add(new StringAttribute("FIELD3", {ru: {name: "Поле 3"}}, false,
+      1, 160, undefined, true, undefined));
+
+    await erBridge.importToDatabase(erModel);
+
+    const loadedERModel = await loadERModel();
+    const loadEntity = loadedERModel.entity("TEST");
+    expect(loadEntity).toEqual(entity);
+  });
+
+  it("date", async () => {
+    const erModel = createERModel();
+    const entity = createEntity(erModel,
+      undefined,
+      "TEST",
+      {ru: {name: "entity name", fullName: "full entity name"}},
+      false);
+    entity.add(new DateAttribute("FIELD1", {ru: {name: "Поле 1"}}, true,
+      moment.utc().year(1999).month(10).date(3).startOf("date").local().toDate(),
+      moment.utc().year(2099).startOf("year").local().toDate(),
+      moment.utc().startOf("date").local().toDate(),
+      [], {relation: "TEST", field: "FIELD_ADAPTER"}));
+    entity.add(new DateAttribute("FIELD2", {ru: {name: "Поле 2"}}, false,
+      moment.utc(MIN_TIMESTAMP).startOf("date").local().toDate(),
+      moment.utc(MAX_TIMESTAMP).startOf("date").local().toDate(),
+      "CURRENT_DATE"));
+    entity.add(new DateAttribute("FIELD3", {ru: {name: "Поле 3"}}, false,
+      moment.utc(MIN_TIMESTAMP).startOf("date").local().toDate(),
+      moment.utc(MAX_TIMESTAMP).startOf("date").local().toDate(),
+      undefined));
+
+    await erBridge.importToDatabase(erModel);
+
+    const loadedERModel = await loadERModel();
+    const loadEntity = loadedERModel.entity("TEST");
+    expect(loadEntity).toEqual(entity);
+  });
+
+  it("time", async () => {
+    const erModel = createERModel();
+    const entity = createEntity(erModel,
+      undefined,
+      "TEST",
+      {ru: {name: "entity name", fullName: "full entity name"}},
+      false);
+    entity.add(new TimeAttribute("FIELD1", {ru: {name: "Поле 1"}}, true,
+      moment.utc().year(MIN_TIMESTAMP.getUTCFullYear()).month(MIN_TIMESTAMP.getUTCMonth()).date(MIN_TIMESTAMP.getDate())
+        .startOf("date").local().toDate(),
+      moment.utc().year(MIN_TIMESTAMP.getUTCFullYear()).month(MIN_TIMESTAMP.getUTCMonth()).date(MIN_TIMESTAMP.getDate())
+        .endOf("date").local().toDate(),
+      moment.utc().year(MIN_TIMESTAMP.getUTCFullYear()).month(MIN_TIMESTAMP.getUTCMonth()).date(MIN_TIMESTAMP.getDate())
+        .local().toDate(),
+      [], {relation: "TEST", field: "FIELD_ADAPTER"}));
+    entity.add(new TimeAttribute("FIELD2", {ru: {name: "Поле 2"}}, false,
+      moment.utc(MIN_TIMESTAMP, TIME_TEMPLATE).local().toDate(),
+      moment.utc(MAX_TIMESTAMP, TIME_TEMPLATE)
+        .year(MIN_TIMESTAMP.getUTCFullYear()).month(MIN_TIMESTAMP.getUTCMonth()).date(MIN_TIMESTAMP.getDate())
+        .local().toDate(),
+      "CURRENT_TIME"));
+    entity.add(new TimeAttribute("FIELD3", {ru: {name: "Поле 3"}}, false,
+      moment.utc(MIN_TIMESTAMP, TIME_TEMPLATE).local().toDate(),
+      moment.utc(MAX_TIMESTAMP, TIME_TEMPLATE)
+        .year(MIN_TIMESTAMP.getUTCFullYear()).month(MIN_TIMESTAMP.getUTCMonth()).date(MIN_TIMESTAMP.getDate())
+        .local().toDate(),
+      undefined));
+
+    await erBridge.importToDatabase(erModel);
+
+    const loadedERModel = await loadERModel();
+    const loadEntity = loadedERModel.entity("TEST");
+    expect(loadEntity).toEqual(entity);
+  });
+
+  it("timestamp", async () => {
+    const erModel = createERModel();
+    const entity = createEntity(erModel,
+      undefined,
+      "TEST",
+      {ru: {name: "entity name", fullName: "full entity name"}},
+      false);
+    entity.add(new TimeStampAttribute("FIELD1", {ru: {name: "Поле 1"}}, true,
+      moment.utc().year(1999).month(10).startOf("month").local().toDate(),
+      moment.utc().year(2099).month(1).date(1).endOf("date").local().toDate(),
+      moment.utc().local().toDate(),
+      [], {relation: "TEST", field: "FIELD_ADAPTER"}));
+    entity.add(new TimeStampAttribute("FIELD2", {ru: {name: "Поле 2"}}, false,
+      moment.utc(MIN_TIMESTAMP).local().toDate(),
+      moment.utc(MAX_TIMESTAMP).local().toDate(),
+      "CURRENT_TIMESTAMP"));
+    entity.add(new TimeStampAttribute("FIELD3", {ru: {name: "Поле 3"}}, false,
+      moment.utc(MIN_TIMESTAMP).local().toDate(),
+      moment.utc(MAX_TIMESTAMP).local().toDate(),
+      undefined));
+
+    await erBridge.importToDatabase(erModel);
+
+    const loadedERModel = await loadERModel();
+    const loadEntity = loadedERModel.entity("TEST");
+    expect(loadEntity).toEqual(entity);
+  });
+
+  it("float", async () => {
+    const erModel = createERModel();
+    const entity = createEntity(erModel,
+      undefined,
+      "TEST",
+      {ru: {name: "entity name", fullName: "full entity name"}},
+      false);
+    entity.add(new FloatAttribute("FIELD1", {ru: {name: "Поле 1"}}, true,
+      -123, 123123123123123123123123, 40,
+      [], {relation: "TEST", field: "FIELD_ADAPTER"}));
+    // entity.add(new FloatAttribute("FIELD2", {ru: {name: "Поле 2"}}, false,
+    //   Number.MIN_VALUE, Number.MAX_VALUE, 40));
+    entity.add(new FloatAttribute("FIELD3", {ru: {name: "Поле 3"}}, true,
+      -123, 123123123123123123123123, undefined));
+
+    await erBridge.importToDatabase(erModel);
+
+    const loadedERModel = await loadERModel();
+    const loadEntity = loadedERModel.entity("TEST");
+    expect(loadEntity).toEqual(entity);
+  });
+
+  it("enum", async () => {
+    const erModel = createERModel();
+    const entity = createEntity(erModel,
+      undefined,
+      "TEST",
+      {ru: {name: "entity name", fullName: "full entity name"}},
+      false);
+    entity.add(new EnumAttribute("FIELD1", {ru: {name: "Поле 1"}}, true, [
+      {
+        value: "Z",
+        lName: {ru: {name: "Перечисление Z"}}
+      },
+      {
+        value: "X",
+        lName: {ru: {name: "Перечисление X"}}
+      },
+      {
+        value: "Y",
+        lName: {ru: {name: "Перечисление Y"}}
+      }
+    ], "Z", [], {relation: "TEST", field: "FIELD_ADAPTER"}));
+    entity.add(new EnumAttribute("FIELD2", {ru: {name: "Поле 2"}}, false,
+      [{value: "Z"}, {value: "X"}, {value: "Y"}], "Z"));
+    entity.add(new EnumAttribute("FIELD3", {ru: {name: "Поле 3"}}, false,
+      [{value: "Z"}, {value: "X"}, {value: "Y"}], undefined));
+
+    await erBridge.importToDatabase(erModel);
+
+    const loadedERModel = await loadERModel();
+    const loadEntity = loadedERModel.entity("TEST");
+    expect(loadEntity).toEqual(entity);
+  });
+});

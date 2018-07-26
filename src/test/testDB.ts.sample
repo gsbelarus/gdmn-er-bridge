@@ -2,7 +2,7 @@ import {Factory} from "gdmn-db";
 import {resolve} from "path";
 import {IDBDetail} from "../export/dbdetail";
 
-export const testDB: IDBDetail = {
+export const exportTestDBDetail: IDBDetail = {
   alias: "exportTestDB",
   driver: Factory.FBDriver,
   options: {

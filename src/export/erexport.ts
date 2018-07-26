@@ -52,7 +52,7 @@ import {
   default2Boolean,
   default2Date,
   default2Int,
-  default2Number,
+  default2Float,
   default2String,
   default2Time,
   default2Timestamp,
@@ -603,7 +603,7 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
           fieldSource.fieldPrecision,
           Math.abs(fieldSource.fieldScale),
           range.minValue, range.maxValue,
-          default2Number(defaultValue),
+          default2Float(defaultValue),
           semCategories,
           adapter);
       }
@@ -675,7 +675,7 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
       case FieldType.DOUBLE:
         const fRange = check2NumberRange(fieldSource.validationSource);
         return new FloatAttribute(attributeName, lName, required, fRange.minValue, fRange.maxValue,
-          default2Number(defaultValue), semCategories, adapter);
+          default2Float(defaultValue), semCategories, adapter);
 
       case FieldType.SMALL_INTEGER:
         if (isCheckForBoolean(fieldSource.validationSource)) {

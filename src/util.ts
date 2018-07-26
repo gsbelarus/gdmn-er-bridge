@@ -1,12 +1,12 @@
 import {ContextVariables} from "gdmn-orm";
 import moment from "moment";
 
-export const MIN_TIMESTAMP = new Date(1900, 0, 1, 0, 0, 0, 0);
-export const MAX_TIMESTAMP = new Date(9999, 11, 31, 23, 59, 99, 999);
+export const MIN_TIMESTAMP = moment().utc().year(1900).startOf("year").toDate();
+export const MAX_TIMESTAMP = moment().utc().year(9999).endOf("year").toDate();
 
-const TIME_TEMPLATE = "HH:mm:ss.SSS";
-const DATE_TEMPLATE = "DD.MM.YYYY";
-const TIMESTAMP_TEMPLATE = "DD.MM.YYYY HH:mm:ss.SSS";
+export const TIME_TEMPLATE = "HH:mm:ss.SSS";
+export const DATE_TEMPLATE = "DD.MM.YYYY";
+export const TIMESTAMP_TEMPLATE = "DD.MM.YYYY HH:mm:ss.SSS";
 
 export interface IRange<T> {
   minValue: T | undefined;
@@ -81,43 +81,53 @@ export function check2NumberRange(validationSource: string | null,
 
 export function check2TimestampRange(validationSource: string | null): IRange<Date> {
   const range = checkRange(validationSource);
-  let minDate = moment(range.min, TIMESTAMP_TEMPLATE);
-  let maxDate = moment(range.max, TIMESTAMP_TEMPLATE);
+  let minDate = moment.utc(range.min, TIMESTAMP_TEMPLATE);
+  let maxDate = moment.utc(range.max, TIMESTAMP_TEMPLATE);
   if (minDate.isValid() && minDate.isBefore(MIN_TIMESTAMP)) {
-    minDate = moment(MIN_TIMESTAMP);
+    minDate = moment.utc(MIN_TIMESTAMP, TIMESTAMP_TEMPLATE);
   }
   if (maxDate.isValid() && maxDate.isAfter(MAX_TIMESTAMP)) {
-    maxDate = moment(MAX_TIMESTAMP);
+    maxDate = moment.utc(MAX_TIMESTAMP, TIMESTAMP_TEMPLATE);
   }
   return {
-    minValue: minDate.isValid() ? minDate.toDate() : MIN_TIMESTAMP,
-    maxValue: maxDate.isValid() ? maxDate.toDate() : MAX_TIMESTAMP
+    minValue: minDate.isValid() ? minDate.local().toDate() : MIN_TIMESTAMP,
+    maxValue: maxDate.isValid() ? maxDate.local().toDate() : MAX_TIMESTAMP
   };
 }
 
 export function check2TimeRange(validationSource: string | null): IRange<Date> {
   const range = checkRange(validationSource);
-  const minDate = moment(range.min, TIME_TEMPLATE);
-  const maxDate = moment(range.max, TIME_TEMPLATE);
+  const minDate = moment.utc(range.min, TIME_TEMPLATE);
+  const maxDate = moment.utc(range.max, TIME_TEMPLATE);
+  if (minDate.isValid()) {
+    minDate.year(MIN_TIMESTAMP.getUTCFullYear())
+      .month(MIN_TIMESTAMP.getUTCMonth())
+      .date(MIN_TIMESTAMP.getUTCDate());
+  }
+  if (maxDate.isValid()) {
+    maxDate.year(MIN_TIMESTAMP.getUTCFullYear())
+      .month(MIN_TIMESTAMP.getUTCMonth())
+      .date(MIN_TIMESTAMP.getUTCDate());
+  }
   return {
-    minValue: minDate.isValid() ? minDate.date(1).month(1).year(2000).toDate() : undefined,
-    maxValue: maxDate.isValid() ? maxDate.date(1).month(1).year(2000).toDate() : undefined
+    minValue: minDate.isValid() ? minDate.local().toDate() : undefined,
+    maxValue: maxDate.isValid() ? maxDate.local().toDate() : undefined
   };
 }
 
 export function check2DateRange(validationSource: string | null): IRange<Date> {
   const range = checkRange(validationSource);
-  let minDate = moment(range.min, DATE_TEMPLATE);
-  let maxDate = moment(range.max, DATE_TEMPLATE);
+  let minDate = moment.utc(range.min, DATE_TEMPLATE);
+  let maxDate = moment.utc(range.max, DATE_TEMPLATE);
   if (minDate.isValid() && minDate.isBefore(MIN_TIMESTAMP)) {
-    minDate = moment(MIN_TIMESTAMP);
+    minDate = moment.utc(MIN_TIMESTAMP, DATE_TEMPLATE);
   }
   if (maxDate.isValid() && maxDate.isAfter(MAX_TIMESTAMP)) {
-    maxDate = moment(MAX_TIMESTAMP);
+    maxDate = moment.utc(MAX_TIMESTAMP, DATE_TEMPLATE);
   }
   return {
-    minValue: minDate.isValid() ? minDate.toDate() : MIN_TIMESTAMP,
-    maxValue: maxDate.isValid() ? maxDate.toDate() : MAX_TIMESTAMP
+    minValue: minDate.isValid() ? minDate.local().toDate() : MIN_TIMESTAMP,
+    maxValue: maxDate.isValid() ? maxDate.local().toDate() : MAX_TIMESTAMP
   };
 }
 
@@ -174,19 +184,21 @@ export function cropDefault(defaultSource: string | null): string | null {
 
 export function default2Boolean(defaultSource: string | null): boolean {
   defaultSource = cropDefault(defaultSource);
-  return Boolean(defaultSource);
+  return !!defaultSource && Boolean(Number.parseInt(defaultSource));
 }
 
 export function default2Int(defaultSource: string | null): number | undefined {
   defaultSource = cropDefault(defaultSource);
-  const num = Number(defaultSource);
-  return (num || num === 0) && Number.isInteger(num) ? num : undefined;
+  if (defaultSource) {
+    return Number.parseInt(defaultSource);
+  }
 }
 
-export function default2Number(defaultSource: string | null): number | undefined {
+export function default2Float(defaultSource: string | null): number | undefined {
   defaultSource = cropDefault(defaultSource);
-  const num = Number(defaultSource);
-  return (num || num === 0) ? num : undefined;
+  if (defaultSource) {
+    return Number.parseFloat(defaultSource);
+  }
 }
 
 export function default2String(defaultSource: string | null): string | undefined {
@@ -201,9 +213,13 @@ export function default2Time(defaultSource: string | null): Date | ContextVariab
   if (defaultSource === "CURRENT_TIME") {
     return defaultSource;
   }
-  const mDate = moment(defaultSource!, TIME_TEMPLATE);
+  const mDate = moment.utc(defaultSource!, TIME_TEMPLATE);
   if (mDate.isValid()) {
-    return mDate.date(1).month(1).year(2000).toDate();
+    return mDate
+      .year(MIN_TIMESTAMP.getUTCFullYear())
+      .month(MIN_TIMESTAMP.getUTCMonth())
+      .date(MIN_TIMESTAMP.getUTCDate())
+      .local().toDate();
   }
 }
 
@@ -215,9 +231,9 @@ export function default2Timestamp(defaultSource: string | null): Date | ContextV
   if (defaultSource === "CURRENT_TIMESTAMP(0)") {
     return defaultSource;
   }
-  const mDate = moment(defaultSource!, TIMESTAMP_TEMPLATE);
+  const mDate = moment.utc(defaultSource!, TIMESTAMP_TEMPLATE);
   if (mDate.isValid()) {
-    return mDate.toDate();
+    return mDate.local().toDate();
   }
 }
 
@@ -226,20 +242,29 @@ export function default2Date(defaultSource: string | null): Date | ContextVariab
   if (defaultSource === "CURRENT_DATE") {
     return defaultSource;
   }
-  const mDate = moment(defaultSource!, DATE_TEMPLATE);
+  const mDate = moment.utc(defaultSource!, DATE_TEMPLATE);
   if (mDate.isValid()) {
-    return mDate.toDate();
+    return mDate.local().toDate();
   }
 }
 
 export function date2Str(date: Date | ContextVariables): string {
-  return `'${moment(date).format(DATE_TEMPLATE)}'`;
+  if (date instanceof Date) {
+    return `'${moment(date).utc().format(DATE_TEMPLATE)}'`;
+  }
+  return date;
 }
 
 export function dateTime2Str(date: Date | ContextVariables): string {
-  return `'${moment(date).format(TIMESTAMP_TEMPLATE)}'`;
+  if (date instanceof Date) {
+    return `'${moment(date).utc().format(TIMESTAMP_TEMPLATE)}'`;
+  }
+  return date;
 }
 
 export function time2Str(date: Date | ContextVariables): string {
-  return `'${moment(date).format(TIME_TEMPLATE)}'`;
+  if (date instanceof Date) {
+    return `'${moment(date).utc().format(TIME_TEMPLATE)}'`;
+  }
+  return date;
 }

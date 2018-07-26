@@ -403,7 +403,7 @@ async function erExport(dbs, connection, transaction, erModel) {
                     break;
             }
             if (range) {
-                return new gdmn_orm_1.NumericAttribute(attributeName, lName, required, fieldSource.fieldPrecision, Math.abs(fieldSource.fieldScale), range.minValue, range.maxValue, util_1.default2Number(defaultValue), semCategories, adapter);
+                return new gdmn_orm_1.NumericAttribute(attributeName, lName, required, fieldSource.fieldPrecision, Math.abs(fieldSource.fieldScale), range.minValue, range.maxValue, util_1.default2Float(defaultValue), semCategories, adapter);
             }
         }
         switch (fieldSource.fieldType) {
@@ -455,7 +455,7 @@ async function erExport(dbs, connection, transaction, erModel) {
             case gdmn_db_1.FieldType.FLOAT:
             case gdmn_db_1.FieldType.DOUBLE:
                 const fRange = util_1.check2NumberRange(fieldSource.validationSource);
-                return new gdmn_orm_1.FloatAttribute(attributeName, lName, required, fRange.minValue, fRange.maxValue, util_1.default2Number(defaultValue), semCategories, adapter);
+                return new gdmn_orm_1.FloatAttribute(attributeName, lName, required, fRange.minValue, fRange.maxValue, util_1.default2Float(defaultValue), semCategories, adapter);
             case gdmn_db_1.FieldType.SMALL_INTEGER:
                 if (util_1.isCheckForBoolean(fieldSource.validationSource)) {
                     return new gdmn_orm_1.BooleanAttribute(attributeName, lName, required, util_1.default2Boolean(defaultValue), semCategories, adapter);
