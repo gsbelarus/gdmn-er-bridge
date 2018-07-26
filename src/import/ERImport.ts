@@ -97,7 +97,7 @@ export class ERImport {
 
   private async _scalarFieldName(attr: ScalarAttribute): Promise<string> {
     const attrAdapter = attr.adapter as Attribute2FieldMap;
-    return attrAdapter ? attrAdapter.field : Prefix.join(`${await this._getDDLHelper().nextUnique()}`, Prefix.FIELD);
+    return attrAdapter ? attrAdapter.field : attr.name;
   }
 
   private async _tableName(entity: Entity): Promise<string> {

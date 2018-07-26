@@ -8,7 +8,7 @@ const util_1 = require("../util");
 const atdata_1 = require("./atdata");
 const document_1 = require("./document");
 const gdtables_1 = require("./gdtables");
-const idAttrName = "ID";
+const ID_ATTR_NAME = "ID";
 async function erExport(dbs, connection, transaction, erModel) {
     const { atfields, atrelations } = await atdata_1.load(connection, transaction);
     const crossRelationsAdapters = {
@@ -70,7 +70,7 @@ async function erExport(dbs, connection, transaction, erModel) {
         const fake = gdmn_orm_1.relationName2Adapter(setEntityName);
         const entity = new gdmn_orm_1.Entity(parent, setEntityName, lName ? lName : (atRelation ? atRelation.lName : {}), !!abstract, semCategories, JSON.stringify(adapter) !== JSON.stringify(fake) ? adapter : undefined);
         if (!parent) {
-            entity.add(new gdmn_orm_1.SequenceAttribute(idAttrName, { ru: { name: "Идентификатор" } }, GDGUnique));
+            entity.add(new gdmn_orm_1.SequenceAttribute(ID_ATTR_NAME, { ru: { name: "Идентификатор" } }, GDGUnique));
         }
         if (attributes) {
             attributes.forEach(attr => entity.add(attr));
@@ -357,8 +357,8 @@ async function erExport(dbs, connection, transaction, erModel) {
         }, true);
     }
     dbs.forEachRelation(r => {
-        if (r.primaryKey.fields.join() === idAttrName && /^USR\$.+$/.test(r.name)
-            && !Object.entries(r.foreignKeys).find(fk => fk[1].fields.join() === idAttrName)) {
+        if (r.primaryKey.fields.join() === ID_ATTR_NAME && /^USR\$.+$/.test(r.name)
+            && !Object.entries(r.foreignKeys).find(fk => fk[1].fields.join() === ID_ATTR_NAME)) {
             if (abstractBaseRelations[r.name]) {
                 recursInherited([r]);
             }
@@ -368,8 +368,7 @@ async function erExport(dbs, connection, transaction, erModel) {
         }
     }, true);
     function createAttribute(r, rf, atRelationField, attrName, semCategories, adapter) {
-        const attributeName = atRelationField && atRelationField.attrName !== undefined
-            ? atRelationField.attrName : gdmn_orm_1.adjustName(attrName);
+        const attributeName = gdmn_orm_1.adjustName(attrName);
         const atField = atfields[rf.fieldSource];
         const fieldSource = dbs.fields[rf.fieldSource];
         const required = rf.notNull || fieldSource.notNull;
@@ -501,7 +500,14 @@ async function erExport(dbs, connection, transaction, erModel) {
                 const atRelationField = atRelation ? atRelation.relationFields[fn] : undefined;
                 if (atRelationField && atRelationField.crossTable)
                     return;
-                const attr = createAttribute(r, rf, atRelationField, entity.hasAttribute(fn) ? `${r.name}.${fn}` : fn, atRelationField ? atRelationField.semCategories : [], relations.length > 1 ? { relation: r.name, field: fn } : undefined);
+                let attrName = entity.hasAttribute(fn) ? `${r.name}.${fn}` : fn;
+                let adapter = relations.length > 1 ? { relation: r.name, field: fn } : undefined;
+                // for custom field adapters
+                if (atRelationField && atRelationField.attrName !== undefined) {
+                    attrName = atRelationField.attrName;
+                    adapter = { relation: r.name, field: fn };
+                }
+                const attr = createAttribute(r, rf, atRelationField, attrName, atRelationField ? atRelationField.semCategories : [], adapter);
                 if (attr) {
                     entity.add(attr);
                 }

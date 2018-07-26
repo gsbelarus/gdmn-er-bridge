@@ -63,7 +63,7 @@ import {atRelationField, load} from "./atdata";
 import {loadDocument} from "./document";
 import {gedeminTables} from "./gdtables";
 
-const idAttrName = "ID";
+const ID_ATTR_NAME = "ID";
 
 export async function erExport(dbs: DBStructure, connection: AConnection, transaction: ATransaction, erModel: ERModel): Promise<ERModel> {
 
@@ -152,7 +152,7 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
 
     if (!parent) {
       entity.add(
-        new SequenceAttribute(idAttrName, {ru: {name: "Идентификатор"}}, GDGUnique)
+        new SequenceAttribute(ID_ATTR_NAME, {ru: {name: "Идентификатор"}}, GDGUnique)
       );
     }
 
@@ -545,8 +545,8 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
   }
 
   dbs.forEachRelation(r => {
-    if (r.primaryKey!.fields.join() === idAttrName && /^USR\$.+$/.test(r.name)
-      && !Object.entries(r.foreignKeys).find(fk => fk[1].fields.join() === idAttrName)) {
+    if (r.primaryKey!.fields.join() === ID_ATTR_NAME && /^USR\$.+$/.test(r.name)
+      && !Object.entries(r.foreignKeys).find(fk => fk[1].fields.join() === ID_ATTR_NAME)) {
       if (abstractBaseRelations[r.name]) {
         recursInherited([r]);
       } else {
@@ -561,8 +561,7 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
                            attrName: string,
                            semCategories: SemCategory[],
                            adapter: Attribute2FieldMap | undefined) {
-    const attributeName = atRelationField && atRelationField.attrName !== undefined
-      ? atRelationField.attrName : adjustName(attrName);
+    const attributeName = adjustName(attrName);
     const atField = atfields[rf.fieldSource];
     const fieldSource = dbs.fields[rf.fieldSource];
     const required: boolean = rf.notNull || fieldSource.notNull;
@@ -734,11 +733,19 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
 
         if (atRelationField && atRelationField.crossTable) return;
 
+        let attrName = entity.hasAttribute(fn) ? `${r.name}.${fn}` : fn;
+        let adapter = relations.length > 1 ? {relation: r.name, field: fn} : undefined;
+
+        // for custom field adapters
+        if (atRelationField && atRelationField.attrName !== undefined) {
+          attrName = atRelationField.attrName;
+          adapter = {relation: r.name, field: fn};
+        }
         const attr = createAttribute(
           r, rf, atRelationField,
-          entity.hasAttribute(fn) ? `${r.name}.${fn}` : fn,
+          attrName,
           atRelationField ? atRelationField.semCategories : [],
-          relations.length > 1 ? {relation: r.name, field: fn} : undefined
+          adapter
         );
 
         if (attr) {

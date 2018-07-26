@@ -31,9 +31,11 @@ async function load(connection, transaction) {
             const getTrimmedString = getTrimmedStringFunc(resultSet);
             const fields = {};
             while (await resultSet.next()) {
-                const name = resultSet.getString("LNAME");
+                const ru = { name: resultSet.getString("LNAME") };
                 const fullName = getTrimmedString("DESCRIPTION");
-                const ru = { name, fullName };
+                if (fullName) {
+                    ru.fullName = fullName;
+                }
                 fields[resultSet.getString("FIELDNAME")] = {
                     lName: { ru },
                     refTable: getTrimmedString("REFTABLE"),
@@ -63,9 +65,11 @@ async function load(connection, transaction) {
             const getTrimmedString = getTrimmedStringFunc(resultSet);
             const relations = {};
             while (await resultSet.next()) {
-                const name = resultSet.getString("LNAME");
+                const ru = { name: resultSet.getString("LNAME") };
                 const fullName = getTrimmedString("DESCRIPTION");
-                const ru = { name, fullName };
+                if (fullName) {
+                    ru.fullName = fullName;
+                }
                 relations[resultSet.getString("RELATIONNAME")] = {
                     lName: { ru },
                     semCategories: gdmn_nlp_1.str2SemCategories(resultSet.getString("SEMCATEGORY")),
@@ -106,9 +110,11 @@ async function load(connection, transaction) {
                 }
                 const fieldName = resultSet.getString("FIELDNAME");
                 const attrName = getTrimmedString("ATTRNAME");
-                const name = resultSet.getString("LNAME");
+                const ru = { name: resultSet.getString("LNAME") };
                 const fullName = getTrimmedString("DESCRIPTION");
-                const ru = { name, fullName };
+                if (fullName) {
+                    ru.fullName = fullName;
+                }
                 rel.relationFields[fieldName] = {
                     attrName,
                     lName: { ru },

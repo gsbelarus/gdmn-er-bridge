@@ -35,7 +35,7 @@ class DDLHelper {
         await this._connection.execute(this._transaction, sql);
     }
     async addScalarDomain(domainName, options) {
-        const sql = `CREATE DOMAIN ${domainName} AS ${options.type}`.padEnd(62) +
+        const sql = `CREATE DOMAIN ${domainName.padEnd(31)} AS ${options.type.padEnd(31)}` +
             options.default.padEnd(40) +
             options.nullable.padEnd(10) +
             options.check.padEnd(62);

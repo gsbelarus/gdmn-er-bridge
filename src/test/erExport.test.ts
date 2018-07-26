@@ -2,7 +2,7 @@ import * as fs from "fs";
 import {AConnection} from "gdmn-db";
 import {ERModel, deserializeERModel} from "gdmn-orm";
 import {erExport} from "..";
-import { testDB } from "./testDB";
+import { exportTestDBDetail } from "./exportTestDBDetail";
 import { IDBDetail } from "../export/dbdetail";
 
 async function loadERModel(dbDetail: IDBDetail) {
@@ -35,8 +35,8 @@ async function loadERModel(dbDetail: IDBDetail) {
   return result;
 }
 
-test("erModel", async () => {
-  const result = await loadERModel(testDB);
+test("erExport", async () => {
+  const result = await loadERModel(exportTestDBDetail);
   const serialized = result.erModel.serialize();
   const deserialized = deserializeERModel(serialized);
 
@@ -58,5 +58,5 @@ test("erModel", async () => {
   }
 
   expect(serialized).toEqual(deserialized.serialize());
-}, 40000);
+}, 120000);
 

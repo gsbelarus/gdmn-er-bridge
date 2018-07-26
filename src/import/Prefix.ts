@@ -3,7 +3,6 @@ export class Prefix {
   public static GDMN = "GD";
   public static GENERATOR = "G";
   public static DOMAIN = "DOMAIN";
-  public static FIELD = "FIELD";
   public static PK = "PK";
 
   public static join(name: string, ...prefixes: string[]): string {

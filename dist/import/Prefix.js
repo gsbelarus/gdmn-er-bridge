@@ -10,7 +10,6 @@ class Prefix {
 Prefix.GDMN = "GD";
 Prefix.GENERATOR = "G";
 Prefix.DOMAIN = "DOMAIN";
-Prefix.FIELD = "FIELD";
 Prefix.PK = "PK";
 exports.Prefix = Prefix;
 //# sourceMappingURL=Prefix.js.map

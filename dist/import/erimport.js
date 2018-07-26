@@ -77,7 +77,7 @@ class ERImport {
     }
     async _scalarFieldName(attr) {
         const attrAdapter = attr.adapter;
-        return attrAdapter ? attrAdapter.field : Prefix_1.Prefix.join(`${await this._getDDLHelper().nextUnique()}`, Prefix_1.Prefix.FIELD);
+        return attrAdapter ? attrAdapter.field : attr.name;
     }
     async _tableName(entity) {
         // TODO adapter

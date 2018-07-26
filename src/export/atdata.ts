@@ -8,7 +8,7 @@
 
 import {AConnection, AResultSet, ATransaction} from "gdmn-db";
 import {SemCategory, str2SemCategories} from "gdmn-nlp";
-import {LName} from "gdmn-orm";
+import {LName, TName} from "gdmn-orm";
 
 /**
  * Дополнительная информация по доменам.
@@ -80,9 +80,11 @@ export async function load(connection: AConnection, transaction: ATransaction) {
       const getTrimmedString = getTrimmedStringFunc(resultSet);
       const fields: atFields = {};
       while (await resultSet.next()) {
-        const name = resultSet.getString("LNAME");
+        const ru: TName = {name: resultSet.getString("LNAME")};
         const fullName = getTrimmedString("DESCRIPTION");
-        const ru = {name, fullName};
+        if (fullName) {
+          ru.fullName = fullName;
+        }
         fields[resultSet.getString("FIELDNAME")] = {
           lName: {ru},
           refTable: getTrimmedString("REFTABLE"),
@@ -113,9 +115,11 @@ export async function load(connection: AConnection, transaction: ATransaction) {
       const getTrimmedString = getTrimmedStringFunc(resultSet);
       const relations: atRelations = {};
       while (await resultSet.next()) {
-        const name = resultSet.getString("LNAME");
+        const ru: TName = {name: resultSet.getString("LNAME")};
         const fullName = getTrimmedString("DESCRIPTION");
-        const ru = {name, fullName};
+        if (fullName) {
+          ru.fullName = fullName;
+        }
         relations[resultSet.getString("RELATIONNAME")] = {
           lName: {ru},
           semCategories: str2SemCategories(resultSet.getString("SEMCATEGORY")),
@@ -156,9 +160,11 @@ export async function load(connection: AConnection, transaction: ATransaction) {
         }
         const fieldName = resultSet.getString("FIELDNAME");
         const attrName = getTrimmedString("ATTRNAME");
-        const name = resultSet.getString("LNAME");
+        const ru: TName = {name: resultSet.getString("LNAME")};
         const fullName = getTrimmedString("DESCRIPTION");
-        const ru = {name, fullName};
+        if (fullName) {
+          ru.fullName = fullName;
+        }
         rel!.relationFields[fieldName] = {
           attrName,
           lName: {ru},
