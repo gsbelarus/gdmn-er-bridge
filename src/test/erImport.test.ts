@@ -18,7 +18,7 @@ import {
 } from "gdmn-orm";
 import moment from "moment";
 import {ERBridge} from "../ERBridge";
-import {importTestDBDetail} from "./exportTestDBDetail";
+import {importTestDBDetail} from "./testDB";
 
 test("ERImport", async () => {
   const {driver, options} = importTestDBDetail;
