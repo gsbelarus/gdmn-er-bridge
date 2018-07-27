@@ -3,7 +3,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const gdmn_db_1 = require("gdmn-db");
 const gdmn_nlp_1 = require("gdmn-nlp");
 const gdmn_orm_1 = require("gdmn-orm");
-const gddomains_1 = require("../gddomains");
+const gddomains_1 = require("./gddomains");
+const Update1_1 = require("../updates/Update1");
 const util_1 = require("../util");
 const atdata_1 = require("./atdata");
 const document_1 = require("./document");
@@ -26,7 +27,7 @@ async function erExport(dbs, connection, transaction, erModel) {
     /**
      * Если имя генератора совпадает с именем объекта в БД, то адаптер можем не указывать.
      */
-    const GDGUnique = erModel.addSequence(new gdmn_orm_1.Sequence("GD_G_UNIQUE"));
+    const GDGUnique = erModel.addSequence(new gdmn_orm_1.Sequence(Update1_1.GLOBAL_GENERATOR));
     erModel.addSequence(new gdmn_orm_1.Sequence("Offset", { sequence: "GD_G_OFFSET" }));
     function findEntities(relationName, selectors = []) {
         const found = Object.entries(erModel.entities).reduce((p, e) => {

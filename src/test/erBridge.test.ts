@@ -25,17 +25,18 @@ import {Entity2RelationMap} from "gdmn-orm/src/rdbadapter";
 import {LName} from "gdmn-orm/src/types";
 import moment from "moment";
 import {ERBridge} from "../ERBridge";
+import {GLOBAL_GENERATOR} from "../updates/Update1";
 import {MAX_TIMESTAMP, MIN_TIMESTAMP, TIME_TEMPLATE} from "../util";
 import {importTestDBDetail} from "./testDB";
 
-describe("ERImport", () => {
+describe("ERBridge", () => {
   const {driver, options} = importTestDBDetail;
   const connection = driver.newConnection();
   const erBridge = new ERBridge(connection);
 
   const createERModel = () => {
     const erModel = new ERModel();
-    erModel.addSequence(new Sequence("GD_G_UNIQUE"));
+    erModel.addSequence(new Sequence(GLOBAL_GENERATOR));
     return erModel;
   };
   const createEntity = (erModel: ERModel,
@@ -66,6 +67,7 @@ describe("ERImport", () => {
       unlinkSync(options.path);
     }
     await connection.createDatabase(options);
+    await erBridge.init();
   });
 
   afterEach(async () => {

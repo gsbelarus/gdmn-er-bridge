@@ -1,5 +1,4 @@
 import {
-  Attribute,
   isBlobAttribute,
   isBooleanAttribute,
   isDateAttribute,
@@ -20,14 +19,8 @@ import {
   MIN_64BIT_INT,
   ScalarAttribute
 } from "gdmn-orm";
+import {IDomainOptions} from "../ddl/DDLHelper";
 import {date2Str, dateTime2Str, time2Str} from "../util";
-
-export interface IDomainOptions {
-  type: string;
-  default: string;
-  nullable: string;
-  check: string;
-}
 
 export class DomainResolver {
 
@@ -35,7 +28,7 @@ export class DomainResolver {
     return {
       type: DomainResolver._getScalarType(attr),
       default: DomainResolver._getDefaultValue(attr),
-      nullable: DomainResolver._getNullFlag(attr),
+      notNull: attr.required,
       check: DomainResolver._getScalarChecker(attr)
     };
   }
@@ -96,18 +89,10 @@ export class DomainResolver {
     return expr;
   }
 
-  private static _getNullFlag(attr: Attribute): string {
-    let expr = "";
-    if (attr.required) {
-      expr = "NOT NULL";
-    }
-    return expr;
-  }
-
   private static _getDefaultValue(attr: any): string {
     let expr = "";
     if (attr.defaultValue !== undefined) {
-      expr = `DEFAULT ${DomainResolver._val2Str(attr, attr.defaultValue)}`;
+      expr = `${DomainResolver._val2Str(attr, attr.defaultValue)}`;
     }
     return expr;
   }

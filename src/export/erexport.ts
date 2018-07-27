@@ -41,7 +41,8 @@ import {
   TimeAttribute,
   TimeStampAttribute
 } from "gdmn-orm";
-import {gdDomains} from "../gddomains";
+import {gdDomains} from "./gddomains";
+import {GLOBAL_GENERATOR} from "../updates/Update1";
 import {
   check2DateRange,
   check2Enum,
@@ -51,8 +52,8 @@ import {
   check2TimestampRange,
   default2Boolean,
   default2Date,
-  default2Int,
   default2Float,
+  default2Int,
   default2String,
   default2Time,
   default2Timestamp,
@@ -88,7 +89,7 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
    * Если имя генератора совпадает с именем объекта в БД, то адаптер можем не указывать.
    */
 
-  const GDGUnique = erModel.addSequence(new Sequence("GD_G_UNIQUE"));
+  const GDGUnique = erModel.addSequence(new Sequence(GLOBAL_GENERATOR));
   erModel.addSequence(new Sequence("Offset", {sequence: "GD_G_OFFSET"}));
 
   function findEntities(relationName: string, selectors: EntitySelector[] = []): Entity[] {

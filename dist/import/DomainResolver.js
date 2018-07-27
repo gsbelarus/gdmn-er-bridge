@@ -7,7 +7,7 @@ class DomainResolver {
         return {
             type: DomainResolver._getScalarType(attr),
             default: DomainResolver._getDefaultValue(attr),
-            nullable: DomainResolver._getNullFlag(attr),
+            notNull: attr.required,
             check: DomainResolver._getScalarChecker(attr)
         };
     }
@@ -81,17 +81,10 @@ class DomainResolver {
         }
         return expr;
     }
-    static _getNullFlag(attr) {
-        let expr = "";
-        if (attr.required) {
-            expr = "NOT NULL";
-        }
-        return expr;
-    }
     static _getDefaultValue(attr) {
         let expr = "";
         if (attr.defaultValue !== undefined) {
-            expr = `DEFAULT ${DomainResolver._val2Str(attr, attr.defaultValue)}`;
+            expr = `${DomainResolver._val2Str(attr, attr.defaultValue)}`;
         }
         return expr;
     }

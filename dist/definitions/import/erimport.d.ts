@@ -7,6 +7,7 @@ export declare class ERImport {
     private _createATRelation;
     private _createATRelationField;
     private _ddlHelper;
+    private _ddlUniqueGen;
     constructor(connection: AConnection, erModel: ERModel);
     execute(): Promise<void>;
     _prepareStatements(transaction: ATransaction): Promise<void>;

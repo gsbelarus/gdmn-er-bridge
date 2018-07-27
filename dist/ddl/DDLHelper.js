@@ -1,7 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const createDefaultGenerators_1 = require("./import/createDefaultGenerators");
-const Prefix_1 = require("./import/Prefix");
+const Prefix_1 = require("../Prefix");
 class DDLHelper {
     constructor(connection, transaction) {
         this._logs = [];
@@ -10,14 +9,6 @@ class DDLHelper {
     }
     get logs() {
         return this._logs;
-    }
-    async prepare() {
-        this._nextUnique = await this._connection.prepare(this._transaction, `SELECT NEXT VALUE FOR ${Prefix_1.Prefix.join(createDefaultGenerators_1.G_UNIQUE_DDL_NAME, Prefix_1.Prefix.GDMN, Prefix_1.Prefix.GENERATOR)} FROM RDB$DATABASE`);
-    }
-    async dispose() {
-        if (this._nextUnique) {
-            await this._nextUnique.dispose();
-        }
     }
     async addSequence(sequenceName) {
         await this._connection.execute(this._transaction, `CREATE SEQUENCE ${sequenceName}`);
@@ -36,20 +27,11 @@ class DDLHelper {
     }
     async addScalarDomain(domainName, options) {
         const sql = `CREATE DOMAIN ${domainName.padEnd(31)} AS ${options.type.padEnd(31)}` +
-            options.default.padEnd(40) +
-            options.nullable.padEnd(10) +
-            options.check.padEnd(62);
+            (options.default ? `DEFAULT ${options.default}` : "").padEnd(40) +
+            (options.notNull ? "NOT NULL" : "").padEnd(10) +
+            (options.check || "").padEnd(62);
         this._logs.push(sql);
         await this._connection.execute(this._transaction, sql);
-    }
-    async nextUnique() {
-        if (this._nextUnique) {
-            const result = await this._nextUnique.executeReturning();
-            return (await result.getAll())[0];
-        }
-        else {
-            throw new Error("nextUnique is undefined");
-        }
     }
 }
 exports.DDLHelper = DDLHelper;

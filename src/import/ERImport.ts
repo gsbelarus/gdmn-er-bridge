@@ -8,13 +8,11 @@ import {
   isScalarAttribute,
   ScalarAttribute
 } from "gdmn-orm";
-import {DDLHelper, IScalarField} from "../DDLHelper";
-import {createATStructure} from "./createATStructure";
-import {createDefaultDomains} from "./createDefaultDomains";
-import {createDefaultGenerators, G_UNIQUE_NAME} from "./createDefaultGenerators";
-import {createDocStructure} from "./createDocStructure";
+import {DDLHelper, IScalarField} from "../ddl/DDLHelper";
+import {DDLUniqueGenerator} from "../ddl/DDLUniqueGenerator";
+import {GLOBAL_GENERATOR} from "../updates/Update1";
 import {DomainResolver} from "./DomainResolver";
-import {Prefix} from "./Prefix";
+import {Prefix} from "../Prefix";
 
 export class ERImport {
 
@@ -25,6 +23,7 @@ export class ERImport {
   private _createATRelation: AStatement | undefined;
   private _createATRelationField: AStatement | undefined;
   private _ddlHelper: DDLHelper | undefined;
+  private _ddlUniqueGen = new DDLUniqueGenerator();
 
   constructor(connection: AConnection, erModel: ERModel) {
     this._connection = connection;
@@ -32,16 +31,6 @@ export class ERImport {
   }
 
   public async execute(): Promise<void> {
-    await AConnection.executeTransaction({
-      connection: this._connection,
-      callback: async (transaction) => {
-        await createDefaultGenerators(this._connection, transaction);
-        await createDefaultDomains(this._connection, transaction);
-        await createATStructure(this._connection, transaction);
-        await createDocStructure(this._connection, transaction);
-      }
-    });
-
     await AConnection.executeTransaction({
       connection: this._connection,
       callback: async (transaction) => {
@@ -58,9 +47,7 @@ export class ERImport {
   }
 
   public async _prepareStatements(transaction: ATransaction): Promise<void> {
-    if (this._ddlHelper) {
-      await this._ddlHelper.prepare();
-    }
+    await this._ddlUniqueGen.prepare(this._connection, transaction);
     this._createATField = await this._connection.prepare(transaction, `
       INSERT INTO AT_FIELDS (FIELDNAME, LNAME, DESCRIPTION, NUMERATION)
       VALUES (:fieldName, :lName, :description, :numeration)
@@ -76,9 +63,7 @@ export class ERImport {
   }
 
   public async _disposeStatements(): Promise<void> {
-    if (this._ddlHelper) {
-      await this._ddlHelper.dispose();
-    }
+    await this._ddlUniqueGen.dispose();
     if (this._createATField) {
       await this._createATField.dispose();
     }
@@ -91,7 +76,9 @@ export class ERImport {
   }
 
   private _getDDLHelper(): DDLHelper {
-    if (this._ddlHelper) return this._ddlHelper;
+    if (this._ddlHelper) {
+      return this._ddlHelper;
+    }
     throw new Error("ddlHelper is undefined");
   }
 
@@ -108,7 +95,7 @@ export class ERImport {
   private async _createERSchema(): Promise<void> {
     for (const sequence of Object.values(this._erModel.sequencies)) {
       const sequenceName = sequence.adapter ? (sequence.adapter as any).sequence : sequence.name;
-      if (sequenceName !== Prefix.join(G_UNIQUE_NAME, Prefix.GDMN, Prefix.GENERATOR)) {
+      if (sequenceName !== GLOBAL_GENERATOR) {
         await this._getDDLHelper().addSequence(sequenceName);
       }
     }
@@ -136,16 +123,14 @@ export class ERImport {
         pkFields.push(field);
       }
     }
-    if (this._ddlHelper) {
-      await this._ddlHelper.addTable(tableName, fields);
-      await this._ddlHelper.addPrimaryKey(tableName, pkFields.map((i) => i.name));
-    }
+    await this._getDDLHelper().addTable(tableName, fields);
+    await this._getDDLHelper().addPrimaryKey(tableName, pkFields.map((i) => i.name));
 
     await this._bindATEntity(entity, tableName);
   }
 
   private async _addScalarDomain(attr: ScalarAttribute): Promise<string> {
-    const domainName = Prefix.join(`${await this._getDDLHelper().nextUnique()}`, Prefix.DOMAIN);
+    const domainName = Prefix.join(`${await this._ddlUniqueGen.next()}`, Prefix.DOMAIN);
     await this._getDDLHelper().addScalarDomain(domainName, DomainResolver.resolveScalar(attr));
     return domainName;
   }

@@ -2,6 +2,7 @@ import {AConnection, ATransaction, DBStructure} from "gdmn-db";
 import {ERModel} from "gdmn-orm";
 import {erExport} from "./export/erexport";
 import {ERImport} from "./import/ERImport";
+import {UpdateManager} from "./updates/UpdateManager";
 
 export class ERBridge {
 
@@ -19,5 +20,9 @@ export class ERBridge {
 
   public async importToDatabase(erModel: ERModel): Promise<void> {
     return await new ERImport(this._connection, erModel).execute();
+  }
+
+  public async init(): Promise<void> {
+    await new UpdateManager().updateDatabase(this._connection);
   }
 }
