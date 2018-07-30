@@ -49,7 +49,7 @@ describe("ERBridge", () => {
     const entity = new Entity(parent, name, lName, isAbstract, semCategories, adapter);
     // auto added field
     if (!parent) {
-      entity.add(new SequenceAttribute("ID", {ru: {name: "Идентификатор"}}, erModel.sequencies.GD_G_UNIQUE));
+      entity.add(new SequenceAttribute("ID", {ru: {name: "Идентификатор"}}, erModel.sequencies[GLOBAL_GENERATOR]));
     }
     erModel.add(entity);
     return entity;

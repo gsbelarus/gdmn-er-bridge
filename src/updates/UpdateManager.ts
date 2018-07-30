@@ -7,7 +7,7 @@ export type UpdateConstructor = new (connection: AConnection) => BaseUpdate;
 
 export class UpdateManager {
 
-  public CURRENT_DATABASE_VERSION = 2;
+  public static readonly CURRENT_DATABASE_VERSION = 2;
 
   private readonly _updatesConstructors: UpdateConstructor[] = [
     Update2,
@@ -26,15 +26,16 @@ export class UpdateManager {
       callback: (transaction) => this._getDBVersion(connection, transaction)
     });
 
-    for (const update of updates) {
-      if (update.version > version) {
-        await update.do();
-      }
+    const newUpdates = updates.filter((item) => item.version > version);
+    for (const update of newUpdates) {
+      await update.do();
     }
-    await AConnection.executeTransaction({
-      connection,
-      callback: (transaction) => this._updateDBVersion(connection, transaction)
-    });
+    if (newUpdates.length) {
+      await AConnection.executeTransaction({
+        connection,
+        callback: (transaction) => this._updateDBVersion(connection, transaction)
+      });
+    }
   }
 
   private sort(updates: BaseUpdate[]): void {
@@ -51,10 +52,10 @@ export class UpdateManager {
       }
       return cur.version;
     }, 0);
-    if (lastVersion < this.CURRENT_DATABASE_VERSION) {
+    if (lastVersion < UpdateManager.CURRENT_DATABASE_VERSION) {
       throw new Error("missing update");
     }
-    if (lastVersion > this.CURRENT_DATABASE_VERSION) {
+    if (lastVersion > UpdateManager.CURRENT_DATABASE_VERSION) {
       throw new Error("extra update");
     }
   }
@@ -65,23 +66,24 @@ export class UpdateManager {
         FROM RDB$RELATIONS
         WHERE RDB$RELATION_NAME = 'AT_FIELDS'
       `);
-    if (gdmnExists.getBoolean("COUNT")) {
-      const versionExists = await connection.executeReturning(transaction, `
-        SELECT COUNT(1) 
-        FROM RDB$RELATIONS
-        WHERE RDB$RELATION_NAME = 'AT_DATABASE'
-      `);
-      if (versionExists.getBoolean("COUNT")) {
-        const result = await connection.executeReturning(transaction, `
-          SELECT FIRST 1
-            VERSION
-          FROM AT_DATABASE
-        `);
-        return await result.getNumber("VERSION");
-      }
-      return 1; // gdmn database
+    if (!gdmnExists.getBoolean("COUNT")) {
+      return 0; // database is clean
     }
-    return 0; // clean database
+    const versionExists = await connection.executeReturning(transaction, `
+      SELECT COUNT(1) 
+      FROM RDB$RELATIONS
+      WHERE RDB$RELATION_NAME = 'AT_DATABASE'
+    `);
+    if (!versionExists.getBoolean("COUNT")) {
+      return 1; // database is gedemin
+    }
+
+    const result = await connection.executeReturning(transaction, `
+      SELECT FIRST 1
+        VERSION
+      FROM AT_DATABASE
+    `);
+    return await result.getNumber("VERSION");
   }
 
   private async _updateDBVersion(connection: AConnection, transaction: ATransaction): Promise<void> {
@@ -90,7 +92,7 @@ export class UpdateManager {
       VALUES (1, :version)
       MATCHING (ID)
     `, {
-      version: this.CURRENT_DATABASE_VERSION
+      version: UpdateManager.CURRENT_DATABASE_VERSION
     });
   }
 }

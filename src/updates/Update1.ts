@@ -1,10 +1,10 @@
-import {ATransaction} from "gdmn-db";
 import {DDLHelper} from "../ddl/DDLHelper";
 import {Prefix} from "../Prefix";
 import {BaseUpdate} from "./BaseUpdate";
 
 export const GLOBAL_GENERATOR = Prefix.join("UNIQUE", Prefix.GDMN, Prefix.GENERATOR);
 
+// Update for creating gedemin database
 export class Update1 extends BaseUpdate {
 
   public version: number = 1;
@@ -12,7 +12,6 @@ export class Update1 extends BaseUpdate {
   public async do(): Promise<void> {
     await this._executeTransaction(async (transaction) => {
       const ddlHelper = new DDLHelper(this._connection, transaction);
-
       await ddlHelper.addSequence(GLOBAL_GENERATOR);
 
       await ddlHelper.addScalarDomain("DINTKEY", {type: "INTEGER", notNull: true, check: "CHECK (VALUE > 0)"});
@@ -35,81 +34,59 @@ export class Update1 extends BaseUpdate {
       await ddlHelper.addScalarDomain("DCLASSNAME", {type: "VARCHAR(40)"});
       await ddlHelper.addScalarDomain("DNUMERATIONBLOB", {type: "BLOB SUB_TYPE -1 SEGMENT SIZE 256"});
 
-      await this._connection.execute(transaction, `
-        CREATE TABLE AT_FIELDS (
-          ID                  DINTKEY                                 PRIMARY KEY,
-          FIELDNAME           DFIELDNAME          NOT NULL,
-          LNAME               DNAME,
-          DESCRIPTION         DTEXT180,
-          REFTABLE            DTABLENAME,
-          REFCONDITION        DTEXT255,
-          SETTABLE            DTABLENAME,
-          SETLISTFIELD        DFIELDNAME,
-          SETCONDITION        DTEXT255,
-          NUMERATION          DNUMERATIONBLOB
-        )
-      `);
-      await this.createAutoIncrementTrigger(transaction, "AT_FIELDS", "AT_BI_FIELDS");
+      await ddlHelper.addTable("AT_FIELDS", [
+        {name: "ID", domain: "DINTKEY"},
+        {name: "FIELDNAME", domain: "DFIELDNAME", notNull: true},
+        {name: "LNAME", domain: "DNAME"},
+        {name: "DESCRIPTION", domain: "DTEXT180"},
+        {name: "REFTABLE", domain: "DTABLENAME"},
+        {name: "REFCONDITION", domain: "DTEXT255"},
+        {name: "SETTABLE", domain: "DTABLENAME"},
+        {name: "SETLISTFIELD", domain: "DFIELDNAME"},
+        {name: "SETCONDITION", domain: "DTEXT255"},
+        {name: "NUMERATION", domain: "DNUMERATIONBLOB"}
+      ]);
+      await ddlHelper.addPrimaryKey("AT_FIELDS", ["ID"]);
+      await ddlHelper.addAutoIncrementTrigger("AT_BI_FIELDS", "AT_FIELDS", "ID");
 
-      await this._connection.execute(transaction, `
-        CREATE TABLE AT_RELATIONS (
-          ID                  DINTKEY                                 PRIMARY KEY,
-          RELATIONNAME        DTABLENAME          NOT NULL,
-          LNAME               DNAME,
-          DESCRIPTION         DTEXT180,
-          SEMCATEGORY         DTEXT60
-        )
-      `);
-      await this.createAutoIncrementTrigger(transaction, "AT_RELATIONS", "AT_BI_RELATIONS");
+      await ddlHelper.addTable("AT_RELATIONS", [
+        {name: "ID", domain: "DINTKEY"},
+        {name: "RELATIONNAME", domain: "DTABLENAME", notNull: true},
+        {name: "LNAME", domain: "DNAME"},
+        {name: "DESCRIPTION", domain: "DTEXT180"},
+        {name: "SEMCATEGORY", domain: "DTEXT60"}
+      ]);
+      await ddlHelper.addPrimaryKey("AT_RELATIONS", ["ID"]);
+      await ddlHelper.addAutoIncrementTrigger("AT_BI_RELATIONS", "AT_RELATIONS", "ID");
 
-      await this._connection.execute(transaction, `
-        CREATE TABLE AT_RELATION_FIELDS (
-          ID                  DINTKEY                                 PRIMARY KEY,
-          FIELDNAME           DFIELDNAME          NOT NULL,
-          RELATIONNAME        DTABLENAME          NOT NULL,
-          FIELDSOURCE         DFIELDNAME,
-          LNAME               DNAME,
-          DESCRIPTION         DTEXT180,
-          SEMCATEGORY         DTEXT60,
-          CROSSTABLE          DTABLENAME,
-          CROSSFIELD          DFIELDNAME
-        )
-      `);
-      await this.createAutoIncrementTrigger(transaction, "AT_RELATION_FIELDS", "AT_BI_RELATION_FIELDS");
+      await ddlHelper.addTable("AT_RELATION_FIELDS", [
+        {name: "ID", domain: "DINTKEY"},
+        {name: "FIELDNAME", domain: "DFIELDNAME", notNull: true},
+        {name: "RELATIONNAME", domain: "DTABLENAME", notNull: true},
+        {name: "FIELDSOURCE", domain: "DFIELDNAME"},
+        {name: "LNAME", domain: "DNAME"},
+        {name: "DESCRIPTION", domain: "DTEXT180"},
+        {name: "SEMCATEGORY", domain: "DTEXT60"},
+        {name: "CROSSTABLE", domain: "DTABLENAME"},
+        {name: "CROSSFIELD", domain: "DFIELDNAME"}
+      ]);
+      await ddlHelper.addPrimaryKey("AT_RELATION_FIELDS", ["ID"]);
+      await ddlHelper.addAutoIncrementTrigger("AT_BI_RELATION_FIELDS", "AT_RELATION_FIELDS", "ID");
 
-      await this._connection.execute(transaction, `
-        CREATE TABLE GD_DOCUMENTTYPE (
-          ID                  DINTKEY                                 PRIMARY KEY,
-          RUID                DRUID,
-          DOCUMENTTYPE        DDOCUMENTTYPE       DEFAULT 'D',
-          NAME                DNAME,
-          CLASSNAME           DCLASSNAME,
-          PARENT              DPARENT,
-          LB                  DLB,
-          RB                  DRB,
-          HEADERRELKEY        DFOREIGNKEY,
-          LINERELKEY          DFOREIGNKEY
-        )
-      `);
-      await this.createAutoIncrementTrigger(transaction, "GD_DOCUMENTTYPE", "GD_BI_DOCUMENTTYPE");
-
-      await this._connection.execute(transaction, `
-        CREATE TABLE AT_DATABASE (
-          ID                  DINTKEY,
-          VERSION             DINTKEY
-        )
-      `);
+      await ddlHelper.addTable("GD_DOCUMENTTYPE", [
+        {name: "ID", domain: "DINTKEY"},
+        {name: "RUID", domain: "DRUID"},
+        {name: "DOCUMENTTYPE", domain: "DDOCUMENTTYPE", default: "'D'"},
+        {name: "NAME", domain: "DNAME"},
+        {name: "CLASSNAME", domain: "DCLASSNAME"},
+        {name: "PARENT", domain: "DPARENT"},
+        {name: "LB", domain: "DLB"},
+        {name: "RB", domain: "DRB"},
+        {name: "HEADERRELKEY", domain: "DFOREIGNKEY"},
+        {name: "LINERELKEY", domain: "DFOREIGNKEY"}
+      ]);
+      await ddlHelper.addPrimaryKey("GD_DOCUMENTTYPE", ["ID"]);
+      await ddlHelper.addAutoIncrementTrigger("GD_BI_DOCUMENTTYPE", "GD_DOCUMENTTYPE", "ID");
     });
-  }
-
-  private async createAutoIncrementTrigger(transaction: ATransaction, relation: string, name: string) {
-    await this._connection.execute(transaction, `
-      CREATE TRIGGER ${name} FOR ${relation}
-        ACTIVE BEFORE INSERT POSITION 0
-      AS
-      BEGIN
-        IF (NEW.ID IS NULL) THEN NEW.ID = NEXT VALUE FOR ${GLOBAL_GENERATOR};
-      END
-    `);
   }
 }

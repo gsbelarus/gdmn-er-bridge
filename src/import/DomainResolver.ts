@@ -19,12 +19,12 @@ import {
   MIN_64BIT_INT,
   ScalarAttribute
 } from "gdmn-orm";
-import {IDomainOptions} from "../ddl/DDLHelper";
+import {IDomainProps} from "../ddl/DDLHelper";
 import {date2Str, dateTime2Str, time2Str} from "../util";
 
 export class DomainResolver {
 
-  public static resolveScalar(attr: ScalarAttribute): IDomainOptions {
+  public static resolveScalar(attr: ScalarAttribute): IDomainProps {
     return {
       type: DomainResolver._getScalarType(attr),
       default: DomainResolver._getDefaultValue(attr),
