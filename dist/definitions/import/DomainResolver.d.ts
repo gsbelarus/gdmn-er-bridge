@@ -1,7 +1,7 @@
 import { ScalarAttribute } from "gdmn-orm";
-import { IDomainOptions } from "../ddl/DDLHelper";
+import { IDomainProps } from "../ddl/DDLHelper";
 export declare class DomainResolver {
-    static resolveScalar(attr: ScalarAttribute): IDomainOptions;
+    static resolveScalar(attr: ScalarAttribute): IDomainProps;
     private static _getScalarType;
     private static _getScalarChecker;
     private static _getDefaultValue;

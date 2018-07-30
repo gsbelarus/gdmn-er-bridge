@@ -1,22 +1,31 @@
 import { AConnection, ATransaction } from "gdmn-db";
-export interface IScalarField {
+export interface IColumnsProps {
+    notNull?: boolean;
+    default?: string;
+    check?: string;
+}
+export interface IScalarFieldProps extends IColumnsProps {
     name: string;
     domain: string;
 }
-export interface IDomainOptions {
+export interface IDomainProps extends IColumnsProps {
     type: string;
-    default?: string;
-    notNull?: boolean;
-    check?: string;
 }
 export declare class DDLHelper {
     private readonly _connection;
     private readonly _transaction;
+    private _ddlUniqueGen;
     private _logs;
     constructor(connection: AConnection, transaction: ATransaction);
     readonly logs: string[];
+    private static _getColumnProps;
+    prepare(): Promise<void>;
+    dispose(): Promise<void>;
     addSequence(sequenceName: string): Promise<void>;
-    addTable(tableName: string, scalarFields: IScalarField[]): Promise<void>;
-    addPrimaryKey(tableName: string, fieldNames: string[]): Promise<void>;
-    addScalarDomain(domainName: string, options: IDomainOptions): Promise<void>;
+    addTable(tableName: string, scalarFields: IScalarFieldProps[]): Promise<void>;
+    addScalarColumns(tableName: string, scalarFields: IScalarFieldProps[]): Promise<void>;
+    addPrimaryKey(tableName: string, fieldNames: string[]): Promise<string>;
+    addScalarDomain(props: IDomainProps): Promise<string>;
+    addScalarDomain(domainName: string, pros: IDomainProps): Promise<string>;
+    addAutoIncrementTrigger(triggerName: string, tableName: string, fieldName: string): Promise<void>;
 }

@@ -1,8 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const Prefix_1 = require("../Prefix");
+const Update1_1 = require("../updates/Update1");
+const DDLUniqueGenerator_1 = require("./DDLUniqueGenerator");
 class DDLHelper {
     constructor(connection, transaction) {
+        this._ddlUniqueGen = new DDLUniqueGenerator_1.DDLUniqueGenerator();
         this._logs = [];
         this._connection = connection;
         this._transaction = transaction;
@@ -10,26 +13,62 @@ class DDLHelper {
     get logs() {
         return this._logs;
     }
+    static _getColumnProps(props) {
+        return ((props.default ? `DEFAULT ${props.default}` : " ").padEnd(40) +
+            (props.notNull ? "NOT NULL" : " ").padEnd(10) +
+            (props.check || "").padEnd(62));
+    }
+    async prepare() {
+        await this._ddlUniqueGen.prepare(this._connection, this._transaction);
+    }
+    async dispose() {
+        await this._ddlUniqueGen.dispose();
+    }
     async addSequence(sequenceName) {
         await this._connection.execute(this._transaction, `CREATE SEQUENCE ${sequenceName}`);
         await this._connection.execute(this._transaction, `ALTER SEQUENCE ${sequenceName} RESTART WITH 0`);
     }
     async addTable(tableName, scalarFields) {
-        const fields = scalarFields.map((item) => `${item.name.padEnd(31)} ${item.domain}`);
+        const fields = scalarFields.map((item) => (`${item.name.padEnd(31)} ${item.domain.padEnd(31)} ${DDLHelper._getColumnProps(item)}`.trim()));
         const sql = `CREATE TABLE ${tableName} (\n  ` + fields.join(",\n  ") + `\n)`;
         this._logs.push(sql);
         await this._connection.execute(this._transaction, sql);
     }
+    async addScalarColumns(tableName, scalarFields) {
+        for (const field of scalarFields) {
+            const column = field.name.padEnd(31) + " " + field.domain.padEnd(31);
+            const sql = `ALTER TABLE ${tableName} ADD ${column} ${DDLHelper._getColumnProps(field)}`.trim();
+            this._logs.push(sql);
+            await this._connection.execute(this._transaction, sql);
+        }
+    }
     async addPrimaryKey(tableName, fieldNames) {
-        const sql = `ALTER TABLE ${tableName} ADD CONSTRAINT ${Prefix_1.Prefix.join(tableName, Prefix_1.Prefix.PK)} PRIMARY KEY (${fieldNames.join(", ")})`;
+        const constraintName = Prefix_1.Prefix.join(tableName, Prefix_1.Prefix.PK);
+        const sql = `ALTER TABLE ${tableName} ADD CONSTRAINT ${constraintName} PRIMARY KEY (${fieldNames.join(", ")})`;
         this._logs.push(sql);
         await this._connection.execute(this._transaction, sql);
+        return constraintName;
     }
-    async addScalarDomain(domainName, options) {
-        const sql = `CREATE DOMAIN ${domainName.padEnd(31)} AS ${options.type.padEnd(31)}` +
-            (options.default ? `DEFAULT ${options.default}` : "").padEnd(40) +
-            (options.notNull ? "NOT NULL" : "").padEnd(10) +
-            (options.check || "").padEnd(62);
+    async addScalarDomain(domainName, props) {
+        if (!props) {
+            props = domainName;
+            domainName = Prefix_1.Prefix.join(`${await this._ddlUniqueGen.next()}`, Prefix_1.Prefix.DOMAIN);
+        }
+        const sql = `CREATE DOMAIN ${domainName.padEnd(31)} AS ${props.type.padEnd(31)}` +
+            DDLHelper._getColumnProps(props);
+        this._logs.push(sql);
+        await this._connection.execute(this._transaction, sql);
+        return domainName;
+    }
+    async addAutoIncrementTrigger(triggerName, tableName, fieldName) {
+        const sql = `
+      CREATE TRIGGER ${triggerName} FOR ${tableName}
+        ACTIVE BEFORE INSERT POSITION 0
+      AS
+      BEGIN
+        IF (NEW.${fieldName} IS NULL) THEN NEW.${fieldName} = NEXT VALUE FOR ${Update1_1.GLOBAL_GENERATOR};
+      END
+    `;
         this._logs.push(sql);
         await this._connection.execute(this._transaction, sql);
     }

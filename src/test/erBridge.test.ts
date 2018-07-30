@@ -58,7 +58,9 @@ describe("ERBridge", () => {
     connection,
     callback: async (transaction) => {
       const dbStructure = await driver.readDBStructure(connection, transaction);
-      return erBridge.exportFromDatabase(dbStructure, transaction, new ERModel());
+      const erModel = await erBridge.exportFromDatabase(dbStructure, transaction, new ERModel());
+      console.log(Object.keys(erModel.entities));
+      return erModel;
     }
   });
 

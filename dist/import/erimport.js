@@ -3,13 +3,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const gdmn_db_1 = require("gdmn-db");
 const gdmn_orm_1 = require("gdmn-orm");
 const DDLHelper_1 = require("../ddl/DDLHelper");
-const DDLUniqueGenerator_1 = require("../ddl/DDLUniqueGenerator");
 const Update1_1 = require("../updates/Update1");
 const DomainResolver_1 = require("./DomainResolver");
-const Prefix_1 = require("../Prefix");
 class ERImport {
     constructor(connection, erModel) {
-        this._ddlUniqueGen = new DDLUniqueGenerator_1.DDLUniqueGenerator();
         this._connection = connection;
         this._erModel = erModel;
     }
@@ -30,7 +27,7 @@ class ERImport {
         });
     }
     async _prepareStatements(transaction) {
-        await this._ddlUniqueGen.prepare(this._connection, transaction);
+        await this._getDDLHelper().prepare();
         this._createATField = await this._connection.prepare(transaction, `
       INSERT INTO AT_FIELDS (FIELDNAME, LNAME, DESCRIPTION, NUMERATION)
       VALUES (:fieldName, :lName, :description, :numeration)
@@ -45,7 +42,7 @@ class ERImport {
     `);
     }
     async _disposeStatements() {
-        await this._ddlUniqueGen.dispose();
+        await this._getDDLHelper().dispose();
         if (this._createATField) {
             await this._createATField.dispose();
         }
@@ -86,7 +83,7 @@ class ERImport {
         const fields = [];
         const pkFields = [];
         for (const attr of Object.values(entity.attributes).filter((attr) => gdmn_orm_1.isScalarAttribute(attr))) {
-            const domainName = await this._addScalarDomain(attr);
+            const domainName = await this._getDDLHelper().addScalarDomain(DomainResolver_1.DomainResolver.resolveScalar(attr));
             const fieldName = await this._scalarFieldName(attr);
             await this._bindATAttr(attr, tableName, fieldName, domainName);
             const field = {
@@ -101,11 +98,6 @@ class ERImport {
         await this._getDDLHelper().addTable(tableName, fields);
         await this._getDDLHelper().addPrimaryKey(tableName, pkFields.map((i) => i.name));
         await this._bindATEntity(entity, tableName);
-    }
-    async _addScalarDomain(attr) {
-        const domainName = Prefix_1.Prefix.join(`${await this._ddlUniqueGen.next()}`, Prefix_1.Prefix.DOMAIN);
-        await this._getDDLHelper().addScalarDomain(domainName, DomainResolver_1.DomainResolver.resolveScalar(attr));
-        return domainName;
     }
     async _bindATEntity(entity, tableName) {
         if (this._createATRelation) {

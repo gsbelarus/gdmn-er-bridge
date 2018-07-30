@@ -4,6 +4,7 @@ const DDLHelper_1 = require("../ddl/DDLHelper");
 const Prefix_1 = require("../Prefix");
 const BaseUpdate_1 = require("./BaseUpdate");
 exports.GLOBAL_DDL_GENERATOR = Prefix_1.Prefix.join("DDL", Prefix_1.Prefix.GDMN, Prefix_1.Prefix.GENERATOR);
+// Update for creating gdmn-back adapted database
 class Update2 extends BaseUpdate_1.BaseUpdate {
     constructor() {
         super(...arguments);
@@ -13,10 +14,20 @@ class Update2 extends BaseUpdate_1.BaseUpdate {
         await this._executeTransaction(async (transaction) => {
             const ddlHelper = new DDLHelper_1.DDLHelper(this._connection, transaction);
             await ddlHelper.addSequence(exports.GLOBAL_DDL_GENERATOR);
-            await this._connection.execute(transaction, `
-        ALTER TABLE AT_RELATION_FIELDS
-          ADD ATTRNAME            DFIELDNAME
-      `);
+            await ddlHelper.prepare();
+            try {
+                await ddlHelper.addTable("AT_DATABASE", [
+                    { name: "ID", domain: "DINTKEY" },
+                    { name: "VERSION", domain: "DINTKEY" }
+                ]);
+                await ddlHelper.addPrimaryKey("AT_DATABASE", ["ID"]);
+                await ddlHelper.addScalarColumns("AT_RELATION_FIELDS", [
+                    { name: "ATTRNAME", domain: "DFIELDNAME" }
+                ]);
+            }
+            finally {
+                await ddlHelper.dispose();
+            }
         });
     }
 }

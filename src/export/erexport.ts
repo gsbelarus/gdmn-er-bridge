@@ -41,7 +41,6 @@ import {
   TimeAttribute,
   TimeStampAttribute
 } from "gdmn-orm";
-import {gdDomains} from "./gddomains";
 import {GLOBAL_GENERATOR} from "../updates/Update1";
 import {
   check2DateRange,
@@ -62,6 +61,7 @@ import {
 } from "../util";
 import {atRelationField, load} from "./atdata";
 import {loadDocument} from "./document";
+import {gdDomains} from "./gddomains";
 import {gedeminTables} from "./gdtables";
 
 const ID_ATTR_NAME = "ID";
@@ -170,26 +170,31 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
    * Простейший случай таблицы. Никаких ссылок.
    */
 
-  createEntity(undefined, relationName2Adapter("WG_HOLIDAY"));
+  if (dbs.findRelation((rel) => rel.name === "WG_HOLIDAY")) {
+    createEntity(undefined, relationName2Adapter("WG_HOLIDAY"));
+  }
 
   /**
    * Административно-территориальная единица.
    * Тут исключительно для иллюстрации типа данных Перечисление.
    */
-  createEntity(undefined, relationName2Adapter("GD_PLACE"), false, undefined, undefined, [SemCategory.Place],
-    [
-      new EnumAttribute("PLACETYPE", {ru: {name: "Тип"}}, true,
-        [
-          {
-            value: "Область"
-          },
-          {
-            value: "Район"
-          }
-        ],
-        "Область"
-      )
-    ]);
+
+  if (dbs.findRelation((rel) => rel.name === "GD_PLACE")) {
+    createEntity(undefined, relationName2Adapter("GD_PLACE"), false, undefined, undefined, [SemCategory.Place],
+      [
+        new EnumAttribute("PLACETYPE", {ru: {name: "Тип"}}, true,
+          [
+            {
+              value: "Область"
+            },
+            {
+              value: "Район"
+            }
+          ],
+          "Область"
+        )
+      ]);
+  }
 
   /**
    * Папка из справочника контактов.
@@ -197,264 +202,272 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
    * Записи имеют признак CONTACTTYPE = 0.
    * Имеет древовидную структуру.
    */
-  const Folder = createEntity(undefined,
-    {
-      relation: [{
-        relationName: "GD_CONTACT",
-        selector: {
-          field: "CONTACTTYPE",
-          value: 0
-        },
-        fields: [
-          "PARENT",
-          "NAME"
-        ]
-      }]
-    },
-    false,
-    "Folder", {ru: {name: "Папка"}}
-  );
-  Folder.add(
-    new ParentAttribute("PARENT", {ru: {name: "Входит в папку"}}, [Folder])
-  );
-
-  /**
-   * Компания хранится в трех таблицах.
-   * Две обязательные GD_CONTACT - GD_COMPANY. В адаптере они указываются
-   * в массиве relation и соединяются в запросе оператором JOIN.
-   * Первой указывается главная таблица. Остальные таблицы называются
-   * дополнительными. Первичный ключ дополнительной таблицы
-   * должен одновременно являться внешним ключем на главную.
-   * Третья -- GD_COMPANYCODE -- необязательная. Подключается через LEFT JOIN.
-   * Для атрибутов из главной таблицы можно не указывать адаптер, если их имя
-   * совпадает с именем поля.
-   * Флаг refresh означает, что после вставки/изменения записи ее надо перечитать.
-   */
-  const Company = createEntity(undefined,
-    {
-      relation: [
-        {
+  if (dbs.findRelation((rel) => rel.name === "GD_CONTACT")) {
+    const Folder = createEntity(undefined,
+      {
+        relation: [{
           relationName: "GD_CONTACT",
           selector: {
             field: "CONTACTTYPE",
-            value: 3
-          }
-        },
-        {
-          relationName: "GD_COMPANY"
-        },
-        {
-          relationName: "GD_COMPANYCODE",
-          weak: true
-        }
-      ],
-      refresh: true
-    },
-    false,
-    "Company", {ru: {name: "Организация"}},
-    [SemCategory.Company],
-    [
-      new ParentAttribute("PARENT", {ru: {name: "Входит в папку"}}, [Folder]),
-      new StringAttribute("NAME", {ru: {name: "Краткое наименование"}}, true,
-        undefined, 60, undefined, true, undefined)
-    ]
-  );
-
-  createEntity(Company,
-    {
-      relation: [
-        {
-          relationName: "GD_CONTACT",
-          selector: {
-            field: "CONTACTTYPE",
-            value: 3
-          }
-        },
-        {
-          relationName: "GD_COMPANY"
-        },
-        {
-          relationName: "GD_COMPANYCODE",
-          weak: true
-        },
-        {
-          relationName: "GD_OURCOMPANY"
-        }
-      ],
-      refresh: true
-    },
-    false,
-    "OurCompany", {ru: {name: "Рабочая организация"}}
-  );
-
-  /**
-   * Банк является частным случаем компании (наследуется от компании).
-   * Все атрибуты компании являются и атрибутами банка и не нуждаются
-   * в повторном определении, за тем исключением, если мы хотим что-то
-   * поменять в параметрах атрибута.
-   */
-  createEntity(Company,
-    {
-      relation: [
-        {
-          relationName: "GD_CONTACT",
-          selector: {
-            field: "CONTACTTYPE",
-            value: 5
-          }
-        },
-        {
-          relationName: "GD_COMPANY"
-        },
-        {
-          relationName: "GD_COMPANYCODE",
-          weak: true
-        },
-        {
-          relationName: "GD_BANK"
-        }
-      ],
-      refresh: true
-    },
-    false,
-    "Bank", {ru: {name: "Банк"}}
-  );
-
-  /**
-   * Подразделение организации может входить (через поле Parent) в
-   * организацию (компания, банк) или в другое подразделение.
-   */
-  const Department = createEntity(undefined,
-    {
-      relation: [{
-        relationName: "GD_CONTACT",
-        selector: {
-          field: "CONTACTTYPE",
-          value: 4
-        }
-      }]
-    },
-    false,
-    "Department", {ru: {name: "Подразделение"}}
-  );
-  Department.add(
-    new ParentAttribute("PARENT", {ru: {name: "Входит в организацию (подразделение)"}}, [Company, Department])
-  );
-  Department.add(
-    new StringAttribute("NAME", {ru: {name: "Наименование"}}, true,
-      undefined, 60, undefined, true, undefined)
-  );
-
-  /**
-   * Физическое лицо хранится в двух таблицах GD_CONTACT - GD_PEOPLE.
-   */
-  const Person = createEntity(undefined,
-    {
-      relation: [
-        {
-          relationName: "GD_CONTACT",
-          selector: {
-            field: "CONTACTTYPE",
-            value: 2
-          }
-        },
-        {
-          relationName: "GD_PEOPLE"
-        }
-      ],
-      refresh: true
-    },
-    false,
-    "Person", {ru: {name: "Физическое лицо"}}
-  );
-  Person.add(
-    new ParentAttribute("PARENT", {ru: {name: "Входит в папку"}}, [Folder])
-  );
-  Person.add(
-    new StringAttribute("NAME", {ru: {name: "ФИО"}}, true,
-      undefined, 60, undefined, true, undefined)
-  );
-
-  /**
-   * Сотрудник, частный случай физического лица.
-   * Добавляется таблица GD_EMPLOYEE.
-   */
-  const Employee = createEntity(Person,
-    {
-      relation: [
-        {
-          relationName: "GD_CONTACT",
-          selector: {
-            field: "CONTACTTYPE",
-            value: 2
-          }
-        },
-        {
-          relationName: "GD_PEOPLE"
-        },
-        {
-          relationName: "GD_EMPLOYEE"
-        }
-      ]
-    },
-    false,
-    "Employee", {ru: {name: "Сотрудник предприятия"}}
-  );
-  Employee.add(
-    new ParentAttribute("PARENT", {ru: {name: "Организация или подразделение"}}, [Company, Department])
-  );
-
-  /**
-   * Группа контактов.
-   * CONTACTLIST -- множество, которое хранится в кросс-таблице.
-   */
-  const Group = createEntity(undefined,
-    {
-      relation:
-        [{
-          relationName: "GD_CONTACT",
-          selector: {
-            field: "CONTACTTYPE",
-            value: 1
+            value: 0
           },
           fields: [
             "PARENT",
             "NAME"
           ]
         }]
-    },
-    false,
-    "Group", {ru: {name: "Группа"}}
-  );
-  Group.add(
-    new ParentAttribute("PARENT", {ru: {name: "Входит в папку"}}, [Folder])
-  );
-  Group.add(
-    new SetAttribute("CONTACTLIST", {ru: {name: "Контакты"}}, false, [Company, Person], 0, [],
-      {
-        crossRelation: "GD_CONTACTLIST"
-      }
-    )
-  ) as SetAttribute;
+      },
+      false,
+      "Folder", {ru: {name: "Папка"}}
+    );
+    Folder.add(
+      new ParentAttribute("PARENT", {ru: {name: "Входит в папку"}}, [Folder])
+    );
 
-  const companyAccount = createEntity(undefined, relationName2Adapter("GD_COMPANYACCOUNT"));
-
-  Company.add(
-    new DetailAttribute("GD_COMPANYACCOUNT", {ru: {name: "Банковские счета"}}, false, [companyAccount], [],
+    /**
+     * Компания хранится в трех таблицах.
+     * Две обязательные GD_CONTACT - GD_COMPANY. В адаптере они указываются
+     * в массиве relation и соединяются в запросе оператором JOIN.
+     * Первой указывается главная таблица. Остальные таблицы называются
+     * дополнительными. Первичный ключ дополнительной таблицы
+     * должен одновременно являться внешним ключем на главную.
+     * Третья -- GD_COMPANYCODE -- необязательная. Подключается через LEFT JOIN.
+     * Для атрибутов из главной таблицы можно не указывать адаптер, если их имя
+     * совпадает с именем поля.
+     * Флаг refresh означает, что после вставки/изменения записи ее надо перечитать.
+     */
+    const Company = createEntity(undefined,
       {
-        masterLinks: [
+        relation: [
           {
-            detailRelation: "GD_COMPANYACCOUNT",
-            link2masterField: "COMPANYKEY"
+            relationName: "GD_CONTACT",
+            selector: {
+              field: "CONTACTTYPE",
+              value: 3
+            }
+          },
+          {
+            relationName: "GD_COMPANY"
+          },
+          {
+            relationName: "GD_COMPANYCODE",
+            weak: true
+          }
+        ],
+        refresh: true
+      },
+      false,
+      "Company", {ru: {name: "Организация"}},
+      [SemCategory.Company],
+      [
+        new ParentAttribute("PARENT", {ru: {name: "Входит в папку"}}, [Folder]),
+        new StringAttribute("NAME", {ru: {name: "Краткое наименование"}}, true,
+          undefined, 60, undefined, true, undefined)
+      ]
+    );
+
+    createEntity(Company,
+      {
+        relation: [
+          {
+            relationName: "GD_CONTACT",
+            selector: {
+              field: "CONTACTTYPE",
+              value: 3
+            }
+          },
+          {
+            relationName: "GD_COMPANY"
+          },
+          {
+            relationName: "GD_COMPANYCODE",
+            weak: true
+          },
+          {
+            relationName: "GD_OURCOMPANY"
+          }
+        ],
+        refresh: true
+      },
+      false,
+      "OurCompany", {ru: {name: "Рабочая организация"}}
+    );
+
+    /**
+     * Банк является частным случаем компании (наследуется от компании).
+     * Все атрибуты компании являются и атрибутами банка и не нуждаются
+     * в повторном определении, за тем исключением, если мы хотим что-то
+     * поменять в параметрах атрибута.
+     */
+    createEntity(Company,
+      {
+        relation: [
+          {
+            relationName: "GD_CONTACT",
+            selector: {
+              field: "CONTACTTYPE",
+              value: 5
+            }
+          },
+          {
+            relationName: "GD_COMPANY"
+          },
+          {
+            relationName: "GD_COMPANYCODE",
+            weak: true
+          },
+          {
+            relationName: "GD_BANK"
+          }
+        ],
+        refresh: true
+      },
+      false,
+      "Bank", {ru: {name: "Банк"}}
+    );
+
+    /**
+     * Подразделение организации может входить (через поле Parent) в
+     * организацию (компания, банк) или в другое подразделение.
+     */
+    const Department = createEntity(undefined,
+      {
+        relation: [{
+          relationName: "GD_CONTACT",
+          selector: {
+            field: "CONTACTTYPE",
+            value: 4
+          }
+        }]
+      },
+      false,
+      "Department", {ru: {name: "Подразделение"}}
+    );
+    Department.add(
+      new ParentAttribute("PARENT", {ru: {name: "Входит в организацию (подразделение)"}}, [Company, Department])
+    );
+    Department.add(
+      new StringAttribute("NAME", {ru: {name: "Наименование"}}, true,
+        undefined, 60, undefined, true, undefined)
+    );
+
+    /**
+     * Физическое лицо хранится в двух таблицах GD_CONTACT - GD_PEOPLE.
+     */
+    const Person = createEntity(undefined,
+      {
+        relation: [
+          {
+            relationName: "GD_CONTACT",
+            selector: {
+              field: "CONTACTTYPE",
+              value: 2
+            }
+          },
+          {
+            relationName: "GD_PEOPLE"
+          }
+        ],
+        refresh: true
+      },
+      false,
+      "Person", {ru: {name: "Физическое лицо"}}
+    );
+    Person.add(
+      new ParentAttribute("PARENT", {ru: {name: "Входит в папку"}}, [Folder])
+    );
+    Person.add(
+      new StringAttribute("NAME", {ru: {name: "ФИО"}}, true,
+        undefined, 60, undefined, true, undefined)
+    );
+
+    /**
+     * Сотрудник, частный случай физического лица.
+     * Добавляется таблица GD_EMPLOYEE.
+     */
+    const Employee = createEntity(Person,
+      {
+        relation: [
+          {
+            relationName: "GD_CONTACT",
+            selector: {
+              field: "CONTACTTYPE",
+              value: 2
+            }
+          },
+          {
+            relationName: "GD_PEOPLE"
+          },
+          {
+            relationName: "GD_EMPLOYEE"
           }
         ]
+      },
+      false,
+      "Employee", {ru: {name: "Сотрудник предприятия"}}
+    );
+    Employee.add(
+      new ParentAttribute("PARENT", {ru: {name: "Организация или подразделение"}}, [Company, Department])
+    );
+
+    /**
+     * Группа контактов.
+     * CONTACTLIST -- множество, которое хранится в кросс-таблице.
+     */
+    const Group = createEntity(undefined,
+      {
+        relation:
+          [{
+            relationName: "GD_CONTACT",
+            selector: {
+              field: "CONTACTTYPE",
+              value: 1
+            },
+            fields: [
+              "PARENT",
+              "NAME"
+            ]
+          }]
+      },
+      false,
+      "Group", {ru: {name: "Группа"}}
+    );
+    Group.add(
+      new ParentAttribute("PARENT", {ru: {name: "Входит в папку"}}, [Folder])
+    );
+    Group.add(
+      new SetAttribute("CONTACTLIST", {ru: {name: "Контакты"}}, false, [Company, Person], 0, [],
+        {
+          crossRelation: "GD_CONTACTLIST"
+        }
+      )
+    ) as SetAttribute;
+
+    const companyAccount = createEntity(undefined, relationName2Adapter("GD_COMPANYACCOUNT"));
+
+    Company.add(
+      new DetailAttribute("GD_COMPANYACCOUNT", {ru: {name: "Банковские счета"}}, false, [companyAccount], [],
+        {
+          masterLinks: [
+            {
+              detailRelation: "GD_COMPANYACCOUNT",
+              link2masterField: "COMPANYKEY"
+            }
+          ]
+        }
+      )
+    );
+
+    gedeminTables.forEach((t) => {
+      if (dbs.findRelation((rel) => rel.name === t)) {
+        createEntity(undefined, relationName2Adapter(t));
       }
-    )
-  );
+    });
+  }
 
-  gedeminTables.forEach(t => createEntity(undefined, relationName2Adapter(t)));
-
-  createEntity(undefined, relationName2Adapter("INV_CARD"));
+  if (dbs.findRelation((rel) => rel.name === "INV_CARD")) {
+    createEntity(undefined, relationName2Adapter("INV_CARD"));
+  }
 
   const TgdcDocument = createEntity(undefined, relationName2Adapter("GD_DOCUMENT"), true, "TgdcDocument");
   const TgdcDocumentAdapter = relationName2Adapter("GD_DOCUMENT");
