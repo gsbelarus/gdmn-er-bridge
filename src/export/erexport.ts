@@ -469,79 +469,81 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
     createEntity(undefined, relationName2Adapter("INV_CARD"));
   }
 
-  const TgdcDocument = createEntity(undefined, relationName2Adapter("GD_DOCUMENT"), true, "TgdcDocument");
-  const TgdcDocumentAdapter = relationName2Adapter("GD_DOCUMENT");
-  const documentABC: { [name: string]: Entity } = {
-    "TgdcDocumentType": TgdcDocument,
-    "TgdcUserDocumentType": createEntity(TgdcDocument, TgdcDocumentAdapter, true, "TgdcUserDocument", {ru: {name: "Пользовательские документы"}}),
-    "TgdcInvDocumentType": createEntity(TgdcDocument, TgdcDocumentAdapter, true, "TgdcInvDocument", {ru: {name: "Складские документы"}}),
-    "TgdcInvPriceListType": createEntity(TgdcDocument, TgdcDocumentAdapter, true, "TgdcInvPriceList", {ru: {name: "Прайс-листы"}})
-  };
+  if (dbs.findRelation((rel) => rel.name === "GD_DOCUMENT")) {
+    const TgdcDocument = createEntity(undefined, relationName2Adapter("GD_DOCUMENT"), true, "TgdcDocument");
+    const TgdcDocumentAdapter = relationName2Adapter("GD_DOCUMENT");
+    const documentABC: { [name: string]: Entity } = {
+      "TgdcDocumentType": TgdcDocument,
+      "TgdcUserDocumentType": createEntity(TgdcDocument, TgdcDocumentAdapter, true, "TgdcUserDocument", {ru: {name: "Пользовательские документы"}}),
+      "TgdcInvDocumentType": createEntity(TgdcDocument, TgdcDocumentAdapter, true, "TgdcInvDocument", {ru: {name: "Складские документы"}}),
+      "TgdcInvPriceListType": createEntity(TgdcDocument, TgdcDocumentAdapter, true, "TgdcInvPriceList", {ru: {name: "Прайс-листы"}})
+    };
 
-  const documentClasses: { [ruid: string]: { header: Entity, line?: Entity } } = {};
+    const documentClasses: { [ruid: string]: { header: Entity, line?: Entity } } = {};
 
-  function createDocument(id: number, ruid: string, parent_ruid: string, name: string,
-                          className: string, hr: string, lr: string) {
-    const setHR = hr ? hr
-      : id === 800300 ? "BN_BANKSTATEMENT"
-        : id === 800350 ? "BN_BANKCATALOGUE"
-          : "";
+    function createDocument(id: number, ruid: string, parent_ruid: string, name: string,
+                            className: string, hr: string, lr: string) {
+      const setHR = hr ? hr
+        : id === 800300 ? "BN_BANKSTATEMENT"
+          : id === 800350 ? "BN_BANKCATALOGUE"
+            : "";
 
-    const setLR = lr ? lr
-      : id === 800300 ? "BN_BANKSTATEMENTLINE"
-        : id === 800350 ? "BN_BANKCATALOGUELINE"
-          : "";
+      const setLR = lr ? lr
+        : id === 800300 ? "BN_BANKSTATEMENTLINE"
+          : id === 800350 ? "BN_BANKCATALOGUELINE"
+            : "";
 
-    const parent = documentClasses[parent_ruid] && documentClasses[parent_ruid].header ? documentClasses[parent_ruid].header
-      : documentABC[className] ? documentABC[className]
-        : TgdcDocument;
-
-    if (!parent) {
-      throw new Error(`Unknown doc type ${parent_ruid} of ${className}`);
-    }
-
-    const headerAdapter = appendAdapter(parent.adapter, setHR);
-    headerAdapter.relation[0].selector = {field: "DOCUMENTTYPEKEY", value: id};
-    const header = createEntity(parent, headerAdapter, false, `DOC_${ruid}_${setHR}`, {ru: {name}});
-
-    documentClasses[ruid] = {header};
-
-    if (setLR) {
-      const lineParent = documentClasses[parent_ruid] && documentClasses[parent_ruid].line ? documentClasses[parent_ruid].line
+      const parent = documentClasses[parent_ruid] && documentClasses[parent_ruid].header ? documentClasses[parent_ruid].header
         : documentABC[className] ? documentABC[className]
           : TgdcDocument;
 
-      if (!lineParent) {
+      if (!parent) {
         throw new Error(`Unknown doc type ${parent_ruid} of ${className}`);
       }
 
-      const lineAdapter = appendAdapter(lineParent.adapter, setLR);
-      lineAdapter.relation[0].selector = {field: "DOCUMENTTYPEKEY", value: id};
-      const line = createEntity(lineParent, lineAdapter,
-        false, `LINE_${ruid}_${setLR}`, {ru: {name: `Позиция: ${name}`}});
-      line.add(
-        new ParentAttribute("PARENT", {ru: {name: "Шапка документа"}}, [header])
-      );
-      documentClasses[ruid] = {...documentClasses[ruid], line};
-      const masterLinks = [
-        {
-          detailRelation: "GD_DOCUMENT",
-          link2masterField: "PARENT"
-        }
-      ];
-      if (dbs.relations[setLR] && dbs.relations[setLR].relationFields["MASTERKEY"]) {
-        masterLinks.push({
-          detailRelation: setLR,
-          link2masterField: "MASTERKEY"
-        });
-      }
-      header.add(
-        new DetailAttribute(line.name, line.lName, false, [line], [], {masterLinks})
-      );
-    }
-  }
+      const headerAdapter = appendAdapter(parent.adapter, setHR);
+      headerAdapter.relation[0].selector = {field: "DOCUMENTTYPEKEY", value: id};
+      const header = createEntity(parent, headerAdapter, false, `DOC_${ruid}_${setHR}`, {ru: {name}});
 
-  await loadDocument(connection, transaction, createDocument);
+      documentClasses[ruid] = {header};
+
+      if (setLR) {
+        const lineParent = documentClasses[parent_ruid] && documentClasses[parent_ruid].line ? documentClasses[parent_ruid].line
+          : documentABC[className] ? documentABC[className]
+            : TgdcDocument;
+
+        if (!lineParent) {
+          throw new Error(`Unknown doc type ${parent_ruid} of ${className}`);
+        }
+
+        const lineAdapter = appendAdapter(lineParent.adapter, setLR);
+        lineAdapter.relation[0].selector = {field: "DOCUMENTTYPEKEY", value: id};
+        const line = createEntity(lineParent, lineAdapter,
+          false, `LINE_${ruid}_${setLR}`, {ru: {name: `Позиция: ${name}`}});
+        line.add(
+          new ParentAttribute("PARENT", {ru: {name: "Шапка документа"}}, [header])
+        );
+        documentClasses[ruid] = {...documentClasses[ruid], line};
+        const masterLinks = [
+          {
+            detailRelation: "GD_DOCUMENT",
+            link2masterField: "PARENT"
+          }
+        ];
+        if (dbs.relations[setLR] && dbs.relations[setLR].relationFields["MASTERKEY"]) {
+          masterLinks.push({
+            detailRelation: setLR,
+            link2masterField: "MASTERKEY"
+          });
+        }
+        header.add(
+          new DetailAttribute(line.name, line.lName, false, [line], [], {masterLinks})
+        );
+      }
+    }
+
+    await loadDocument(connection, transaction, createDocument);
+  }
 
   function recursInherited(parentRelation: Relation[], parentEntity?: Entity) {
     dbs.forEachRelation(inherited => {
