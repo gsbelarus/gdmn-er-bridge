@@ -10,6 +10,8 @@ class Prefix {
 Prefix.GDMN = "GD";
 Prefix.GENERATOR = "G";
 Prefix.DOMAIN = "DOMAIN";
-Prefix.PK = "PK";
+Prefix.PRIMARY_KEY = "PK";
+Prefix.FOREIGN_KEY = "FK";
+Prefix.TRIGGER_BI = "BI";
 exports.Prefix = Prefix;
 //# sourceMappingURL=Prefix.js.map

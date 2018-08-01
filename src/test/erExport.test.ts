@@ -13,7 +13,7 @@ import {exportTestDBDetail} from "./testDB";
 //   const connection = driver.newConnection();
 //   await connection.createDatabase(options);
 //   const erBridge = new ERBridge(connection);
-//   await erBridge.init();
+//   await erBridge.initDatabase();
 //   const result = await AConnection.executeTransaction({
 //     connection,
 //     callback: async (transaction) => {
@@ -45,7 +45,7 @@ async function loadERModel(dbDetail: IDBDetail) {
     options,
     callback: async (connection) => {
       const erBridge = new ERBridge(connection);
-      await erBridge.init();
+      await erBridge.initDatabase();
       return await AConnection.executeTransaction({
         connection,
         callback: async (transaction) => {

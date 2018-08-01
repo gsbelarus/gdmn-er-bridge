@@ -22,7 +22,7 @@ export class ERBridge {
     return await new ERImport(this._connection, erModel).execute();
   }
 
-  public async init(): Promise<void> {
+  public async initDatabase(): Promise<void> {
     await new UpdateManager().updateDatabase(this._connection);
   }
 }

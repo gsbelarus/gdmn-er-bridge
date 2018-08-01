@@ -1,7 +1,9 @@
 import {
+  Attribute,
   isBlobAttribute,
   isBooleanAttribute,
   isDateAttribute,
+  isEntityAttribute,
   isEnumAttribute,
   isFloatAttribute,
   isIntegerAttribute,
@@ -24,19 +26,21 @@ import {date2Str, dateTime2Str, time2Str} from "../util";
 
 export class DomainResolver {
 
-  public static resolveScalar(attr: ScalarAttribute): IDomainProps {
+  public static resolve(attr: Attribute): IDomainProps {
     return {
-      type: DomainResolver._getScalarType(attr),
+      type: DomainResolver._getType(attr),
       default: DomainResolver._getDefaultValue(attr),
       notNull: attr.required,
-      check: DomainResolver._getScalarChecker(attr)
+      check: DomainResolver._getChecker(attr)
     };
   }
 
-  private static _getScalarType(attr: ScalarAttribute): string {
+  private static _getType(attr: Attribute): string {
     let expr = "";
     // TODO TimeIntervalAttribute
-    if (isEnumAttribute(attr)) {
+    if (isEntityAttribute(attr)) {
+      expr = `INTEGER`;
+    } else if (isEnumAttribute(attr)) {
       expr = `VARCHAR(1)`;
     } else if (isDateAttribute(attr)) {
       expr = `DATE`;
@@ -64,7 +68,7 @@ export class DomainResolver {
     return expr;
   }
 
-  private static _getScalarChecker(attr: ScalarAttribute): string {
+  private static _getChecker(attr: Attribute): string {
     let expr = "";
     if (isNumberAttribute(attr)) {
       const minCond = attr.minValue !== undefined ? DomainResolver._val2Str(attr, attr.minValue) : undefined;

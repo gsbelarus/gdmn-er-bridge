@@ -59,14 +59,6 @@ class ERImport {
         }
         throw new Error("ddlHelper is undefined");
     }
-    async _scalarFieldName(attr) {
-        const attrAdapter = attr.adapter;
-        return attrAdapter ? attrAdapter.field : attr.name;
-    }
-    async _tableName(entity) {
-        // TODO adapter
-        return entity.name;
-    }
     async _createERSchema() {
         for (const sequence of Object.values(this._erModel.sequencies)) {
             const sequenceName = sequence.adapter ? sequence.adapter.sequence : sequence.name;
@@ -77,14 +69,42 @@ class ERImport {
         for (const entity of Object.values(this._erModel.entities)) {
             await this._addEntity(entity);
         }
+        for (const entity of Object.values(this._erModel.entities)) {
+            await this._addLinks(entity);
+        }
+    }
+    async _addLinks(entity) {
+        const tableName = entity.name;
+        for (const attr of Object.values(entity.attributes).filter((attr) => gdmn_orm_1.isEntityAttribute(attr))) {
+            const fieldName = attr.name;
+            if (gdmn_orm_1.isParentAttribute(attr)) {
+            }
+            else if (gdmn_orm_1.isDetailAttribute(attr)) {
+            }
+            else if (gdmn_orm_1.isSetAttribute(attr)) {
+            }
+            else if (gdmn_orm_1.isEntityAttribute(attr)) {
+                const domainName = await this._getDDLHelper().addDomain(DomainResolver_1.DomainResolver.resolve(attr));
+                await this._getDDLHelper().addColumns(tableName, [{ name: fieldName, domain: domainName }]);
+                await this._getDDLHelper().addForeignKey({
+                    tableName,
+                    fieldName
+                }, {
+                    tableName: attr.entity[0].name,
+                    fieldName: attr.entity[0].pk[0].name
+                });
+                await this._bindATAttr(attr, tableName, fieldName, domainName);
+            }
+        }
     }
     async _addEntity(entity) {
-        const tableName = await this._tableName(entity);
+        const tableName = entity.name;
         const fields = [];
         const pkFields = [];
         for (const attr of Object.values(entity.attributes).filter((attr) => gdmn_orm_1.isScalarAttribute(attr))) {
-            const domainName = await this._getDDLHelper().addScalarDomain(DomainResolver_1.DomainResolver.resolveScalar(attr));
-            const fieldName = await this._scalarFieldName(attr);
+            const domainName = await this._getDDLHelper().addDomain(DomainResolver_1.DomainResolver.resolve(attr));
+            const attrAdapter = attr.adapter;
+            const fieldName = attrAdapter ? attrAdapter.field : attr.name;
             await this._bindATAttr(attr, tableName, fieldName, domainName);
             const field = {
                 name: fieldName,

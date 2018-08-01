@@ -5,5 +5,5 @@ export declare class ERBridge {
     constructor(connection: AConnection);
     exportFromDatabase(dbStructure: DBStructure, transaction: ATransaction, erModel?: ERModel): Promise<ERModel>;
     importToDatabase(erModel: ERModel): Promise<void>;
-    init(): Promise<void>;
+    initDatabase(): Promise<void>;
 }

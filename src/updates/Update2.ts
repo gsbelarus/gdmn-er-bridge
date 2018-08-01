@@ -20,9 +20,9 @@ export class Update2 extends BaseUpdate {
           {name: "ID", domain: "DINTKEY"},
           {name: "VERSION", domain: "DINTKEY"}
         ]);
-        await ddlHelper.addPrimaryKey("AT_DATABASE", ["ID"]);
+        await ddlHelper.addPrimaryKey("AT_PK_DATABASE", "AT_DATABASE", ["ID"]);
 
-        await ddlHelper.addScalarColumns("AT_RELATION_FIELDS", [
+        await ddlHelper.addColumns("AT_RELATION_FIELDS", [
           {name: "ATTRNAME", domain: "DFIELDNAME"}
         ]);
       } finally {

@@ -9,13 +9,18 @@ export interface IColumnsProps {
   check?: string;
 }
 
-export interface IScalarFieldProps extends IColumnsProps {
+export interface IFieldProps extends IColumnsProps {
   name: string;
   domain: string;
 }
 
 export interface IDomainProps extends IColumnsProps {
   type: string;
+}
+
+export interface IRelation {
+  tableName: string;
+  fieldName: string;
 }
 
 export class DDLHelper {
@@ -57,7 +62,7 @@ export class DDLHelper {
     await this._connection.execute(this._transaction, `ALTER SEQUENCE ${sequenceName} RESTART WITH 0`);
   }
 
-  public async addTable(tableName: string, scalarFields: IScalarFieldProps[]): Promise<void> {
+  public async addTable(tableName: string, scalarFields: IFieldProps[]): Promise<void> {
     const fields = scalarFields.map((item) => (
       `${item.name.padEnd(31)} ${item.domain.padEnd(31)} ${DDLHelper._getColumnProps(item)}`.trim()
     ));
@@ -66,7 +71,7 @@ export class DDLHelper {
     await this._connection.execute(this._transaction, sql);
   }
 
-  public async addScalarColumns(tableName: string, scalarFields: IScalarFieldProps[]): Promise<void> {
+  public async addColumns(tableName: string, scalarFields: IFieldProps[]): Promise<void> {
     for (const field of scalarFields) {
       const column = field.name.padEnd(31) + " " + field.domain.padEnd(31);
       const sql = `ALTER TABLE ${tableName} ADD ${column} ${DDLHelper._getColumnProps(field)}`.trim();
@@ -75,19 +80,49 @@ export class DDLHelper {
     }
   }
 
-  public async addPrimaryKey(tableName: string, fieldNames: string[]): Promise<string> {
-    const constraintName = Prefix.join(tableName, Prefix.PK);
+  public async addPrimaryKey(tableName: string, fieldNames: string[]): Promise<string>;
+  public async addPrimaryKey(constraintName: string, tableName: string, fieldNames: string[]): Promise<string>;
+  public async addPrimaryKey(constraintName: any, tableName: any, fieldNames?: any): Promise<string> {
+    if (!fieldNames) {
+      fieldNames = tableName;
+      tableName = constraintName;
+      constraintName = undefined;
+    }
+    if (!constraintName) {
+      constraintName = Prefix.join(`${await this._ddlUniqueGen.next()}`, Prefix.PRIMARY_KEY);
+    }
     const sql = `ALTER TABLE ${tableName} ADD CONSTRAINT ${constraintName} PRIMARY KEY (${fieldNames.join(", ")})`;
     this._logs.push(sql);
     await this._connection.execute(this._transaction, sql);
     return constraintName;
   }
 
-  public async addScalarDomain(props: IDomainProps): Promise<string>;
-  public async addScalarDomain(domainName: string, pros: IDomainProps): Promise<string>;
-  public async addScalarDomain(domainName: any, props?: any): Promise<string> {
+  public async addForeignKey(from: IRelation, to: IRelation): Promise<string>;
+  public async addForeignKey(constraintName: string, from: IRelation, to: IRelation): Promise<string>;
+  public async addForeignKey(constraintName: any, from: any, to?: any): Promise<string> {
+    if (!to) {
+      to = from;
+      from = constraintName;
+      constraintName = undefined;
+    }
+    if (!constraintName) {
+      constraintName = Prefix.join(`${await this._ddlUniqueGen.next()}`, Prefix.FOREIGN_KEY);
+    }
+    const sql = `ALTER TABLE ${from.tableName} ADD CONSTRAINT ${constraintName} FOREIGN KEY (${from.fieldName}) ` +
+      `REFERENCES ${to.tableName} (${to.fieldName})`;
+    this._logs.push(sql);
+    await this._connection.execute(this._transaction, sql);
+    return constraintName;
+  }
+
+  public async addDomain(props: IDomainProps): Promise<string>;
+  public async addDomain(domainName: string, pros: IDomainProps): Promise<string>;
+  public async addDomain(domainName: any, props?: any): Promise<string> {
     if (!props) {
       props = domainName;
+      domainName = undefined;
+    }
+    if (!domainName) {
       domainName = Prefix.join(`${await this._ddlUniqueGen.next()}`, Prefix.DOMAIN);
     }
     const sql = `CREATE DOMAIN ${domainName.padEnd(31)} AS ${props.type.padEnd(31)}` +
@@ -97,7 +132,17 @@ export class DDLHelper {
     return domainName;
   }
 
-  public async addAutoIncrementTrigger(triggerName: string, tableName: string, fieldName: string): Promise<void> {
+  public async addAutoIncrementTrigger(tableName: string, fieldName: string): Promise<void>;
+  public async addAutoIncrementTrigger(triggerName: string, tableName: string, fieldName: string): Promise<void>;
+  public async addAutoIncrementTrigger(triggerName: any, tableName: any, fieldName?: any): Promise<void> {
+    if (!fieldName) {
+      fieldName = tableName;
+      tableName = triggerName;
+      triggerName = undefined;
+    }
+    if (!triggerName) {
+      triggerName = Prefix.join(`${await this._ddlUniqueGen.next()}`, Prefix.TRIGGER_BI);
+    }
     const sql = `
       CREATE TRIGGER ${triggerName} FOR ${tableName}
         ACTIVE BEFORE INSERT POSITION 0

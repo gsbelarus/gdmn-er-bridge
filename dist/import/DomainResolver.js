@@ -3,18 +3,21 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const gdmn_orm_1 = require("gdmn-orm");
 const util_1 = require("../util");
 class DomainResolver {
-    static resolveScalar(attr) {
+    static resolve(attr) {
         return {
-            type: DomainResolver._getScalarType(attr),
+            type: DomainResolver._getType(attr),
             default: DomainResolver._getDefaultValue(attr),
             notNull: attr.required,
-            check: DomainResolver._getScalarChecker(attr)
+            check: DomainResolver._getChecker(attr)
         };
     }
-    static _getScalarType(attr) {
+    static _getType(attr) {
         let expr = "";
         // TODO TimeIntervalAttribute
-        if (gdmn_orm_1.isEnumAttribute(attr)) {
+        if (gdmn_orm_1.isEntityAttribute(attr)) {
+            expr = `INTEGER`;
+        }
+        else if (gdmn_orm_1.isEnumAttribute(attr)) {
             expr = `VARCHAR(1)`;
         }
         else if (gdmn_orm_1.isDateAttribute(attr)) {
@@ -52,7 +55,7 @@ class DomainResolver {
         }
         return expr;
     }
-    static _getScalarChecker(attr) {
+    static _getChecker(attr) {
         let expr = "";
         if (gdmn_orm_1.isNumberAttribute(attr)) {
             const minCond = attr.minValue !== undefined ? DomainResolver._val2Str(attr, attr.minValue) : undefined;

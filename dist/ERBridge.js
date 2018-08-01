@@ -14,7 +14,7 @@ class ERBridge {
     async importToDatabase(erModel) {
         return await new ERImport_1.ERImport(this._connection, erModel).execute();
     }
-    async init() {
+    async initDatabase() {
         await new UpdateManager_1.UpdateManager().updateDatabase(this._connection);
     }
 }

@@ -12,9 +12,8 @@ export declare class ERImport {
     _prepareStatements(transaction: ATransaction): Promise<void>;
     _disposeStatements(): Promise<void>;
     private _getDDLHelper;
-    private _scalarFieldName;
-    private _tableName;
     private _createERSchema;
+    private _addLinks;
     private _addEntity;
     private _bindATEntity;
     private _bindATAttr;

@@ -6,6 +6,7 @@ import {
   BooleanAttribute,
   DateAttribute,
   Entity,
+  EntityAttribute,
   EnumAttribute,
   ERModel,
   FloatAttribute,
@@ -58,9 +59,7 @@ describe("ERBridge", () => {
     connection,
     callback: async (transaction) => {
       const dbStructure = await driver.readDBStructure(connection, transaction);
-      const erModel = await erBridge.exportFromDatabase(dbStructure, transaction, new ERModel());
-      console.log(Object.keys(erModel.entities));
-      return erModel;
+      return await erBridge.exportFromDatabase(dbStructure, transaction, new ERModel());
     }
   });
 
@@ -69,7 +68,7 @@ describe("ERBridge", () => {
       unlinkSync(options.path);
     }
     await connection.createDatabase(options);
-    await erBridge.init();
+    await erBridge.initDatabase();
   });
 
   afterEach(async () => {
@@ -339,5 +338,32 @@ describe("ERBridge", () => {
     const loadedERModel = await loadERModel();
     const loadEntity = loadedERModel.entity("TEST");
     expect(loadEntity).toEqual(entity);
+  });
+
+  it("link to entities", async () => {
+    const erModel = createERModel();
+    const entity1 = createEntity(erModel,
+      undefined,
+      "TEST1",
+      {ru: {name: "entity name", fullName: "full entity name"}},
+      false);
+
+    const entity2 = createEntity(erModel,
+      undefined,
+      "TEST2",
+      {ru: {name: "entity name", fullName: "full entity name"}},
+      false);
+
+
+    entity1.add(new EntityAttribute("LINK", {ru: {name: "Ссылка"}}, true, [entity2]));
+    entity2.add(new EntityAttribute("LINK", {ru: {name: "Ссылка"}}, false, [entity1]));
+
+    await erBridge.importToDatabase(erModel);
+
+    const loadedERModel = await loadERModel();
+    const loadEntity1 = loadedERModel.entity("TEST1");
+    const loadEntity2 = loadedERModel.entity("TEST2");
+    expect(loadEntity1).toEqual(entity1);
+    expect(loadEntity2).toEqual(entity2);
   });
 });

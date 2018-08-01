@@ -34,7 +34,7 @@ class DDLHelper {
         this._logs.push(sql);
         await this._connection.execute(this._transaction, sql);
     }
-    async addScalarColumns(tableName, scalarFields) {
+    async addColumns(tableName, scalarFields) {
         for (const field of scalarFields) {
             const column = field.name.padEnd(31) + " " + field.domain.padEnd(31);
             const sql = `ALTER TABLE ${tableName} ADD ${column} ${DDLHelper._getColumnProps(field)}`.trim();
@@ -42,16 +42,41 @@ class DDLHelper {
             await this._connection.execute(this._transaction, sql);
         }
     }
-    async addPrimaryKey(tableName, fieldNames) {
-        const constraintName = Prefix_1.Prefix.join(tableName, Prefix_1.Prefix.PK);
+    async addPrimaryKey(constraintName, tableName, fieldNames) {
+        if (!fieldNames) {
+            fieldNames = tableName;
+            tableName = constraintName;
+            constraintName = undefined;
+        }
+        if (!constraintName) {
+            constraintName = Prefix_1.Prefix.join(`${await this._ddlUniqueGen.next()}`, Prefix_1.Prefix.PRIMARY_KEY);
+        }
         const sql = `ALTER TABLE ${tableName} ADD CONSTRAINT ${constraintName} PRIMARY KEY (${fieldNames.join(", ")})`;
         this._logs.push(sql);
         await this._connection.execute(this._transaction, sql);
         return constraintName;
     }
-    async addScalarDomain(domainName, props) {
+    async addForeignKey(constraintName, from, to) {
+        if (!to) {
+            to = from;
+            from = constraintName;
+            constraintName = undefined;
+        }
+        if (!constraintName) {
+            constraintName = Prefix_1.Prefix.join(`${await this._ddlUniqueGen.next()}`, Prefix_1.Prefix.FOREIGN_KEY);
+        }
+        const sql = `ALTER TABLE ${from.tableName} ADD CONSTRAINT ${constraintName} FOREIGN KEY (${from.fieldName}) ` +
+            `REFERENCES ${to.tableName} (${to.fieldName})`;
+        this._logs.push(sql);
+        await this._connection.execute(this._transaction, sql);
+        return constraintName;
+    }
+    async addDomain(domainName, props) {
         if (!props) {
             props = domainName;
+            domainName = undefined;
+        }
+        if (!domainName) {
             domainName = Prefix_1.Prefix.join(`${await this._ddlUniqueGen.next()}`, Prefix_1.Prefix.DOMAIN);
         }
         const sql = `CREATE DOMAIN ${domainName.padEnd(31)} AS ${props.type.padEnd(31)}` +
@@ -61,6 +86,14 @@ class DDLHelper {
         return domainName;
     }
     async addAutoIncrementTrigger(triggerName, tableName, fieldName) {
+        if (!fieldName) {
+            fieldName = tableName;
+            tableName = triggerName;
+            triggerName = undefined;
+        }
+        if (!triggerName) {
+            triggerName = Prefix_1.Prefix.join(`${await this._ddlUniqueGen.next()}`, Prefix_1.Prefix.TRIGGER_BI);
+        }
         const sql = `
       CREATE TRIGGER ${triggerName} FOR ${tableName}
         ACTIVE BEFORE INSERT POSITION 0
