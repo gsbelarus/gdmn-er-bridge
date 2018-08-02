@@ -1,5 +1,5 @@
 import { AConnection, ATransaction } from "gdmn-db";
-import { ERModel } from "gdmn-orm";
+import { ERModel, ScalarAttribute } from "gdmn-orm";
 export declare class ERImport {
     private readonly _connection;
     private readonly _erModel;
@@ -8,6 +8,7 @@ export declare class ERImport {
     private _createATRelationField;
     private _ddlHelper;
     constructor(connection: AConnection, erModel: ERModel);
+    static _getScalarFieldName(attr: ScalarAttribute): string;
     execute(): Promise<void>;
     _prepareStatements(transaction: ATransaction): Promise<void>;
     _disposeStatements(): Promise<void>;

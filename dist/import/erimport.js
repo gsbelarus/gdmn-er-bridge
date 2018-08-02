@@ -10,6 +10,10 @@ class ERImport {
         this._connection = connection;
         this._erModel = erModel;
     }
+    static _getScalarFieldName(attr) {
+        const attrAdapter = attr.adapter;
+        return attrAdapter ? attrAdapter.field : attr.name;
+    }
     async execute() {
         await gdmn_db_1.AConnection.executeTransaction({
             connection: this._connection,
@@ -74,16 +78,31 @@ class ERImport {
         }
     }
     async _addLinks(entity) {
-        const tableName = entity.name;
         for (const attr of Object.values(entity.attributes).filter((attr) => gdmn_orm_1.isEntityAttribute(attr))) {
-            const fieldName = attr.name;
             if (gdmn_orm_1.isParentAttribute(attr)) {
             }
             else if (gdmn_orm_1.isDetailAttribute(attr)) {
+                const tableName = entity.name;
+                const fieldName = ERImport._getScalarFieldName(entity.pk[0]);
+                const adapter = attr.adapter;
+                const detailTableName = adapter.masterLinks[0].detailRelation;
+                const detailFieldName = adapter.masterLinks[0].link2masterField;
+                const domainName = await this._getDDLHelper().addDomain(DomainResolver_1.DomainResolver.resolve(attr));
+                await this._getDDLHelper().addColumns(detailTableName, [{ name: detailFieldName, domain: domainName }]);
+                await this._getDDLHelper().addForeignKey({
+                    tableName: detailTableName,
+                    fieldName: detailFieldName
+                }, {
+                    tableName,
+                    fieldName
+                });
+                await this._bindATAttr(attr, detailTableName, detailFieldName, domainName);
             }
             else if (gdmn_orm_1.isSetAttribute(attr)) {
             }
             else if (gdmn_orm_1.isEntityAttribute(attr)) {
+                const tableName = entity.name;
+                const fieldName = attr.name;
                 const domainName = await this._getDDLHelper().addDomain(DomainResolver_1.DomainResolver.resolve(attr));
                 await this._getDDLHelper().addColumns(tableName, [{ name: fieldName, domain: domainName }]);
                 await this._getDDLHelper().addForeignKey({
@@ -103,8 +122,7 @@ class ERImport {
         const pkFields = [];
         for (const attr of Object.values(entity.attributes).filter((attr) => gdmn_orm_1.isScalarAttribute(attr))) {
             const domainName = await this._getDDLHelper().addDomain(DomainResolver_1.DomainResolver.resolve(attr));
-            const attrAdapter = attr.adapter;
-            const fieldName = attrAdapter ? attrAdapter.field : attr.name;
+            const fieldName = ERImport._getScalarFieldName(attr);
             await this._bindATAttr(attr, tableName, fieldName, domainName);
             const field = {
                 name: fieldName,

@@ -69,20 +69,20 @@ class Update1 extends BaseUpdate_1.BaseUpdate {
             ]);
             await ddlHelper.addPrimaryKey("AT_PK_RELATION_FIELDS", "AT_RELATION_FIELDS", ["ID"]);
             await ddlHelper.addAutoIncrementTrigger("AT_BI_RELATION_FIELDS", "AT_RELATION_FIELDS", "ID");
-            await ddlHelper.addTable("GD_DOCUMENTTYPE", [
-                { name: "ID", domain: "DINTKEY" },
-                { name: "RUID", domain: "DRUID" },
-                { name: "DOCUMENTTYPE", domain: "DDOCUMENTTYPE", default: "'D'" },
-                { name: "NAME", domain: "DNAME" },
-                { name: "CLASSNAME", domain: "DCLASSNAME" },
-                { name: "PARENT", domain: "DPARENT" },
-                { name: "LB", domain: "DLB" },
-                { name: "RB", domain: "DRB" },
-                { name: "HEADERRELKEY", domain: "DFOREIGNKEY" },
-                { name: "LINERELKEY", domain: "DFOREIGNKEY" }
-            ]);
-            await ddlHelper.addPrimaryKey("GD_PK_DOCUMENTTYPE", "GD_DOCUMENTTYPE", ["ID"]);
-            await ddlHelper.addAutoIncrementTrigger("GD_BI_DOCUMENTTYPE", "GD_DOCUMENTTYPE", "ID");
+            // await ddlHelper.addTable("GD_DOCUMENTTYPE", [
+            //   {name: "ID", domain: "DINTKEY"},
+            //   {name: "RUID", domain: "DRUID"},
+            //   {name: "DOCUMENTTYPE", domain: "DDOCUMENTTYPE", default: "'D'"},
+            //   {name: "NAME", domain: "DNAME"},
+            //   {name: "CLASSNAME", domain: "DCLASSNAME"},
+            //   {name: "PARENT", domain: "DPARENT"},
+            //   {name: "LB", domain: "DLB"},
+            //   {name: "RB", domain: "DRB"},
+            //   {name: "HEADERRELKEY", domain: "DFOREIGNKEY"},
+            //   {name: "LINERELKEY", domain: "DFOREIGNKEY"}
+            // ]);
+            // await ddlHelper.addPrimaryKey("GD_PK_DOCUMENTTYPE", "GD_DOCUMENTTYPE", ["ID"]);
+            // await ddlHelper.addAutoIncrementTrigger("GD_BI_DOCUMENTTYPE", "GD_DOCUMENTTYPE", "ID");
         });
     }
 }

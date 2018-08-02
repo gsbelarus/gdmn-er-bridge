@@ -2,6 +2,7 @@ import {AConnection, AStatement, ATransaction} from "gdmn-db";
 import {
   Attribute,
   Attribute2FieldMap,
+  DetailAttributeMap,
   Entity,
   ERModel,
   isDetailAttribute,
@@ -9,7 +10,8 @@ import {
   isEnumAttribute,
   isParentAttribute,
   isScalarAttribute,
-  isSetAttribute
+  isSetAttribute,
+  ScalarAttribute
 } from "gdmn-orm";
 import {DDLHelper, IFieldProps} from "../ddl/DDLHelper";
 import {GLOBAL_GENERATOR} from "../updates/Update1";
@@ -28,6 +30,11 @@ export class ERImport {
   constructor(connection: AConnection, erModel: ERModel) {
     this._connection = connection;
     this._erModel = erModel;
+  }
+
+  public static _getScalarFieldName(attr: ScalarAttribute): string {
+    const attrAdapter = attr.adapter as Attribute2FieldMap;
+    return attrAdapter ? attrAdapter.field : attr.name;
   }
 
   public async execute(): Promise<void> {
@@ -100,16 +107,33 @@ export class ERImport {
   }
 
   private async _addLinks(entity: Entity): Promise<void> {
-    const tableName = entity.name;
     for (const attr of Object.values(entity.attributes).filter((attr) => isEntityAttribute(attr))) {
-      const fieldName = attr.name;
       if (isParentAttribute(attr)) {
 
       } else if (isDetailAttribute(attr)) {
+        const tableName = entity.name;
+        const fieldName = ERImport._getScalarFieldName(entity.pk[0]);
+        const adapter = attr.adapter as DetailAttributeMap;
+        const detailTableName = adapter.masterLinks[0].detailRelation;
+        const detailFieldName = adapter.masterLinks[0].link2masterField;
+
+        const domainName = await this._getDDLHelper().addDomain(DomainResolver.resolve(attr));
+        await this._getDDLHelper().addColumns(detailTableName, [{name: detailFieldName, domain: domainName}]);
+
+        await this._getDDLHelper().addForeignKey({
+          tableName: detailTableName,
+          fieldName: detailFieldName
+        }, {
+          tableName,
+          fieldName
+        });
+        await this._bindATAttr(attr, detailTableName, detailFieldName, domainName);
 
       } else if (isSetAttribute(attr)) {
 
       } else if (isEntityAttribute(attr)) {
+        const tableName = entity.name;
+        const fieldName = attr.name;
         const domainName = await this._getDDLHelper().addDomain(DomainResolver.resolve(attr));
         await this._getDDLHelper().addColumns(tableName, [{name: fieldName, domain: domainName}]);
         await this._getDDLHelper().addForeignKey({
@@ -131,8 +155,7 @@ export class ERImport {
     const pkFields: IFieldProps[] = [];
     for (const attr of Object.values(entity.attributes).filter((attr) => isScalarAttribute(attr))) {
       const domainName = await this._getDDLHelper().addDomain(DomainResolver.resolve(attr));
-      const attrAdapter = attr.adapter as Attribute2FieldMap;
-      const fieldName = attrAdapter ? attrAdapter.field : attr.name;
+      const fieldName = ERImport._getScalarFieldName(attr);
       await this._bindATAttr(attr, tableName, fieldName, domainName);
       const field = {
         name: fieldName,

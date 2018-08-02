@@ -5,6 +5,7 @@ import {
   BlobAttribute,
   BooleanAttribute,
   DateAttribute,
+  DetailAttribute,
   Entity,
   EntityAttribute,
   EnumAttribute,
@@ -340,7 +341,7 @@ describe("ERBridge", () => {
     expect(loadEntity).toEqual(entity);
   });
 
-  it("link to entities", async () => {
+  it("link to entity", async () => {
     const erModel = createERModel();
     const entity1 = createEntity(erModel,
       undefined,
@@ -357,6 +358,37 @@ describe("ERBridge", () => {
 
     entity1.add(new EntityAttribute("LINK", {ru: {name: "Ссылка"}}, true, [entity2]));
     entity2.add(new EntityAttribute("LINK", {ru: {name: "Ссылка"}}, false, [entity1]));
+
+    await erBridge.importToDatabase(erModel);
+
+    const loadedERModel = await loadERModel();
+    const loadEntity1 = loadedERModel.entity("TEST1");
+    const loadEntity2 = loadedERModel.entity("TEST2");
+    expect(loadEntity1).toEqual(entity1);
+    expect(loadEntity2).toEqual(entity2);
+  });
+
+  it("detail entity", async () => {
+    const erModel = createERModel();
+    const entity1 = createEntity(erModel,
+      undefined,
+      "TEST1",
+      {ru: {name: "entity name", fullName: "full entity name"}},
+      false);
+
+    const entity2 = createEntity(erModel,
+      undefined,
+      "TEST2",
+      {ru: {name: "entity name", fullName: "full entity name"}},
+      false);
+
+
+    entity1.add(new DetailAttribute("TEST2", {ru: {name: "Ссылка"}}, true, [entity2], [], {
+      masterLinks: [{
+        detailRelation: "TEST2",
+        link2masterField: "MASTERKEY"
+      }]
+    }));
 
     await erBridge.importToDatabase(erModel);
 
