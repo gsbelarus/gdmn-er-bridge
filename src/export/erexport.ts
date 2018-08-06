@@ -41,6 +41,7 @@ import {
   TimeAttribute,
   TimeStampAttribute
 } from "gdmn-orm";
+import {Constants} from "../Constants";
 import {GLOBAL_GENERATOR} from "../updates/Update1";
 import {
   check2DateRange,
@@ -63,8 +64,6 @@ import {atRelationField, load} from "./atdata";
 import {loadDocument} from "./document";
 import {gdDomains} from "./gddomains";
 import {gedeminTables} from "./gdtables";
-
-const ID_ATTR_NAME = "ID";
 
 export async function erExport(dbs: DBStructure, connection: AConnection, transaction: ATransaction, erModel: ERModel): Promise<ERModel> {
 
@@ -153,7 +152,7 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
 
     if (!parent) {
       entity.add(
-        new SequenceAttribute(ID_ATTR_NAME, {ru: {name: "Идентификатор"}}, GDGUnique)
+        new SequenceAttribute(Constants.DEFAULT_ID_NAME, {ru: {name: "Идентификатор"}}, GDGUnique)
       );
     }
 
@@ -561,8 +560,8 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
   }
 
   dbs.forEachRelation(r => {
-    if (r.primaryKey!.fields.join() === ID_ATTR_NAME && /^USR\$.+$/.test(r.name)
-      && !Object.entries(r.foreignKeys).find(fk => fk[1].fields.join() === ID_ATTR_NAME)) {
+    if (r.primaryKey!.fields.join() === Constants.DEFAULT_ID_NAME && /^USR\$.+$/.test(r.name)
+      && !Object.entries(r.foreignKeys).find(fk => fk[1].fields.join() === Constants.DEFAULT_ID_NAME)) {
       if (abstractBaseRelations[r.name]) {
         recursInherited([r]);
       } else {
@@ -757,6 +756,26 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
           attrName = atRelationField.attrName;
           adapter = {relation: r.name, field: fn};
         }
+
+        if (atRelationField && atRelationField.masterEntityName) {
+          const masterEntity = erModel.entity(atRelationField.masterEntityName);  // TODO
+
+          const attributeName = adjustName(attrName);
+          const atField = atfields[rf.fieldSource];
+          const fieldSource = dbs.fields[rf.fieldSource];
+          const required: boolean = rf.notNull || fieldSource.notNull;
+          const lName = atRelationField ? atRelationField.lName : (atField ? atField.lName : {});
+
+          masterEntity.add(new DetailAttribute(attributeName, lName, required, [entity],
+            atRelationField ? atRelationField.semCategories : [], {
+              masterLinks: [{
+                detailRelation: entity.name,
+                link2masterField: adapter ? adapter.field : attrName
+              }]
+            }));
+          return;
+        }
+
         const attr = createAttribute(
           r, rf, atRelationField,
           attrName,

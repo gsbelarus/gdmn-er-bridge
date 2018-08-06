@@ -28,6 +28,7 @@ export interface atFields {
  */
 export interface atRelationField {
     attrName: string | undefined;
+    masterEntityName: string | undefined;
     lName: LName;
     fieldSource: string;
     crossTable: string | undefined;

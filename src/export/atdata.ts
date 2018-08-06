@@ -32,6 +32,7 @@ export interface atFields {
  */
 export interface atRelationField {
   attrName: string | undefined;
+  masterEntityName: string | undefined;
   lName: LName;
   fieldSource: string;
   crossTable: string | undefined;
@@ -139,6 +140,7 @@ export async function load(connection: AConnection, transaction: ATransaction) {
         FIELDSOURCE,
         RELATIONNAME,
         ATTRNAME,
+        MASTERENTITYNAME,
         LNAME,
         DESCRIPTION,
         SEMCATEGORY,
@@ -159,14 +161,14 @@ export async function load(connection: AConnection, transaction: ATransaction) {
           if (!rel) throw new Error(`Unknown relation ${relationName}`);
         }
         const fieldName = resultSet.getString("FIELDNAME");
-        const attrName = getTrimmedString("ATTRNAME");
         const ru: TName = {name: resultSet.getString("LNAME")};
         const fullName = getTrimmedString("DESCRIPTION");
         if (fullName) {
           ru.fullName = fullName;
         }
         rel!.relationFields[fieldName] = {
-          attrName,
+          attrName: getTrimmedString("ATTRNAME"),
+          masterEntityName: getTrimmedString("MASTERENTITYNAME"),
           lName: {ru},
           fieldSource: getTrimmedString("FIELDSOURCE")!,
           crossTable: getTrimmedString("CROSSTABLE"),

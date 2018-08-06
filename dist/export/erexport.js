@@ -3,13 +3,13 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const gdmn_db_1 = require("gdmn-db");
 const gdmn_nlp_1 = require("gdmn-nlp");
 const gdmn_orm_1 = require("gdmn-orm");
+const Constants_1 = require("../Constants");
 const Update1_1 = require("../updates/Update1");
 const util_1 = require("../util");
 const atdata_1 = require("./atdata");
 const document_1 = require("./document");
 const gddomains_1 = require("./gddomains");
 const gdtables_1 = require("./gdtables");
-const ID_ATTR_NAME = "ID";
 async function erExport(dbs, connection, transaction, erModel) {
     const { atfields, atrelations } = await atdata_1.load(connection, transaction);
     const crossRelationsAdapters = {
@@ -71,7 +71,7 @@ async function erExport(dbs, connection, transaction, erModel) {
         const fake = gdmn_orm_1.relationName2Adapter(setEntityName);
         const entity = new gdmn_orm_1.Entity(parent, setEntityName, lName ? lName : (atRelation ? atRelation.lName : {}), !!abstract, semCategories, JSON.stringify(adapter) !== JSON.stringify(fake) ? adapter : undefined);
         if (!parent) {
-            entity.add(new gdmn_orm_1.SequenceAttribute(ID_ATTR_NAME, { ru: { name: "Идентификатор" } }, GDGUnique));
+            entity.add(new gdmn_orm_1.SequenceAttribute(Constants_1.Constants.DEFAULT_ID_NAME, { ru: { name: "Идентификатор" } }, GDGUnique));
         }
         if (attributes) {
             attributes.forEach(attr => entity.add(attr));
@@ -372,8 +372,8 @@ async function erExport(dbs, connection, transaction, erModel) {
         }, true);
     }
     dbs.forEachRelation(r => {
-        if (r.primaryKey.fields.join() === ID_ATTR_NAME && /^USR\$.+$/.test(r.name)
-            && !Object.entries(r.foreignKeys).find(fk => fk[1].fields.join() === ID_ATTR_NAME)) {
+        if (r.primaryKey.fields.join() === Constants_1.Constants.DEFAULT_ID_NAME && /^USR\$.+$/.test(r.name)
+            && !Object.entries(r.foreignKeys).find(fk => fk[1].fields.join() === Constants_1.Constants.DEFAULT_ID_NAME)) {
             if (abstractBaseRelations[r.name]) {
                 recursInherited([r]);
             }
@@ -521,6 +521,21 @@ async function erExport(dbs, connection, transaction, erModel) {
                 if (atRelationField && atRelationField.attrName !== undefined) {
                     attrName = atRelationField.attrName;
                     adapter = { relation: r.name, field: fn };
+                }
+                if (atRelationField && atRelationField.masterEntityName) {
+                    const masterEntity = erModel.entity(atRelationField.masterEntityName); // TODO
+                    const attributeName = gdmn_orm_1.adjustName(attrName);
+                    const atField = atfields[rf.fieldSource];
+                    const fieldSource = dbs.fields[rf.fieldSource];
+                    const required = rf.notNull || fieldSource.notNull;
+                    const lName = atRelationField ? atRelationField.lName : (atField ? atField.lName : {});
+                    masterEntity.add(new gdmn_orm_1.DetailAttribute(attributeName, lName, required, [entity], atRelationField ? atRelationField.semCategories : [], {
+                        masterLinks: [{
+                                detailRelation: entity.name,
+                                link2masterField: adapter ? adapter.field : attrName
+                            }]
+                    }));
+                    return;
                 }
                 const attr = createAttribute(r, rf, atRelationField, attrName, atRelationField ? atRelationField.semCategories : [], adapter);
                 if (attr) {

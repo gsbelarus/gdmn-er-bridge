@@ -41,8 +41,8 @@ class ERImport {
       VALUES (:tableName, :lName, :description)
     `);
         this._createATRelationField = await this._connection.prepare(transaction, `
-      INSERT INTO AT_RELATION_FIELDS (FIELDNAME, RELATIONNAME, ATTRNAME, LNAME, DESCRIPTION)
-      VALUES (:fieldName, :relationName, :attrName, :lName, :description)
+      INSERT INTO AT_RELATION_FIELDS (FIELDNAME, RELATIONNAME, ATTRNAME, MASTERENTITYNAME, LNAME, DESCRIPTION)
+      VALUES (:fieldName, :relationName, :attrName, :masterEntityName, :lName, :description)
     `);
     }
     async _disposeStatements() {
@@ -96,7 +96,12 @@ class ERImport {
                     tableName,
                     fieldName
                 });
-                await this._bindATAttr(attr, detailTableName, detailFieldName, domainName);
+                await this._bindATAttr(attr, {
+                    tableName: detailTableName,
+                    fieldName: detailFieldName,
+                    domainName: domainName,
+                    masterEntity: entity
+                });
             }
             else if (gdmn_orm_1.isSetAttribute(attr)) {
             }
@@ -112,7 +117,7 @@ class ERImport {
                     tableName: attr.entity[0].name,
                     fieldName: attr.entity[0].pk[0].name
                 });
-                await this._bindATAttr(attr, tableName, fieldName, domainName);
+                await this._bindATAttr(attr, { tableName, fieldName, domainName });
             }
         }
     }
@@ -123,7 +128,7 @@ class ERImport {
         for (const attr of Object.values(entity.attributes).filter((attr) => gdmn_orm_1.isScalarAttribute(attr))) {
             const domainName = await this._getDDLHelper().addDomain(DomainResolver_1.DomainResolver.resolve(attr));
             const fieldName = ERImport._getScalarFieldName(attr);
-            await this._bindATAttr(attr, tableName, fieldName, domainName);
+            await this._bindATAttr(attr, { tableName, fieldName, domainName });
             const field = {
                 name: fieldName,
                 domain: domainName
@@ -135,12 +140,12 @@ class ERImport {
         }
         await this._getDDLHelper().addTable(tableName, fields);
         await this._getDDLHelper().addPrimaryKey(tableName, pkFields.map((i) => i.name));
-        await this._bindATEntity(entity, tableName);
+        await this._bindATEntity(entity, { tableName });
     }
-    async _bindATEntity(entity, tableName) {
+    async _bindATEntity(entity, options) {
         if (this._createATRelation) {
             await this._createATRelation.execute({
-                tableName,
+                tableName: options.tableName,
                 lName: entity.lName.ru ? entity.lName.ru.name : entity.name,
                 description: entity.lName.ru ? entity.lName.ru.fullName : entity.name
             });
@@ -149,13 +154,13 @@ class ERImport {
             throw new Error("createATRelation is undefined");
         }
     }
-    async _bindATAttr(attr, tableName, fieldName, domainName) {
+    async _bindATAttr(attr, options) {
         const numeration = gdmn_orm_1.isEnumAttribute(attr)
             ? attr.values.map(({ value, lName }) => `${value}=${lName && lName.ru ? lName.ru.name : ""}`).join("#13#10")
             : undefined;
         if (this._createATField) {
             await this._createATField.execute({
-                fieldName: domainName,
+                fieldName: options.domainName,
                 lName: attr.lName.ru ? attr.lName.ru.name : attr.name,
                 description: attr.lName.ru ? attr.lName.ru.fullName : attr.name,
                 numeration: numeration ? Buffer.from(numeration) : undefined
@@ -166,9 +171,10 @@ class ERImport {
         }
         if (this._createATRelationField) {
             await this._createATRelationField.execute({
-                fieldName: fieldName,
-                relationName: tableName,
-                attrName: fieldName !== attr.name ? attr.name : null,
+                fieldName: options.fieldName,
+                relationName: options.tableName,
+                attrName: options.fieldName !== attr.name ? attr.name : null,
+                masterEntityName: options.masterEntity ? options.masterEntity.name : null,
                 lName: attr.lName.ru ? attr.lName.ru.name : attr.name,
                 description: attr.lName.ru ? attr.lName.ru.fullName : attr.name
             });

@@ -2,14 +2,16 @@ import {AConnection, ATransaction} from "gdmn-db";
 import {BaseUpdate} from "./BaseUpdate";
 import {Update1} from "./Update1";
 import {Update2} from "./Update2";
+import {Update3} from "./Update3";
 
 export type UpdateConstructor = new (connection: AConnection) => BaseUpdate;
 
 export class UpdateManager {
 
-  public static readonly CURRENT_DATABASE_VERSION = 2;
+  public static readonly CURRENT_DATABASE_VERSION = 3;
 
   private readonly _updatesConstructors: UpdateConstructor[] = [
+    Update3,
     Update2,
     Update1
   ];

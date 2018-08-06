@@ -3,9 +3,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const gdmn_db_1 = require("gdmn-db");
 const Update1_1 = require("./Update1");
 const Update2_1 = require("./Update2");
+const Update3_1 = require("./Update3");
 class UpdateManager {
     constructor() {
         this._updatesConstructors = [
+            Update3_1.Update3,
             Update2_1.Update2,
             Update1_1.Update1
         ];
@@ -85,6 +87,6 @@ class UpdateManager {
         });
     }
 }
-UpdateManager.CURRENT_DATABASE_VERSION = 2;
+UpdateManager.CURRENT_DATABASE_VERSION = 3;
 exports.UpdateManager = UpdateManager;
 //# sourceMappingURL=UpdateManager.js.map

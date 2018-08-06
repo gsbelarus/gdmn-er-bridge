@@ -348,13 +348,11 @@ describe("ERBridge", () => {
       "TEST1",
       {ru: {name: "entity name", fullName: "full entity name"}},
       false);
-
     const entity2 = createEntity(erModel,
       undefined,
       "TEST2",
       {ru: {name: "entity name", fullName: "full entity name"}},
       false);
-
 
     entity1.add(new EntityAttribute("LINK", {ru: {name: "Ссылка"}}, true, [entity2]));
     entity2.add(new EntityAttribute("LINK", {ru: {name: "Ссылка"}}, false, [entity1]));
@@ -370,23 +368,32 @@ describe("ERBridge", () => {
 
   it("detail entity", async () => {
     const erModel = createERModel();
-    const entity1 = createEntity(erModel,
-      undefined,
-      "TEST1",
-      {ru: {name: "entity name", fullName: "full entity name"}},
-      false);
-
     const entity2 = createEntity(erModel,
       undefined,
       "TEST2",
       {ru: {name: "entity name", fullName: "full entity name"}},
       false);
+    const entity1 = createEntity(erModel,
+      undefined,
+      "TEST1",
+      {ru: {name: "entity name", fullName: "full entity name"}},
+      false);
+    const entity3 = createEntity(erModel,
+      undefined,
+      "TEST3",
+      {ru: {name: "entity name", fullName: "full entity name"}},
+      false);
 
-
-    entity1.add(new DetailAttribute("TEST2", {ru: {name: "Ссылка"}}, true, [entity2], [], {
+    entity1.add(new DetailAttribute("TEST2", {ru: {name: "Позиции 1"}}, true, [entity2], [], {
       masterLinks: [{
         detailRelation: "TEST2",
         link2masterField: "MASTERKEY"
+      }]
+    }));
+    entity1.add(new DetailAttribute("TEST3", {ru: {name: "Позиции 2"}}, true, [entity3], [], {
+      masterLinks: [{
+        detailRelation: "TEST3",
+        link2masterField: "MASTER_KEY"
       }]
     }));
 
@@ -395,7 +402,9 @@ describe("ERBridge", () => {
     const loadedERModel = await loadERModel();
     const loadEntity1 = loadedERModel.entity("TEST1");
     const loadEntity2 = loadedERModel.entity("TEST2");
+    const loadEntity3 = loadedERModel.entity("TEST3");
     expect(loadEntity1).toEqual(entity1);
     expect(loadEntity2).toEqual(entity2);
+    expect(loadEntity3).toEqual(entity3);
   });
 });
