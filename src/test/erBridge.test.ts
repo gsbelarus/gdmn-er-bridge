@@ -384,18 +384,13 @@ describe("ERBridge", () => {
       {ru: {name: "entity name", fullName: "full entity name"}},
       false);
 
-    entity1.add(new DetailAttribute("TEST2", {ru: {name: "Позиции 1"}}, true, [entity2], [], {
+    entity1.add(new DetailAttribute("DETAILLINK", {ru: {name: "Позиции 1"}}, true, [entity2], [], {
       masterLinks: [{
         detailRelation: "TEST2",
-        link2masterField: "MASTERKEY"
-      }]
-    }));
-    entity1.add(new DetailAttribute("TEST3", {ru: {name: "Позиции 2"}}, true, [entity3], [], {
-      masterLinks: [{
-        detailRelation: "TEST3",
         link2masterField: "MASTER_KEY"
       }]
     }));
+    entity1.add(new DetailAttribute("TEST3", {ru: {name: "Позиции 2"}}, true, [entity3]));
 
     await erBridge.importToDatabase(erModel);
 

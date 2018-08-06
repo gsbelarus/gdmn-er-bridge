@@ -13,6 +13,7 @@ import {
   isSetAttribute,
   ScalarAttribute
 } from "gdmn-orm";
+import {Constants} from "../Constants";
 import {DDLHelper, IFieldProps} from "../ddl/DDLHelper";
 import {GLOBAL_GENERATOR} from "../updates/Update1";
 import {DomainResolver} from "./DomainResolver";
@@ -118,36 +119,40 @@ export class ERImport {
   }
 
   private async _addLinks(entity: Entity): Promise<void> {
+    const tableName = entity.name;
     for (const attr of Object.values(entity.attributes).filter((attr) => isEntityAttribute(attr))) {
-      if (isParentAttribute(attr)) {
-
-      } else if (isDetailAttribute(attr)) {
-        const tableName = entity.name;
+      if (isDetailAttribute(attr)) {
         const fieldName = ERImport._getScalarFieldName(entity.pk[0]);
         const adapter = attr.adapter as DetailAttributeMap;
-        const detailTableName = adapter.masterLinks[0].detailRelation;
-        const detailFieldName = adapter.masterLinks[0].link2masterField;
+        let detailTableName: string;
+        let detailLinkFieldName: string;
+        if (adapter && adapter.masterLinks.length) {
+          detailTableName = adapter.masterLinks[0].detailRelation;
+          detailLinkFieldName = adapter.masterLinks[0].link2masterField;
+        } else {
+          detailTableName = attr.name;
+          detailLinkFieldName = Constants.DEFAULT_MASTER_KEY_NAME;
+        }
 
         const domainName = await this._getDDLHelper().addDomain(DomainResolver.resolve(attr));
-        await this._getDDLHelper().addColumns(detailTableName, [{name: detailFieldName, domain: domainName}]);
+        await this._getDDLHelper().addColumns(detailTableName, [{name: detailLinkFieldName, domain: domainName}]);
         await this._getDDLHelper().addForeignKey({
           tableName: detailTableName,
-          fieldName: detailFieldName
+          fieldName: detailLinkFieldName
         }, {
           tableName,
           fieldName
         });
         await this._bindATAttr(attr, {
           tableName: detailTableName,
-          fieldName: detailFieldName,
+          fieldName: detailLinkFieldName,
           domainName: domainName,
           masterEntity: entity
         });
 
       } else if (isSetAttribute(attr)) {
 
-      } else if (isEntityAttribute(attr)) {
-        const tableName = entity.name;
+      } else if (isParentAttribute(attr) || isEntityAttribute(attr)) {
         const fieldName = attr.name;
         const domainName = await this._getDDLHelper().addDomain(DomainResolver.resolve(attr));
         await this._getDDLHelper().addColumns(tableName, [{name: fieldName, domain: domainName}]);

@@ -529,10 +529,10 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
             link2masterField: "PARENT"
           }
         ];
-        if (dbs.relations[setLR] && dbs.relations[setLR].relationFields["MASTERKEY"]) {
+        if (dbs.relations[setLR] && dbs.relations[setLR].relationFields[Constants.DEFAULT_MASTER_KEY_NAME]) {
           masterLinks.push({
             detailRelation: setLR,
-            link2masterField: "MASTERKEY"
+            link2masterField: Constants.DEFAULT_MASTER_KEY_NAME
           });
         }
         header.add(
@@ -766,13 +766,14 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
           const required: boolean = rf.notNull || fieldSource.notNull;
           const lName = atRelationField ? atRelationField.lName : (atField ? atField.lName : {});
 
+          const detailAdapter = entity.name !== attributeName ? {
+            masterLinks: [{
+              detailRelation: entity.name,
+              link2masterField: adapter ? adapter.field : attrName
+            }]
+          } : undefined;
           masterEntity.add(new DetailAttribute(attributeName, lName, required, [entity],
-            atRelationField ? atRelationField.semCategories : [], {
-              masterLinks: [{
-                detailRelation: entity.name,
-                link2masterField: adapter ? adapter.field : attrName
-              }]
-            }));
+            atRelationField ? atRelationField.semCategories : [], detailAdapter));
           return;
         }
 
