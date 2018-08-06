@@ -89,6 +89,7 @@ async function load(connection, transaction) {
         RELATIONNAME,
         ATTRNAME,
         MASTERENTITYNAME,
+        ISPARENT,
         LNAME,
         DESCRIPTION,
         SEMCATEGORY,
@@ -118,6 +119,7 @@ async function load(connection, transaction) {
                 rel.relationFields[fieldName] = {
                     attrName: getTrimmedString("ATTRNAME"),
                     masterEntityName: getTrimmedString("MASTERENTITYNAME"),
+                    isParent: resultSet.getBoolean("ISPARENT"),
                     lName: { ru },
                     fieldSource: getTrimmedString("FIELDSOURCE"),
                     crossTable: getTrimmedString("CROSSTABLE"),

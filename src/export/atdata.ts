@@ -33,6 +33,7 @@ export interface atFields {
 export interface atRelationField {
   attrName: string | undefined;
   masterEntityName: string | undefined;
+  isParent: boolean;
   lName: LName;
   fieldSource: string;
   crossTable: string | undefined;
@@ -141,6 +142,7 @@ export async function load(connection: AConnection, transaction: ATransaction) {
         RELATIONNAME,
         ATTRNAME,
         MASTERENTITYNAME,
+        ISPARENT,
         LNAME,
         DESCRIPTION,
         SEMCATEGORY,
@@ -169,6 +171,7 @@ export async function load(connection: AConnection, transaction: ATransaction) {
         rel!.relationFields[fieldName] = {
           attrName: getTrimmedString("ATTRNAME"),
           masterEntityName: getTrimmedString("MASTERENTITYNAME"),
+          isParent: resultSet.getBoolean("ISPARENT"),
           lName: {ru},
           fieldSource: getTrimmedString("FIELDSOURCE")!,
           crossTable: getTrimmedString("CROSSTABLE"),

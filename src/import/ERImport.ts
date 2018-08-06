@@ -27,6 +27,7 @@ interface IATAttrOptions {
   fieldName: string;
   domainName: string;
   masterEntity?: Entity;
+  isParent?: boolean;
 }
 
 export class ERImport {
@@ -76,8 +77,8 @@ export class ERImport {
       VALUES (:tableName, :lName, :description)
     `);
     this._createATRelationField = await this._connection.prepare(transaction, `
-      INSERT INTO AT_RELATION_FIELDS (FIELDNAME, RELATIONNAME, ATTRNAME, MASTERENTITYNAME, LNAME, DESCRIPTION)
-      VALUES (:fieldName, :relationName, :attrName, :masterEntityName, :lName, :description)
+      INSERT INTO AT_RELATION_FIELDS (FIELDNAME, RELATIONNAME, ATTRNAME, MASTERENTITYNAME, ISPARENT, LNAME, DESCRIPTION)
+      VALUES (:fieldName, :relationName, :attrName, :masterEntityName, :isParent, :lName, :description)
     `);
   }
 
@@ -163,7 +164,7 @@ export class ERImport {
           tableName: attr.entity[0].name,
           fieldName: attr.entity[0].pk[0].name
         });
-        await this._bindATAttr(attr, {tableName, fieldName, domainName});
+        await this._bindATAttr(attr, {tableName, fieldName, domainName, isParent: isParentAttribute(attr)});
       }
     }
   }
@@ -224,6 +225,7 @@ export class ERImport {
       await this._createATRelationField.execute({
         fieldName: options.fieldName,
         relationName: options.tableName,
+        isParent: options.isParent || null,
         attrName: options.fieldName !== attr.name ? attr.name : null,
         masterEntityName: options.masterEntity ? options.masterEntity.name : null,
         lName: attr.lName.ru ? attr.lName.ru.name : attr.name,

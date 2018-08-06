@@ -211,7 +211,7 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
             value: 0
           },
           fields: [
-            "PARENT",
+            Constants.DEFAULT_PARENT_KET_NAME,
             "NAME"
           ]
         }]
@@ -220,7 +220,7 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
       "Folder", {ru: {name: "Папка"}}
     );
     Folder.add(
-      new ParentAttribute("PARENT", {ru: {name: "Входит в папку"}}, [Folder])
+      new ParentAttribute(Constants.DEFAULT_PARENT_KET_NAME, {ru: {name: "Входит в папку"}}, [Folder])
     );
 
     /**
@@ -259,7 +259,7 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
       "Company", {ru: {name: "Организация"}},
       [SemCategory.Company],
       [
-        new ParentAttribute("PARENT", {ru: {name: "Входит в папку"}}, [Folder]),
+        new ParentAttribute(Constants.DEFAULT_PARENT_KET_NAME, {ru: {name: "Входит в папку"}}, [Folder]),
         new StringAttribute("NAME", {ru: {name: "Краткое наименование"}}, true,
           undefined, 60, undefined, true, undefined)
       ]
@@ -343,7 +343,7 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
       "Department", {ru: {name: "Подразделение"}}
     );
     Department.add(
-      new ParentAttribute("PARENT", {ru: {name: "Входит в организацию (подразделение)"}}, [Company, Department])
+      new ParentAttribute(Constants.DEFAULT_PARENT_KET_NAME, {ru: {name: "Входит в организацию (подразделение)"}}, [Company, Department])
     );
     Department.add(
       new StringAttribute("NAME", {ru: {name: "Наименование"}}, true,
@@ -373,7 +373,7 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
       "Person", {ru: {name: "Физическое лицо"}}
     );
     Person.add(
-      new ParentAttribute("PARENT", {ru: {name: "Входит в папку"}}, [Folder])
+      new ParentAttribute(Constants.DEFAULT_PARENT_KET_NAME, {ru: {name: "Входит в папку"}}, [Folder])
     );
     Person.add(
       new StringAttribute("NAME", {ru: {name: "ФИО"}}, true,
@@ -406,7 +406,7 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
       "Employee", {ru: {name: "Сотрудник предприятия"}}
     );
     Employee.add(
-      new ParentAttribute("PARENT", {ru: {name: "Организация или подразделение"}}, [Company, Department])
+      new ParentAttribute(Constants.DEFAULT_PARENT_KET_NAME, {ru: {name: "Организация или подразделение"}}, [Company, Department])
     );
 
     /**
@@ -423,7 +423,7 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
               value: 1
             },
             fields: [
-              "PARENT",
+              Constants.DEFAULT_PARENT_KET_NAME,
               "NAME"
             ]
           }]
@@ -432,7 +432,7 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
       "Group", {ru: {name: "Группа"}}
     );
     Group.add(
-      new ParentAttribute("PARENT", {ru: {name: "Входит в папку"}}, [Folder])
+      new ParentAttribute(Constants.DEFAULT_PARENT_KET_NAME, {ru: {name: "Входит в папку"}}, [Folder])
     );
     Group.add(
       new SetAttribute("CONTACTLIST", {ru: {name: "Контакты"}}, false, [Company, Person], 0, [],
@@ -520,13 +520,13 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
         const line = createEntity(lineParent, lineAdapter,
           false, `LINE_${ruid}_${setLR}`, {ru: {name: `Позиция: ${name}`}});
         line.add(
-          new ParentAttribute("PARENT", {ru: {name: "Шапка документа"}}, [header])
+          new ParentAttribute(Constants.DEFAULT_PARENT_KET_NAME, {ru: {name: "Шапка документа"}}, [header])
         );
         documentClasses[ruid] = {...documentClasses[ruid], line};
         const masterLinks = [
           {
             detailRelation: "GD_DOCUMENT",
-            link2masterField: "PARENT"
+            link2masterField: Constants.DEFAULT_PARENT_KET_NAME
           }
         ];
         if (dbs.relations[setLR] && dbs.relations[setLR].relationFields[Constants.DEFAULT_MASTER_KEY_NAME]) {
@@ -639,6 +639,9 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
             console.warn(`${r.name}.${rf.name}: no entities for table ${refRelationName}${cond ? ", condition: " + JSON.stringify(cond) : ""}`);
           }
 
+          if (atRelationField && atRelationField.isParent) {
+            return new ParentAttribute(attributeName, lName, refEntities, semCategories, adapter);
+          }
           return new EntityAttribute(attributeName, lName, required, refEntities, semCategories, adapter);
         } else {
           const iRange = check2NumberRange(fieldSource.validationSource, {min: MIN_32BIT_INT, max: MAX_32BIT_INT});

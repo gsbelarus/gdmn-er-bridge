@@ -13,7 +13,8 @@ class Update3 extends BaseUpdate_1.BaseUpdate {
             await ddlHelper.prepare();
             try {
                 await ddlHelper.addColumns("AT_RELATION_FIELDS", [
-                    { name: "MASTERENTITYNAME", domain: "DTABLENAME" }
+                    { name: "MASTERENTITYNAME", domain: "DTABLENAME" },
+                    { name: "ISPARENT", domain: "DBOOLEAN" }
                 ]);
             }
             finally {

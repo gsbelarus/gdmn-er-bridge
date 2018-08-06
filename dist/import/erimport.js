@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const gdmn_db_1 = require("gdmn-db");
 const gdmn_orm_1 = require("gdmn-orm");
+const Constants_1 = require("../Constants");
 const DDLHelper_1 = require("../ddl/DDLHelper");
 const Update1_1 = require("../updates/Update1");
 const DomainResolver_1 = require("./DomainResolver");
@@ -41,8 +42,8 @@ class ERImport {
       VALUES (:tableName, :lName, :description)
     `);
         this._createATRelationField = await this._connection.prepare(transaction, `
-      INSERT INTO AT_RELATION_FIELDS (FIELDNAME, RELATIONNAME, ATTRNAME, MASTERENTITYNAME, LNAME, DESCRIPTION)
-      VALUES (:fieldName, :relationName, :attrName, :masterEntityName, :lName, :description)
+      INSERT INTO AT_RELATION_FIELDS (FIELDNAME, RELATIONNAME, ATTRNAME, MASTERENTITYNAME, ISPARENT, LNAME, DESCRIPTION)
+      VALUES (:fieldName, :relationName, :attrName, :masterEntityName, :isParent, :lName, :description)
     `);
     }
     async _disposeStatements() {
@@ -78,35 +79,40 @@ class ERImport {
         }
     }
     async _addLinks(entity) {
+        const tableName = entity.name;
         for (const attr of Object.values(entity.attributes).filter((attr) => gdmn_orm_1.isEntityAttribute(attr))) {
-            if (gdmn_orm_1.isParentAttribute(attr)) {
-            }
-            else if (gdmn_orm_1.isDetailAttribute(attr)) {
-                const tableName = entity.name;
+            if (gdmn_orm_1.isDetailAttribute(attr)) {
                 const fieldName = ERImport._getScalarFieldName(entity.pk[0]);
                 const adapter = attr.adapter;
-                const detailTableName = adapter.masterLinks[0].detailRelation;
-                const detailFieldName = adapter.masterLinks[0].link2masterField;
+                let detailTableName;
+                let detailLinkFieldName;
+                if (adapter && adapter.masterLinks.length) {
+                    detailTableName = adapter.masterLinks[0].detailRelation;
+                    detailLinkFieldName = adapter.masterLinks[0].link2masterField;
+                }
+                else {
+                    detailTableName = attr.name;
+                    detailLinkFieldName = Constants_1.Constants.DEFAULT_MASTER_KEY_NAME;
+                }
                 const domainName = await this._getDDLHelper().addDomain(DomainResolver_1.DomainResolver.resolve(attr));
-                await this._getDDLHelper().addColumns(detailTableName, [{ name: detailFieldName, domain: domainName }]);
+                await this._getDDLHelper().addColumns(detailTableName, [{ name: detailLinkFieldName, domain: domainName }]);
                 await this._getDDLHelper().addForeignKey({
                     tableName: detailTableName,
-                    fieldName: detailFieldName
+                    fieldName: detailLinkFieldName
                 }, {
                     tableName,
                     fieldName
                 });
                 await this._bindATAttr(attr, {
                     tableName: detailTableName,
-                    fieldName: detailFieldName,
+                    fieldName: detailLinkFieldName,
                     domainName: domainName,
                     masterEntity: entity
                 });
             }
             else if (gdmn_orm_1.isSetAttribute(attr)) {
             }
-            else if (gdmn_orm_1.isEntityAttribute(attr)) {
-                const tableName = entity.name;
+            else if (gdmn_orm_1.isParentAttribute(attr) || gdmn_orm_1.isEntityAttribute(attr)) {
                 const fieldName = attr.name;
                 const domainName = await this._getDDLHelper().addDomain(DomainResolver_1.DomainResolver.resolve(attr));
                 await this._getDDLHelper().addColumns(tableName, [{ name: fieldName, domain: domainName }]);
@@ -117,7 +123,7 @@ class ERImport {
                     tableName: attr.entity[0].name,
                     fieldName: attr.entity[0].pk[0].name
                 });
-                await this._bindATAttr(attr, { tableName, fieldName, domainName });
+                await this._bindATAttr(attr, { tableName, fieldName, domainName, isParent: gdmn_orm_1.isParentAttribute(attr) });
             }
         }
     }
@@ -173,6 +179,7 @@ class ERImport {
             await this._createATRelationField.execute({
                 fieldName: options.fieldName,
                 relationName: options.tableName,
+                isParent: options.isParent || null,
                 attrName: options.fieldName !== attr.name ? attr.name : null,
                 masterEntityName: options.masterEntity ? options.masterEntity.name : null,
                 lName: attr.lName.ru ? attr.lName.ru.name : attr.name,

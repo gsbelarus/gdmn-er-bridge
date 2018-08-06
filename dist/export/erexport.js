@@ -116,12 +116,12 @@ async function erExport(dbs, connection, transaction, erModel) {
                         value: 0
                     },
                     fields: [
-                        "PARENT",
+                        Constants_1.Constants.DEFAULT_PARENT_KET_NAME,
                         "NAME"
                     ]
                 }]
         }, false, "Folder", { ru: { name: "Папка" } });
-        Folder.add(new gdmn_orm_1.ParentAttribute("PARENT", { ru: { name: "Входит в папку" } }, [Folder]));
+        Folder.add(new gdmn_orm_1.ParentAttribute(Constants_1.Constants.DEFAULT_PARENT_KET_NAME, { ru: { name: "Входит в папку" } }, [Folder]));
         /**
          * Компания хранится в трех таблицах.
          * Две обязательные GD_CONTACT - GD_COMPANY. В адаптере они указываются
@@ -153,7 +153,7 @@ async function erExport(dbs, connection, transaction, erModel) {
             ],
             refresh: true
         }, false, "Company", { ru: { name: "Организация" } }, [gdmn_nlp_1.SemCategory.Company], [
-            new gdmn_orm_1.ParentAttribute("PARENT", { ru: { name: "Входит в папку" } }, [Folder]),
+            new gdmn_orm_1.ParentAttribute(Constants_1.Constants.DEFAULT_PARENT_KET_NAME, { ru: { name: "Входит в папку" } }, [Folder]),
             new gdmn_orm_1.StringAttribute("NAME", { ru: { name: "Краткое наименование" } }, true, undefined, 60, undefined, true, undefined)
         ]);
         createEntity(Company, {
@@ -219,7 +219,7 @@ async function erExport(dbs, connection, transaction, erModel) {
                     }
                 }]
         }, false, "Department", { ru: { name: "Подразделение" } });
-        Department.add(new gdmn_orm_1.ParentAttribute("PARENT", { ru: { name: "Входит в организацию (подразделение)" } }, [Company, Department]));
+        Department.add(new gdmn_orm_1.ParentAttribute(Constants_1.Constants.DEFAULT_PARENT_KET_NAME, { ru: { name: "Входит в организацию (подразделение)" } }, [Company, Department]));
         Department.add(new gdmn_orm_1.StringAttribute("NAME", { ru: { name: "Наименование" } }, true, undefined, 60, undefined, true, undefined));
         /**
          * Физическое лицо хранится в двух таблицах GD_CONTACT - GD_PEOPLE.
@@ -239,7 +239,7 @@ async function erExport(dbs, connection, transaction, erModel) {
             ],
             refresh: true
         }, false, "Person", { ru: { name: "Физическое лицо" } });
-        Person.add(new gdmn_orm_1.ParentAttribute("PARENT", { ru: { name: "Входит в папку" } }, [Folder]));
+        Person.add(new gdmn_orm_1.ParentAttribute(Constants_1.Constants.DEFAULT_PARENT_KET_NAME, { ru: { name: "Входит в папку" } }, [Folder]));
         Person.add(new gdmn_orm_1.StringAttribute("NAME", { ru: { name: "ФИО" } }, true, undefined, 60, undefined, true, undefined));
         /**
          * Сотрудник, частный случай физического лица.
@@ -262,7 +262,7 @@ async function erExport(dbs, connection, transaction, erModel) {
                 }
             ]
         }, false, "Employee", { ru: { name: "Сотрудник предприятия" } });
-        Employee.add(new gdmn_orm_1.ParentAttribute("PARENT", { ru: { name: "Организация или подразделение" } }, [Company, Department]));
+        Employee.add(new gdmn_orm_1.ParentAttribute(Constants_1.Constants.DEFAULT_PARENT_KET_NAME, { ru: { name: "Организация или подразделение" } }, [Company, Department]));
         /**
          * Группа контактов.
          * CONTACTLIST -- множество, которое хранится в кросс-таблице.
@@ -275,12 +275,12 @@ async function erExport(dbs, connection, transaction, erModel) {
                         value: 1
                     },
                     fields: [
-                        "PARENT",
+                        Constants_1.Constants.DEFAULT_PARENT_KET_NAME,
                         "NAME"
                     ]
                 }]
         }, false, "Group", { ru: { name: "Группа" } });
-        Group.add(new gdmn_orm_1.ParentAttribute("PARENT", { ru: { name: "Входит в папку" } }, [Folder]));
+        Group.add(new gdmn_orm_1.ParentAttribute(Constants_1.Constants.DEFAULT_PARENT_KET_NAME, { ru: { name: "Входит в папку" } }, [Folder]));
         Group.add(new gdmn_orm_1.SetAttribute("CONTACTLIST", { ru: { name: "Контакты" } }, false, [Company, Person], 0, [], {
             crossRelation: "GD_CONTACTLIST"
         }));
@@ -341,18 +341,18 @@ async function erExport(dbs, connection, transaction, erModel) {
                 const lineAdapter = gdmn_orm_1.appendAdapter(lineParent.adapter, setLR);
                 lineAdapter.relation[0].selector = { field: "DOCUMENTTYPEKEY", value: id };
                 const line = createEntity(lineParent, lineAdapter, false, `LINE_${ruid}_${setLR}`, { ru: { name: `Позиция: ${name}` } });
-                line.add(new gdmn_orm_1.ParentAttribute("PARENT", { ru: { name: "Шапка документа" } }, [header]));
+                line.add(new gdmn_orm_1.ParentAttribute(Constants_1.Constants.DEFAULT_PARENT_KET_NAME, { ru: { name: "Шапка документа" } }, [header]));
                 documentClasses[ruid] = { ...documentClasses[ruid], line };
                 const masterLinks = [
                     {
                         detailRelation: "GD_DOCUMENT",
-                        link2masterField: "PARENT"
+                        link2masterField: Constants_1.Constants.DEFAULT_PARENT_KET_NAME
                     }
                 ];
-                if (dbs.relations[setLR] && dbs.relations[setLR].relationFields["MASTERKEY"]) {
+                if (dbs.relations[setLR] && dbs.relations[setLR].relationFields[Constants_1.Constants.DEFAULT_MASTER_KEY_NAME]) {
                     masterLinks.push({
                         detailRelation: setLR,
-                        link2masterField: "MASTERKEY"
+                        link2masterField: Constants_1.Constants.DEFAULT_MASTER_KEY_NAME
                     });
                 }
                 header.add(new gdmn_orm_1.DetailAttribute(line.name, line.lName, false, [line], [], { masterLinks }));
@@ -430,6 +430,9 @@ async function erExport(dbs, connection, transaction, erModel) {
                     const refEntities = findEntities(refRelationName, cond);
                     if (!refEntities.length) {
                         console.warn(`${r.name}.${rf.name}: no entities for table ${refRelationName}${cond ? ", condition: " + JSON.stringify(cond) : ""}`);
+                    }
+                    if (atRelationField && atRelationField.isParent) {
+                        return new gdmn_orm_1.ParentAttribute(attributeName, lName, refEntities, semCategories, adapter);
                     }
                     return new gdmn_orm_1.EntityAttribute(attributeName, lName, required, refEntities, semCategories, adapter);
                 }
@@ -529,12 +532,13 @@ async function erExport(dbs, connection, transaction, erModel) {
                     const fieldSource = dbs.fields[rf.fieldSource];
                     const required = rf.notNull || fieldSource.notNull;
                     const lName = atRelationField ? atRelationField.lName : (atField ? atField.lName : {});
-                    masterEntity.add(new gdmn_orm_1.DetailAttribute(attributeName, lName, required, [entity], atRelationField ? atRelationField.semCategories : [], {
+                    const detailAdapter = entity.name !== attributeName ? {
                         masterLinks: [{
                                 detailRelation: entity.name,
                                 link2masterField: adapter ? adapter.field : attrName
                             }]
-                    }));
+                    } : undefined;
+                    masterEntity.add(new gdmn_orm_1.DetailAttribute(attributeName, lName, required, [entity], atRelationField ? atRelationField.semCategories : [], detailAdapter));
                     return;
                 }
                 const attr = createAttribute(r, rf, atRelationField, attrName, atRelationField ? atRelationField.semCategories : [], adapter);

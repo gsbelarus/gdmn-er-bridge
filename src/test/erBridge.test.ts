@@ -17,6 +17,7 @@ import {
   MIN_16BIT_INT,
   MIN_32BIT_INT,
   NumericAttribute,
+  ParentAttribute,
   Sequence,
   SequenceAttribute,
   StringAttribute,
@@ -89,6 +90,7 @@ describe("ERBridge", () => {
     const loadedERModel = await loadERModel();
     const loadEntity = loadedERModel.entity("TEST");
     expect(loadEntity).toEqual(entity);
+    expect(loadEntity.serialize()).toEqual(entity.serialize());
   });
 
   it("integer", async () => {
@@ -114,6 +116,7 @@ describe("ERBridge", () => {
     const loadedERModel = await loadERModel();
     const loadEntity = loadedERModel.entity("TEST");
     expect(loadEntity).toEqual(entity);
+    expect(loadEntity.serialize()).toEqual(entity.serialize());
   });
 
   it("numeric", async () => {
@@ -135,6 +138,7 @@ describe("ERBridge", () => {
     const loadedERModel = await loadERModel();
     const loadEntity = loadedERModel.entity("TEST");
     expect(loadEntity).toEqual(entity);
+    expect(loadEntity.serialize()).toEqual(entity.serialize());
   });
 
   it("blob", async () => {
@@ -153,6 +157,7 @@ describe("ERBridge", () => {
     const loadedERModel = await loadERModel();
     const loadEntity = loadedERModel.entity("TEST");
     expect(loadEntity).toEqual(entity);
+    expect(loadEntity.serialize()).toEqual(entity.serialize());
   });
 
   it("boolean", async () => {
@@ -171,6 +176,7 @@ describe("ERBridge", () => {
     const loadedERModel = await loadERModel();
     const loadEntity = loadedERModel.entity("TEST");
     expect(loadEntity).toEqual(entity);
+    expect(loadEntity.serialize()).toEqual(entity.serialize());
   });
 
   it("string", async () => {
@@ -193,6 +199,7 @@ describe("ERBridge", () => {
     const loadedERModel = await loadERModel();
     const loadEntity = loadedERModel.entity("TEST");
     expect(loadEntity).toEqual(entity);
+    expect(loadEntity.serialize()).toEqual(entity.serialize());
   });
 
   it("date", async () => {
@@ -221,6 +228,7 @@ describe("ERBridge", () => {
     const loadedERModel = await loadERModel();
     const loadEntity = loadedERModel.entity("TEST");
     expect(loadEntity).toEqual(entity);
+    expect(loadEntity.serialize()).toEqual(entity.serialize());
   });
 
   it("time", async () => {
@@ -256,6 +264,7 @@ describe("ERBridge", () => {
     const loadedERModel = await loadERModel();
     const loadEntity = loadedERModel.entity("TEST");
     expect(loadEntity).toEqual(entity);
+    expect(loadEntity.serialize()).toEqual(entity.serialize());
   });
 
   it("timestamp", async () => {
@@ -284,6 +293,7 @@ describe("ERBridge", () => {
     const loadedERModel = await loadERModel();
     const loadEntity = loadedERModel.entity("TEST");
     expect(loadEntity).toEqual(entity);
+    expect(loadEntity.serialize()).toEqual(entity.serialize());
   });
 
   it("float", async () => {
@@ -306,6 +316,7 @@ describe("ERBridge", () => {
     const loadedERModel = await loadERModel();
     const loadEntity = loadedERModel.entity("TEST");
     expect(loadEntity).toEqual(entity);
+    expect(loadEntity.serialize()).toEqual(entity.serialize());
   });
 
   it("enum", async () => {
@@ -339,6 +350,7 @@ describe("ERBridge", () => {
     const loadedERModel = await loadERModel();
     const loadEntity = loadedERModel.entity("TEST");
     expect(loadEntity).toEqual(entity);
+    expect(loadEntity.serialize()).toEqual(entity.serialize());
   });
 
   it("link to entity", async () => {
@@ -364,6 +376,35 @@ describe("ERBridge", () => {
     const loadEntity2 = loadedERModel.entity("TEST2");
     expect(loadEntity1).toEqual(entity1);
     expect(loadEntity2).toEqual(entity2);
+    expect(loadEntity1.serialize()).toEqual(entity1.serialize());
+    expect(loadEntity2.serialize()).toEqual(entity2.serialize());
+  });
+
+  it("parent link to entity", async () => {
+    const erModel = createERModel();
+    const entity1 = createEntity(erModel,
+      undefined,
+      "TEST1",
+      {ru: {name: "entity name", fullName: "full entity name"}},
+      false);
+    const entity2 = createEntity(erModel,
+      undefined,
+      "TEST2",
+      {ru: {name: "entity name", fullName: "full entity name"}},
+      false);
+
+    entity1.add(new ParentAttribute("PARENT", {ru: {name: "Ссылка"}}, [entity2]));
+    entity1.add(new ParentAttribute("LINK", {ru: {name: "Ссылка"}}, [entity2]));
+
+    await erBridge.importToDatabase(erModel);
+
+    const loadedERModel = await loadERModel();
+    const loadEntity1 = loadedERModel.entity("TEST1");
+    const loadEntity2 = loadedERModel.entity("TEST2");
+    expect(loadEntity1).toEqual(entity1);
+    expect(loadEntity2).toEqual(entity2);
+    expect(loadEntity1.serialize()).toEqual(entity1.serialize());
+    expect(loadEntity2.serialize()).toEqual(entity2.serialize());
   });
 
   it("detail entity", async () => {
@@ -401,5 +442,8 @@ describe("ERBridge", () => {
     expect(loadEntity1).toEqual(entity1);
     expect(loadEntity2).toEqual(entity2);
     expect(loadEntity3).toEqual(entity3);
+    expect(loadEntity1.serialize()).toEqual(entity1.serialize());
+    expect(loadEntity2.serialize()).toEqual(entity2.serialize());
+    expect(loadEntity3.serialize()).toEqual(entity3.serialize());
   });
 });

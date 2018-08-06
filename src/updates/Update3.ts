@@ -12,7 +12,8 @@ export class Update3 extends BaseUpdate {
       await ddlHelper.prepare();
       try {
         await ddlHelper.addColumns("AT_RELATION_FIELDS", [
-          {name: "MASTERENTITYNAME", domain: "DTABLENAME"}
+          {name: "MASTERENTITYNAME", domain: "DTABLENAME"},
+          {name: "ISPARENT", domain: "DBOOLEAN"}
         ]);
       } finally {
         await ddlHelper.dispose();
