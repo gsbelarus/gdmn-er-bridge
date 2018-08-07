@@ -4,11 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const moment_1 = __importDefault(require("moment"));
-exports.MIN_TIMESTAMP = moment_1.default().utc().year(1900).startOf("year").toDate();
-exports.MAX_TIMESTAMP = moment_1.default().utc().year(9999).endOf("year").toDate();
-exports.TIME_TEMPLATE = "HH:mm:ss.SSS";
-exports.DATE_TEMPLATE = "DD.MM.YYYY";
-exports.TIMESTAMP_TEMPLATE = "DD.MM.YYYY HH:mm:ss.SSS";
+const Constants_1 = require("../Constants");
 function isCheckForBoolean(validationSource) {
     if (validationSource) {
         switch (validationSource) {
@@ -75,33 +71,33 @@ function check2NumberRange(validationSource, rangeLimit) {
 exports.check2NumberRange = check2NumberRange;
 function check2TimestampRange(validationSource) {
     const range = checkRange(validationSource);
-    let minDate = moment_1.default.utc(range.min, exports.TIMESTAMP_TEMPLATE);
-    let maxDate = moment_1.default.utc(range.max, exports.TIMESTAMP_TEMPLATE);
-    if (minDate.isValid() && minDate.isBefore(exports.MIN_TIMESTAMP)) {
-        minDate = moment_1.default.utc(exports.MIN_TIMESTAMP, exports.TIMESTAMP_TEMPLATE);
+    let minDate = moment_1.default.utc(range.min, Constants_1.Constants.TIMESTAMP_TEMPLATE);
+    let maxDate = moment_1.default.utc(range.max, Constants_1.Constants.TIMESTAMP_TEMPLATE);
+    if (minDate.isValid() && minDate.isBefore(Constants_1.Constants.MIN_TIMESTAMP)) {
+        minDate = moment_1.default.utc(Constants_1.Constants.MIN_TIMESTAMP, Constants_1.Constants.TIMESTAMP_TEMPLATE);
     }
-    if (maxDate.isValid() && maxDate.isAfter(exports.MAX_TIMESTAMP)) {
-        maxDate = moment_1.default.utc(exports.MAX_TIMESTAMP, exports.TIMESTAMP_TEMPLATE);
+    if (maxDate.isValid() && maxDate.isAfter(Constants_1.Constants.MAX_TIMESTAMP)) {
+        maxDate = moment_1.default.utc(Constants_1.Constants.MAX_TIMESTAMP, Constants_1.Constants.TIMESTAMP_TEMPLATE);
     }
     return {
-        minValue: minDate.isValid() ? minDate.local().toDate() : exports.MIN_TIMESTAMP,
-        maxValue: maxDate.isValid() ? maxDate.local().toDate() : exports.MAX_TIMESTAMP
+        minValue: minDate.isValid() ? minDate.local().toDate() : Constants_1.Constants.MIN_TIMESTAMP,
+        maxValue: maxDate.isValid() ? maxDate.local().toDate() : Constants_1.Constants.MAX_TIMESTAMP
     };
 }
 exports.check2TimestampRange = check2TimestampRange;
 function check2TimeRange(validationSource) {
     const range = checkRange(validationSource);
-    const minDate = moment_1.default.utc(range.min, exports.TIME_TEMPLATE);
-    const maxDate = moment_1.default.utc(range.max, exports.TIME_TEMPLATE);
+    const minDate = moment_1.default.utc(range.min, Constants_1.Constants.TIME_TEMPLATE);
+    const maxDate = moment_1.default.utc(range.max, Constants_1.Constants.TIME_TEMPLATE);
     if (minDate.isValid()) {
-        minDate.year(exports.MIN_TIMESTAMP.getUTCFullYear())
-            .month(exports.MIN_TIMESTAMP.getUTCMonth())
-            .date(exports.MIN_TIMESTAMP.getUTCDate());
+        minDate.year(Constants_1.Constants.MIN_TIMESTAMP.getUTCFullYear())
+            .month(Constants_1.Constants.MIN_TIMESTAMP.getUTCMonth())
+            .date(Constants_1.Constants.MIN_TIMESTAMP.getUTCDate());
     }
     if (maxDate.isValid()) {
-        maxDate.year(exports.MIN_TIMESTAMP.getUTCFullYear())
-            .month(exports.MIN_TIMESTAMP.getUTCMonth())
-            .date(exports.MIN_TIMESTAMP.getUTCDate());
+        maxDate.year(Constants_1.Constants.MIN_TIMESTAMP.getUTCFullYear())
+            .month(Constants_1.Constants.MIN_TIMESTAMP.getUTCMonth())
+            .date(Constants_1.Constants.MIN_TIMESTAMP.getUTCDate());
     }
     return {
         minValue: minDate.isValid() ? minDate.local().toDate() : undefined,
@@ -111,17 +107,17 @@ function check2TimeRange(validationSource) {
 exports.check2TimeRange = check2TimeRange;
 function check2DateRange(validationSource) {
     const range = checkRange(validationSource);
-    let minDate = moment_1.default.utc(range.min, exports.DATE_TEMPLATE);
-    let maxDate = moment_1.default.utc(range.max, exports.DATE_TEMPLATE);
-    if (minDate.isValid() && minDate.isBefore(exports.MIN_TIMESTAMP)) {
-        minDate = moment_1.default.utc(exports.MIN_TIMESTAMP, exports.DATE_TEMPLATE);
+    let minDate = moment_1.default.utc(range.min, Constants_1.Constants.DATE_TEMPLATE);
+    let maxDate = moment_1.default.utc(range.max, Constants_1.Constants.DATE_TEMPLATE);
+    if (minDate.isValid() && minDate.isBefore(Constants_1.Constants.MIN_TIMESTAMP)) {
+        minDate = moment_1.default.utc(Constants_1.Constants.MIN_TIMESTAMP, Constants_1.Constants.DATE_TEMPLATE);
     }
-    if (maxDate.isValid() && maxDate.isAfter(exports.MAX_TIMESTAMP)) {
-        maxDate = moment_1.default.utc(exports.MAX_TIMESTAMP, exports.DATE_TEMPLATE);
+    if (maxDate.isValid() && maxDate.isAfter(Constants_1.Constants.MAX_TIMESTAMP)) {
+        maxDate = moment_1.default.utc(Constants_1.Constants.MAX_TIMESTAMP, Constants_1.Constants.DATE_TEMPLATE);
     }
     return {
-        minValue: minDate.isValid() ? minDate.local().toDate() : exports.MIN_TIMESTAMP,
-        maxValue: maxDate.isValid() ? maxDate.local().toDate() : exports.MAX_TIMESTAMP
+        minValue: minDate.isValid() ? minDate.local().toDate() : Constants_1.Constants.MIN_TIMESTAMP,
+        maxValue: maxDate.isValid() ? maxDate.local().toDate() : Constants_1.Constants.MAX_TIMESTAMP
     };
 }
 exports.check2DateRange = check2DateRange;
@@ -207,12 +203,12 @@ function default2Time(defaultSource) {
     if (defaultSource === "CURRENT_TIME") {
         return defaultSource;
     }
-    const mDate = moment_1.default.utc(defaultSource, exports.TIME_TEMPLATE);
+    const mDate = moment_1.default.utc(defaultSource, Constants_1.Constants.TIME_TEMPLATE);
     if (mDate.isValid()) {
         return mDate
-            .year(exports.MIN_TIMESTAMP.getUTCFullYear())
-            .month(exports.MIN_TIMESTAMP.getUTCMonth())
-            .date(exports.MIN_TIMESTAMP.getUTCDate())
+            .year(Constants_1.Constants.MIN_TIMESTAMP.getUTCFullYear())
+            .month(Constants_1.Constants.MIN_TIMESTAMP.getUTCMonth())
+            .date(Constants_1.Constants.MIN_TIMESTAMP.getUTCDate())
             .local().toDate();
     }
 }
@@ -225,7 +221,7 @@ function default2Timestamp(defaultSource) {
     if (defaultSource === "CURRENT_TIMESTAMP(0)") {
         return defaultSource;
     }
-    const mDate = moment_1.default.utc(defaultSource, exports.TIMESTAMP_TEMPLATE);
+    const mDate = moment_1.default.utc(defaultSource, Constants_1.Constants.TIMESTAMP_TEMPLATE);
     if (mDate.isValid()) {
         return mDate.local().toDate();
     }
@@ -236,31 +232,10 @@ function default2Date(defaultSource) {
     if (defaultSource === "CURRENT_DATE") {
         return defaultSource;
     }
-    const mDate = moment_1.default.utc(defaultSource, exports.DATE_TEMPLATE);
+    const mDate = moment_1.default.utc(defaultSource, Constants_1.Constants.DATE_TEMPLATE);
     if (mDate.isValid()) {
         return mDate.local().toDate();
     }
 }
 exports.default2Date = default2Date;
-function date2Str(date) {
-    if (date instanceof Date) {
-        return `'${moment_1.default(date).utc().format(exports.DATE_TEMPLATE)}'`;
-    }
-    return date;
-}
-exports.date2Str = date2Str;
-function dateTime2Str(date) {
-    if (date instanceof Date) {
-        return `'${moment_1.default(date).utc().format(exports.TIMESTAMP_TEMPLATE)}'`;
-    }
-    return date;
-}
-exports.dateTime2Str = dateTime2Str;
-function time2Str(date) {
-    if (date instanceof Date) {
-        return `'${moment_1.default(date).utc().format(exports.TIME_TEMPLATE)}'`;
-    }
-    return date;
-}
-exports.time2Str = time2Str;
 //# sourceMappingURL=util.js.map

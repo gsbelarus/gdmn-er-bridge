@@ -13,6 +13,9 @@ class DDLHelper {
     get logs() {
         return this._logs;
     }
+    get ddlUniqueGen() {
+        return this._ddlUniqueGen;
+    }
     static _getColumnProps(props) {
         return ((props.default ? `DEFAULT ${props.default}` : " ").padEnd(40) +
             (props.notNull ? "NOT NULL" : " ").padEnd(10) +

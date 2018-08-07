@@ -3,7 +3,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const gdmn_db_1 = require("gdmn-db");
 const gdmn_orm_1 = require("gdmn-orm");
 const Constants_1 = require("../Constants");
+const ATHelper_1 = require("../ATHelper");
 const DDLHelper_1 = require("../ddl/DDLHelper");
+const Prefix_1 = require("../Prefix");
 const Update1_1 = require("../updates/Update1");
 const DomainResolver_1 = require("./DomainResolver");
 class ERImport {
@@ -20,10 +22,13 @@ class ERImport {
             connection: this._connection,
             callback: async (transaction) => {
                 this._ddlHelper = new DDLHelper_1.DDLHelper(this._connection, transaction);
+                this._atHelper = new ATHelper_1.ATHelper(this._connection, transaction);
                 try {
-                    await this._prepareStatements(transaction);
+                    await this._getDDLHelper().prepare();
+                    await this._getATHelper().prepare();
                     await this._createERSchema();
-                    await this._disposeStatements();
+                    await this._getDDLHelper().dispose();
+                    await this._getATHelper().dispose();
                 }
                 finally {
                     console.debug(this._ddlHelper.logs.join("\n"));
@@ -31,38 +36,17 @@ class ERImport {
             }
         });
     }
-    async _prepareStatements(transaction) {
-        await this._getDDLHelper().prepare();
-        this._createATField = await this._connection.prepare(transaction, `
-      INSERT INTO AT_FIELDS (FIELDNAME, LNAME, DESCRIPTION, NUMERATION)
-      VALUES (:fieldName, :lName, :description, :numeration)
-    `);
-        this._createATRelation = await this._connection.prepare(transaction, `
-      INSERT INTO AT_RELATIONS (RELATIONNAME, LNAME, DESCRIPTION)
-      VALUES (:tableName, :lName, :description)
-    `);
-        this._createATRelationField = await this._connection.prepare(transaction, `
-      INSERT INTO AT_RELATION_FIELDS (FIELDNAME, RELATIONNAME, ATTRNAME, MASTERENTITYNAME, ISPARENT, LNAME, DESCRIPTION)
-      VALUES (:fieldName, :relationName, :attrName, :masterEntityName, :isParent, :lName, :description)
-    `);
-    }
-    async _disposeStatements() {
-        await this._getDDLHelper().dispose();
-        if (this._createATField) {
-            await this._createATField.dispose();
-        }
-        if (this._createATRelation) {
-            await this._createATRelation.dispose();
-        }
-        if (this._createATRelationField) {
-            await this._createATRelationField.dispose();
-        }
-    }
     _getDDLHelper() {
         if (this._ddlHelper) {
             return this._ddlHelper;
         }
         throw new Error("ddlHelper is undefined");
+    }
+    _getATHelper() {
+        if (this._atHelper) {
+            return this._atHelper;
+        }
+        throw new Error("atHelper is undefined");
     }
     async _createERSchema() {
         for (const sequence of Object.values(this._erModel.sequencies)) {
@@ -104,13 +88,76 @@ class ERImport {
                     fieldName
                 });
                 await this._bindATAttr(attr, {
-                    tableName: detailTableName,
+                    relationName: detailTableName,
                     fieldName: detailLinkFieldName,
                     domainName: domainName,
                     masterEntity: entity
                 });
             }
             else if (gdmn_orm_1.isSetAttribute(attr)) {
+                const crossTableName = Prefix_1.Prefix.join(`${await this._getDDLHelper().ddlUniqueGen.next()}`, Prefix_1.Prefix.CROSS);
+                // create cross table
+                const fields = [];
+                for (const crossAttr of Object.values(attr.attributes).filter((attr) => gdmn_orm_1.isScalarAttribute(attr))) {
+                    const domainName = await this._getDDLHelper().addDomain(DomainResolver_1.DomainResolver.resolve(crossAttr));
+                    const fieldName = ERImport._getScalarFieldName(crossAttr);
+                    await this._bindATAttr(crossAttr, { relationName: crossTableName, fieldName, domainName });
+                    const field = {
+                        name: fieldName,
+                        domain: domainName
+                    };
+                    fields.push(field);
+                }
+                const pkFields = [];
+                const refPKDomainName = await this._getDDLHelper().addDomain(DomainResolver_1.DomainResolver.resolve(attr.entity[0].pk[0]));
+                const refPK = {
+                    name: Constants_1.Constants.DEFAULT_CROSS_PK_REF_NAME,
+                    domain: refPKDomainName
+                };
+                fields.unshift(refPK);
+                pkFields.unshift(refPK);
+                const ownPKDomainName = await this._getDDLHelper().addDomain(DomainResolver_1.DomainResolver.resolve(entity.pk[0]));
+                const ownPK = {
+                    name: Constants_1.Constants.DEFAULT_CROSS_PK_OWN_NAME,
+                    domain: ownPKDomainName
+                };
+                fields.unshift(ownPK);
+                pkFields.unshift(ownPK);
+                await this._getDDLHelper().addTable(crossTableName, fields);
+                await this._getDDLHelper().addPrimaryKey(crossTableName, pkFields.map((i) => i.name));
+                const crossTableKey = await this._getATHelper().insertATRelations({
+                    relationName: crossTableName,
+                    relationType: "T",
+                    lName: crossTableName,
+                    description: crossTableName,
+                    semCategory: undefined
+                });
+                // create own table column
+                const fieldName = attr.name;
+                const domainName = await this._getDDLHelper().addDomain(DomainResolver_1.DomainResolver.resolve(attr));
+                await this._getDDLHelper().addColumns(tableName, [{ name: fieldName, domain: domainName }]);
+                await this._bindATAttr(attr, {
+                    relationName: tableName,
+                    fieldName,
+                    domainName,
+                    crossTable: crossTableName,
+                    crossTableKey
+                });
+                // add foreign keys for cross table
+                await this._getDDLHelper().addForeignKey({
+                    tableName: crossTableName,
+                    fieldName: Constants_1.Constants.DEFAULT_CROSS_PK_OWN_NAME
+                }, {
+                    tableName: entity.name,
+                    fieldName: ERImport._getScalarFieldName(entity.pk[0])
+                });
+                await this._getDDLHelper().addForeignKey({
+                    tableName: crossTableName,
+                    fieldName: Constants_1.Constants.DEFAULT_CROSS_PK_REF_NAME
+                }, {
+                    tableName: attr.entity[0].name,
+                    fieldName: ERImport._getScalarFieldName(attr.entity[0].pk[0])
+                });
             }
             else if (gdmn_orm_1.isParentAttribute(attr) || gdmn_orm_1.isEntityAttribute(attr)) {
                 const fieldName = attr.name;
@@ -121,9 +168,9 @@ class ERImport {
                     fieldName
                 }, {
                     tableName: attr.entity[0].name,
-                    fieldName: attr.entity[0].pk[0].name
+                    fieldName: ERImport._getScalarFieldName(attr.entity[0].pk[0])
                 });
-                await this._bindATAttr(attr, { tableName, fieldName, domainName, isParent: gdmn_orm_1.isParentAttribute(attr) });
+                await this._bindATAttr(attr, { relationName: tableName, fieldName, domainName });
             }
         }
     }
@@ -134,7 +181,7 @@ class ERImport {
         for (const attr of Object.values(entity.attributes).filter((attr) => gdmn_orm_1.isScalarAttribute(attr))) {
             const domainName = await this._getDDLHelper().addDomain(DomainResolver_1.DomainResolver.resolve(attr));
             const fieldName = ERImport._getScalarFieldName(attr);
-            await this._bindATAttr(attr, { tableName, fieldName, domainName });
+            await this._bindATAttr(attr, { relationName: tableName, fieldName, domainName });
             const field = {
                 name: fieldName,
                 domain: domainName
@@ -146,49 +193,47 @@ class ERImport {
         }
         await this._getDDLHelper().addTable(tableName, fields);
         await this._getDDLHelper().addPrimaryKey(tableName, pkFields.map((i) => i.name));
-        await this._bindATEntity(entity, { tableName });
+        await this._bindATEntity(entity, { relationName: tableName });
     }
     async _bindATEntity(entity, options) {
-        if (this._createATRelation) {
-            await this._createATRelation.execute({
-                tableName: options.tableName,
-                lName: entity.lName.ru ? entity.lName.ru.name : entity.name,
-                description: entity.lName.ru ? entity.lName.ru.fullName : entity.name
-            });
-        }
-        else {
-            throw new Error("createATRelation is undefined");
-        }
+        return await this._getATHelper().insertATRelations({
+            relationName: options.relationName,
+            relationType: "T",
+            lName: entity.lName.ru ? entity.lName.ru.name : entity.name,
+            description: entity.lName.ru ? entity.lName.ru.fullName : entity.name,
+            semCategory: undefined
+        });
     }
     async _bindATAttr(attr, options) {
         const numeration = gdmn_orm_1.isEnumAttribute(attr)
             ? attr.values.map(({ value, lName }) => `${value}=${lName && lName.ru ? lName.ru.name : ""}`).join("#13#10")
             : undefined;
-        if (this._createATField) {
-            await this._createATField.execute({
-                fieldName: options.domainName,
-                lName: attr.lName.ru ? attr.lName.ru.name : attr.name,
-                description: attr.lName.ru ? attr.lName.ru.fullName : attr.name,
-                numeration: numeration ? Buffer.from(numeration) : undefined
-            });
-        }
-        else {
-            throw new Error("createATField is undefined");
-        }
-        if (this._createATRelationField) {
-            await this._createATRelationField.execute({
-                fieldName: options.fieldName,
-                relationName: options.tableName,
-                isParent: options.isParent || null,
-                attrName: options.fieldName !== attr.name ? attr.name : null,
-                masterEntityName: options.masterEntity ? options.masterEntity.name : null,
-                lName: attr.lName.ru ? attr.lName.ru.name : attr.name,
-                description: attr.lName.ru ? attr.lName.ru.fullName : attr.name
-            });
-        }
-        else {
-            throw new Error("createATRelationField is undefined");
-        }
+        const fieldSourceKey = await this._getATHelper().insertATFields({
+            fieldName: options.domainName,
+            lName: attr.lName.ru ? attr.lName.ru.name : attr.name,
+            description: attr.lName.ru ? attr.lName.ru.fullName : attr.name,
+            refTable: undefined,
+            refCondition: undefined,
+            setTable: undefined,
+            setListField: undefined,
+            setCondition: undefined,
+            numeration: numeration ? Buffer.from(numeration) : undefined
+        });
+        await this._getATHelper().insertATRelationFields({
+            fieldName: options.fieldName,
+            relationName: options.relationName,
+            lName: attr.lName.ru ? attr.lName.ru.name : attr.name,
+            description: attr.lName.ru ? attr.lName.ru.fullName : attr.name,
+            attrName: options.fieldName !== attr.name ? attr.name : undefined,
+            isParent: gdmn_orm_1.isParentAttribute(attr) || undefined,
+            masterEntityName: options.masterEntity ? options.masterEntity.name : undefined,
+            fieldSource: options.domainName,
+            fieldSourceKey,
+            semCategory: undefined,
+            crossTable: options.crossTable,
+            crossTableKey: options.crossTableKey,
+            crossField: options.crossField
+        });
     }
 }
 exports.ERImport = ERImport;

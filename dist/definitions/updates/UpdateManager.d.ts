@@ -8,5 +8,4 @@ export declare class UpdateManager {
     private sort;
     private verifyAmount;
     private _getDBVersion;
-    private _updateDBVersion;
 }

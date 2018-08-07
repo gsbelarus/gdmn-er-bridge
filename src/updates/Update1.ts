@@ -9,7 +9,7 @@ export class Update1 extends BaseUpdate {
 
   public version: number = 1;
 
-  public async do(): Promise<void> {
+  public async run(): Promise<void> {
     await this._executeTransaction(async (transaction) => {
       const ddlHelper = new DDLHelper(this._connection, transaction);
       await ddlHelper.addSequence(GLOBAL_GENERATOR);
@@ -27,6 +27,7 @@ export class Update1 extends BaseUpdate {
       await ddlHelper.addDomain("DTEXT180", {type: "VARCHAR(180)"});
       await ddlHelper.addDomain("DTEXT60", {type: "VARCHAR(60)"});
       await ddlHelper.addDomain("DNAME", {type: "VARCHAR(60)", notNull: true});
+      await ddlHelper.addDomain("DRELATIONTYPE", {type: "VARCHAR(1)", check: "CHECK (VALUE IN ('T', 'V'))"});
       await ddlHelper.addDomain("DDOCUMENTTYPE", {
         type: "VARCHAR(1)",
         check: " CHECK ((VALUE = 'B') OR (VALUE = 'D'))"
@@ -52,6 +53,7 @@ export class Update1 extends BaseUpdate {
       await ddlHelper.addTable("AT_RELATIONS", [
         {name: "ID", domain: "DINTKEY"},
         {name: "RELATIONNAME", domain: "DTABLENAME", notNull: true},
+        {name: "RELATIONTYPE", domain: "DRELATIONTYPE"},
         {name: "LNAME", domain: "DNAME"},
         {name: "DESCRIPTION", domain: "DTEXT180"},
         {name: "SEMCATEGORY", domain: "DTEXT60"}
@@ -64,10 +66,12 @@ export class Update1 extends BaseUpdate {
         {name: "FIELDNAME", domain: "DFIELDNAME", notNull: true},
         {name: "RELATIONNAME", domain: "DTABLENAME", notNull: true},
         {name: "FIELDSOURCE", domain: "DFIELDNAME"},
+        {name: "FIELDSOURCEKEY", domain: "DINTKEY"},
         {name: "LNAME", domain: "DNAME"},
         {name: "DESCRIPTION", domain: "DTEXT180"},
         {name: "SEMCATEGORY", domain: "DTEXT60"},
         {name: "CROSSTABLE", domain: "DTABLENAME"},
+        {name: "CROSSTABLEKEY", domain: "DFOREIGNKEY"},
         {name: "CROSSFIELD", domain: "DFIELDNAME"}
       ]);
       await ddlHelper.addPrimaryKey("AT_PK_RELATION_FIELDS", "AT_RELATION_FIELDS", ["ID"]);

@@ -36,7 +36,9 @@ export interface atRelationField {
   isParent: boolean;
   lName: LName;
   fieldSource: string;
+  fieldSourceKey: number;
   crossTable: string | undefined;
+  crossTableKey: number | undefined;
   crossField: string | undefined;
   semCategories: SemCategory[];
 }
@@ -139,6 +141,7 @@ export async function load(connection: AConnection, transaction: ATransaction) {
       SELECT
         FIELDNAME,
         FIELDSOURCE,
+        FIELDSOURCEKEY,
         RELATIONNAME,
         ATTRNAME,
         MASTERENTITYNAME,
@@ -147,6 +150,7 @@ export async function load(connection: AConnection, transaction: ATransaction) {
         DESCRIPTION,
         SEMCATEGORY,
         CROSSTABLE,
+        CROSSTABLEKEY,
         CROSSFIELD
       FROM
         AT_RELATION_FIELDS
@@ -174,7 +178,9 @@ export async function load(connection: AConnection, transaction: ATransaction) {
           isParent: resultSet.getBoolean("ISPARENT"),
           lName: {ru},
           fieldSource: getTrimmedString("FIELDSOURCE")!,
+          fieldSourceKey: resultSet.getNumber("FIELDSOURCEKEY"),
           crossTable: getTrimmedString("CROSSTABLE"),
+          crossTableKey: resultSet.getNumber("CROSSTABLEKEY"),
           crossField: getTrimmedString("CROSSFIELD"),
           semCategories: str2SemCategories(resultSet.getString("SEMCATEGORY"))
         };

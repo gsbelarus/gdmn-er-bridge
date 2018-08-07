@@ -7,7 +7,7 @@ class Update3 extends BaseUpdate_1.BaseUpdate {
         super(...arguments);
         this.version = 3;
     }
-    async do() {
+    async run() {
         await this._executeTransaction(async (transaction) => {
             const ddlHelper = new DDLHelper_1.DDLHelper(this._connection, transaction);
             await ddlHelper.prepare();
@@ -20,6 +20,7 @@ class Update3 extends BaseUpdate_1.BaseUpdate {
             finally {
                 await ddlHelper.dispose();
             }
+            await this._updateDatabaseVersion(transaction);
         });
     }
 }

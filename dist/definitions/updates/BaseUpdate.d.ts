@@ -4,6 +4,7 @@ export declare abstract class BaseUpdate {
     abstract version: number;
     protected _connection: AConnection;
     constructor(connection: AConnection);
-    abstract do(): Promise<void>;
+    abstract run(): Promise<void>;
     protected _executeTransaction<R>(callback: TExecutor<ATransaction, R>): Promise<R>;
+    protected _updateDatabaseVersion(transaction: ATransaction): Promise<void>;
 }

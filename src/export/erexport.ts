@@ -59,7 +59,7 @@ import {
   default2Timestamp,
   IRange,
   isCheckForBoolean
-} from "../util";
+} from "./util";
 import {atRelationField, load} from "./atdata";
 import {loadDocument} from "./document";
 import {gdDomains} from "./gddomains";
@@ -211,7 +211,7 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
             value: 0
           },
           fields: [
-            Constants.DEFAULT_PARENT_KET_NAME,
+            Constants.DEFAULT_PARENT_KEY_NAME,
             "NAME"
           ]
         }]
@@ -220,7 +220,7 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
       "Folder", {ru: {name: "Папка"}}
     );
     Folder.add(
-      new ParentAttribute(Constants.DEFAULT_PARENT_KET_NAME, {ru: {name: "Входит в папку"}}, [Folder])
+      new ParentAttribute(Constants.DEFAULT_PARENT_KEY_NAME, {ru: {name: "Входит в папку"}}, [Folder])
     );
 
     /**
@@ -259,7 +259,7 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
       "Company", {ru: {name: "Организация"}},
       [SemCategory.Company],
       [
-        new ParentAttribute(Constants.DEFAULT_PARENT_KET_NAME, {ru: {name: "Входит в папку"}}, [Folder]),
+        new ParentAttribute(Constants.DEFAULT_PARENT_KEY_NAME, {ru: {name: "Входит в папку"}}, [Folder]),
         new StringAttribute("NAME", {ru: {name: "Краткое наименование"}}, true,
           undefined, 60, undefined, true, undefined)
       ]
@@ -343,7 +343,7 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
       "Department", {ru: {name: "Подразделение"}}
     );
     Department.add(
-      new ParentAttribute(Constants.DEFAULT_PARENT_KET_NAME, {ru: {name: "Входит в организацию (подразделение)"}}, [Company, Department])
+      new ParentAttribute(Constants.DEFAULT_PARENT_KEY_NAME, {ru: {name: "Входит в организацию (подразделение)"}}, [Company, Department])
     );
     Department.add(
       new StringAttribute("NAME", {ru: {name: "Наименование"}}, true,
@@ -373,7 +373,7 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
       "Person", {ru: {name: "Физическое лицо"}}
     );
     Person.add(
-      new ParentAttribute(Constants.DEFAULT_PARENT_KET_NAME, {ru: {name: "Входит в папку"}}, [Folder])
+      new ParentAttribute(Constants.DEFAULT_PARENT_KEY_NAME, {ru: {name: "Входит в папку"}}, [Folder])
     );
     Person.add(
       new StringAttribute("NAME", {ru: {name: "ФИО"}}, true,
@@ -406,7 +406,7 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
       "Employee", {ru: {name: "Сотрудник предприятия"}}
     );
     Employee.add(
-      new ParentAttribute(Constants.DEFAULT_PARENT_KET_NAME, {ru: {name: "Организация или подразделение"}}, [Company, Department])
+      new ParentAttribute(Constants.DEFAULT_PARENT_KEY_NAME, {ru: {name: "Организация или подразделение"}}, [Company, Department])
     );
 
     /**
@@ -423,7 +423,7 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
               value: 1
             },
             fields: [
-              Constants.DEFAULT_PARENT_KET_NAME,
+              Constants.DEFAULT_PARENT_KEY_NAME,
               "NAME"
             ]
           }]
@@ -432,7 +432,7 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
       "Group", {ru: {name: "Группа"}}
     );
     Group.add(
-      new ParentAttribute(Constants.DEFAULT_PARENT_KET_NAME, {ru: {name: "Входит в папку"}}, [Folder])
+      new ParentAttribute(Constants.DEFAULT_PARENT_KEY_NAME, {ru: {name: "Входит в папку"}}, [Folder])
     );
     Group.add(
       new SetAttribute("CONTACTLIST", {ru: {name: "Контакты"}}, false, [Company, Person], 0, [],
@@ -520,13 +520,13 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
         const line = createEntity(lineParent, lineAdapter,
           false, `LINE_${ruid}_${setLR}`, {ru: {name: `Позиция: ${name}`}});
         line.add(
-          new ParentAttribute(Constants.DEFAULT_PARENT_KET_NAME, {ru: {name: "Шапка документа"}}, [header])
+          new ParentAttribute(Constants.DEFAULT_PARENT_KEY_NAME, {ru: {name: "Шапка документа"}}, [header])
         );
         documentClasses[ruid] = {...documentClasses[ruid], line};
         const masterLinks = [
           {
             detailRelation: "GD_DOCUMENT",
-            link2masterField: Constants.DEFAULT_PARENT_KET_NAME
+            link2masterField: Constants.DEFAULT_PARENT_KEY_NAME
           }
         ];
         if (dbs.relations[setLR] && dbs.relations[setLR].relationFields[Constants.DEFAULT_MASTER_KEY_NAME]) {
@@ -792,13 +792,13 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
         }
       });
 
-      Object.entries(r.unique).forEach(uq => {
-        entity.addUnique(uq[1].fields.map(f => entity.attribute(f)));
+      Object.values(r.unique).forEach((uq) => {
+        entity.addUnique(uq.fields.map(f => entity.attribute(f)));
       });
     });
   }
 
-  Object.entries(erModel.entities).forEach(([, entity]) => createAttributes(entity));
+  Object.values(erModel.entities).forEach((entity) => createAttributes(entity));
 
   /**
    * Looking for cross-tables and construct set attributes.
@@ -865,7 +865,7 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
       const atCrossRelation = atrelations[crossName];
 
       entitiesOwner.forEach(e => {
-        if (!Object.entries(e.attributes).find(([, attr]) =>
+        if (!Object.values(e.attributes).find((attr) =>
           (attr instanceof SetAttribute) && !!attr.adapter && attr.adapter.crossRelation === crossName)) {
           const setAttr = new SetAttribute(
             atSetField ? atSetField[0] : crossName,
@@ -881,14 +881,25 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
 
           Object.entries(crossRelation.relationFields).forEach(([addName, addField]) => {
             if (!crossRelation.primaryKey!.fields.find(f => f === addName)) {
+              const atCrossRelationsFields = atCrossRelation ? atCrossRelation.relationFields[addName] : undefined;
+
+              let attrName = addName;
+              let adapter = undefined;
+
+              // for custom field adapters
+              if (atCrossRelationsFields && atCrossRelationsFields.attrName !== undefined) {
+                attrName = atCrossRelationsFields.attrName;
+                adapter = {relation: crossRelation.name, field: addName};
+              }
+
               setAttr.add(
                 createAttribute(
                   crossRelation,
                   addField,
                   atCrossRelation ? atCrossRelation.relationFields[addName] : undefined,
-                  addName,
+                  attrName,
                   atCrossRelation.relationFields[addName].semCategories,
-                  undefined
+                  adapter
                 )
               );
             }

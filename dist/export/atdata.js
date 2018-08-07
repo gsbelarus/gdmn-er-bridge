@@ -86,6 +86,7 @@ async function load(connection, transaction) {
       SELECT
         FIELDNAME,
         FIELDSOURCE,
+        FIELDSOURCEKEY,
         RELATIONNAME,
         ATTRNAME,
         MASTERENTITYNAME,
@@ -94,6 +95,7 @@ async function load(connection, transaction) {
         DESCRIPTION,
         SEMCATEGORY,
         CROSSTABLE,
+        CROSSTABLEKEY,
         CROSSFIELD
       FROM
         AT_RELATION_FIELDS
@@ -122,7 +124,9 @@ async function load(connection, transaction) {
                     isParent: resultSet.getBoolean("ISPARENT"),
                     lName: { ru },
                     fieldSource: getTrimmedString("FIELDSOURCE"),
+                    fieldSourceKey: resultSet.getNumber("FIELDSOURCEKEY"),
                     crossTable: getTrimmedString("CROSSTABLE"),
+                    crossTableKey: resultSet.getNumber("CROSSTABLEKEY"),
                     crossField: getTrimmedString("CROSSFIELD"),
                     semCategories: gdmn_nlp_1.str2SemCategories(resultSet.getString("SEMCATEGORY"))
                 };

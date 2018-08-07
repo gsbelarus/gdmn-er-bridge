@@ -5,6 +5,10 @@ export class DDLUniqueGenerator {
 
   private _nextUnique: AStatement | undefined;
 
+  public get prepared(): boolean {
+    return !!this._nextUnique;
+  }
+
   public async prepare(connection: AConnection, transaction: ATransaction): Promise<void> {
     this._nextUnique = await connection.prepare(transaction,
       `SELECT NEXT VALUE FOR ${GLOBAL_DDL_GENERATOR} FROM RDB$DATABASE`);

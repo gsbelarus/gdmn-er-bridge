@@ -1,9 +1,4 @@
 import { ContextVariables } from "gdmn-orm";
-export declare const MIN_TIMESTAMP: Date;
-export declare const MAX_TIMESTAMP: Date;
-export declare const TIME_TEMPLATE = "HH:mm:ss.SSS";
-export declare const DATE_TEMPLATE = "DD.MM.YYYY";
-export declare const TIMESTAMP_TEMPLATE = "DD.MM.YYYY HH:mm:ss.SSS";
 export interface IRange<T> {
     minValue: T | undefined;
     maxValue: T | undefined;
@@ -30,6 +25,3 @@ export declare function default2String(defaultSource: string | null): string | u
 export declare function default2Time(defaultSource: string | null): Date | ContextVariables | undefined;
 export declare function default2Timestamp(defaultSource: string | null): Date | ContextVariables | undefined;
 export declare function default2Date(defaultSource: string | null): Date | ContextVariables | undefined;
-export declare function date2Str(date: Date | ContextVariables): string;
-export declare function dateTime2Str(date: Date | ContextVariables): string;
-export declare function time2Str(date: Date | ContextVariables): string;

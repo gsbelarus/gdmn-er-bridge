@@ -9,7 +9,7 @@ export class Update2 extends BaseUpdate {
 
   public version: number = 2;
 
-  public async do(): Promise<void> {
+  public async run(): Promise<void> {
     await this._executeTransaction(async (transaction) => {
       const ddlHelper = new DDLHelper(this._connection, transaction);
       await ddlHelper.addSequence(GLOBAL_DDL_GENERATOR);
@@ -29,5 +29,6 @@ export class Update2 extends BaseUpdate {
         await ddlHelper.dispose();
       }
     });
+    await this._executeTransaction((transaction) => this._updateDatabaseVersion(transaction));
   }
 }

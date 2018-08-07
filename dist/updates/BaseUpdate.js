@@ -11,6 +11,15 @@ class BaseUpdate {
             callback: callback
         });
     }
+    async _updateDatabaseVersion(transaction) {
+        await this._connection.execute(transaction, `
+      UPDATE OR INSERT INTO AT_DATABASE (ID, VERSION)
+      VALUES (1, :version)
+      MATCHING (ID)
+    `, {
+            version: this.version
+        });
+    }
 }
 exports.BaseUpdate = BaseUpdate;
 //# sourceMappingURL=BaseUpdate.js.map

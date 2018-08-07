@@ -20,6 +20,7 @@ import {
   ParentAttribute,
   Sequence,
   SequenceAttribute,
+  SetAttribute,
   StringAttribute,
   TimeAttribute,
   TimeStampAttribute
@@ -27,9 +28,9 @@ import {
 import {Entity2RelationMap} from "gdmn-orm/src/rdbadapter";
 import {LName} from "gdmn-orm/src/types";
 import moment from "moment";
+import {Constants} from "../Constants";
 import {ERBridge} from "../ERBridge";
 import {GLOBAL_GENERATOR} from "../updates/Update1";
-import {MAX_TIMESTAMP, MIN_TIMESTAMP, TIME_TEMPLATE} from "../util";
 import {importTestDBDetail} from "./testDB";
 
 describe("ERBridge", () => {
@@ -215,12 +216,12 @@ describe("ERBridge", () => {
       moment.utc().startOf("date").local().toDate(),
       [], {relation: "TEST", field: "FIELD_ADAPTER"}));
     entity.add(new DateAttribute("FIELD2", {ru: {name: "Поле 2"}}, false,
-      moment.utc(MIN_TIMESTAMP).startOf("date").local().toDate(),
-      moment.utc(MAX_TIMESTAMP).startOf("date").local().toDate(),
+      moment.utc(Constants.MIN_TIMESTAMP).startOf("date").local().toDate(),
+      moment.utc(Constants.MAX_TIMESTAMP).startOf("date").local().toDate(),
       "CURRENT_DATE"));
     entity.add(new DateAttribute("FIELD3", {ru: {name: "Поле 3"}}, false,
-      moment.utc(MIN_TIMESTAMP).startOf("date").local().toDate(),
-      moment.utc(MAX_TIMESTAMP).startOf("date").local().toDate(),
+      moment.utc(Constants.MIN_TIMESTAMP).startOf("date").local().toDate(),
+      moment.utc(Constants.MAX_TIMESTAMP).startOf("date").local().toDate(),
       undefined));
 
     await erBridge.importToDatabase(erModel);
@@ -239,24 +240,24 @@ describe("ERBridge", () => {
       {ru: {name: "entity name", fullName: "full entity name"}},
       false);
     entity.add(new TimeAttribute("FIELD1", {ru: {name: "Поле 1"}}, true,
-      moment.utc().year(MIN_TIMESTAMP.getUTCFullYear()).month(MIN_TIMESTAMP.getUTCMonth()).date(MIN_TIMESTAMP.getDate())
-        .startOf("date").local().toDate(),
-      moment.utc().year(MIN_TIMESTAMP.getUTCFullYear()).month(MIN_TIMESTAMP.getUTCMonth()).date(MIN_TIMESTAMP.getDate())
-        .endOf("date").local().toDate(),
-      moment.utc().year(MIN_TIMESTAMP.getUTCFullYear()).month(MIN_TIMESTAMP.getUTCMonth()).date(MIN_TIMESTAMP.getDate())
-        .local().toDate(),
+      moment.utc().year(Constants.MIN_TIMESTAMP.getUTCFullYear()).month(Constants.MIN_TIMESTAMP.getUTCMonth())
+        .date(Constants.MIN_TIMESTAMP.getDate()).startOf("date").local().toDate(),
+      moment.utc().year(Constants.MIN_TIMESTAMP.getUTCFullYear()).month(Constants.MIN_TIMESTAMP.getUTCMonth())
+        .date(Constants.MIN_TIMESTAMP.getDate()).endOf("date").local().toDate(),
+      moment.utc().year(Constants.MIN_TIMESTAMP.getUTCFullYear()).month(Constants.MIN_TIMESTAMP.getUTCMonth())
+        .date(Constants.MIN_TIMESTAMP.getDate()).local().toDate(),
       [], {relation: "TEST", field: "FIELD_ADAPTER"}));
     entity.add(new TimeAttribute("FIELD2", {ru: {name: "Поле 2"}}, false,
-      moment.utc(MIN_TIMESTAMP, TIME_TEMPLATE).local().toDate(),
-      moment.utc(MAX_TIMESTAMP, TIME_TEMPLATE)
-        .year(MIN_TIMESTAMP.getUTCFullYear()).month(MIN_TIMESTAMP.getUTCMonth()).date(MIN_TIMESTAMP.getDate())
-        .local().toDate(),
+      moment.utc(Constants.MIN_TIMESTAMP, Constants.TIME_TEMPLATE).local().toDate(),
+      moment.utc(Constants.MAX_TIMESTAMP, Constants.TIME_TEMPLATE)
+        .year(Constants.MIN_TIMESTAMP.getUTCFullYear()).month(Constants.MIN_TIMESTAMP.getUTCMonth())
+        .date(Constants.MIN_TIMESTAMP.getDate()).local().toDate(),
       "CURRENT_TIME"));
     entity.add(new TimeAttribute("FIELD3", {ru: {name: "Поле 3"}}, false,
-      moment.utc(MIN_TIMESTAMP, TIME_TEMPLATE).local().toDate(),
-      moment.utc(MAX_TIMESTAMP, TIME_TEMPLATE)
-        .year(MIN_TIMESTAMP.getUTCFullYear()).month(MIN_TIMESTAMP.getUTCMonth()).date(MIN_TIMESTAMP.getDate())
-        .local().toDate(),
+      moment.utc(Constants.MIN_TIMESTAMP, Constants.TIME_TEMPLATE).local().toDate(),
+      moment.utc(Constants.MAX_TIMESTAMP, Constants.TIME_TEMPLATE)
+        .year(Constants.MIN_TIMESTAMP.getUTCFullYear()).month(Constants.MIN_TIMESTAMP.getUTCMonth())
+        .date(Constants.MIN_TIMESTAMP.getDate()).local().toDate(),
       undefined));
 
     await erBridge.importToDatabase(erModel);
@@ -280,12 +281,12 @@ describe("ERBridge", () => {
       moment.utc().local().toDate(),
       [], {relation: "TEST", field: "FIELD_ADAPTER"}));
     entity.add(new TimeStampAttribute("FIELD2", {ru: {name: "Поле 2"}}, false,
-      moment.utc(MIN_TIMESTAMP).local().toDate(),
-      moment.utc(MAX_TIMESTAMP).local().toDate(),
+      moment.utc(Constants.MIN_TIMESTAMP).local().toDate(),
+      moment.utc(Constants.MAX_TIMESTAMP).local().toDate(),
       "CURRENT_TIMESTAMP"));
     entity.add(new TimeStampAttribute("FIELD3", {ru: {name: "Поле 3"}}, false,
-      moment.utc(MIN_TIMESTAMP).local().toDate(),
-      moment.utc(MAX_TIMESTAMP).local().toDate(),
+      moment.utc(Constants.MIN_TIMESTAMP).local().toDate(),
+      moment.utc(Constants.MAX_TIMESTAMP).local().toDate(),
       undefined));
 
     await erBridge.importToDatabase(erModel);
@@ -445,5 +446,91 @@ describe("ERBridge", () => {
     expect(loadEntity1.serialize()).toEqual(entity1.serialize());
     expect(loadEntity2.serialize()).toEqual(entity2.serialize());
     expect(loadEntity3.serialize()).toEqual(entity3.serialize());
+  });
+
+  it("set link to entity", async () => {
+    const erModel = createERModel();
+    const entity1 = createEntity(erModel,
+      undefined,
+      "TEST1",
+      {ru: {name: "entity name", fullName: "full entity name"}},
+      false);
+    const entity2 = createEntity(erModel,
+      undefined,
+      "TEST2",
+      {ru: {name: "entity name", fullName: "full entity name"}},
+      false);
+
+    const crossRelation = "CROSS_5"; // generated value
+    const setAttr = new SetAttribute("SET1", {ru: {name: "Ссылка"}}, true, [entity2], 0, [], {crossRelation});
+
+    setAttr.add(new IntegerAttribute("FIELD1", {ru: {name: "Поле 1", fullName: "FULLNAME"}}, true,
+      MIN_16BIT_INT, MAX_16BIT_INT, -100, [], {relation: crossRelation, field: "FIELD_ADAPTER1"}));
+    setAttr.add(new IntegerAttribute("FIELD2", {ru: {name: "Поле 2", fullName: "FULLNAME"}}, true,
+      MIN_32BIT_INT, MAX_32BIT_INT, -10000, []));
+    // setAttr.add(new IntegerAttribute("FIELD3", {ru: {name: "Поле 3", fullName: "FULLNAME"}}, true,
+    //   MIN_64BIT_INT, MAX_64BIT_INT, -100000000000000, []));
+    setAttr.add(new IntegerAttribute("FIELD4", {ru: {name: "Поле 4", fullName: "FULLNAME"}}, false,
+      MIN_16BIT_INT, MAX_16BIT_INT + 1, 0, []));
+    setAttr.add(new IntegerAttribute("FIELD5", {ru: {name: "Поле 5", fullName: "FULLNAME"}}, false,
+      MIN_16BIT_INT, MAX_16BIT_INT + 1, undefined));
+
+    setAttr.add(new NumericAttribute("FIELD6", {ru: {name: "Поле 6"}}, true,
+      4, 2, 40, 1000, 40.36, [], {relation: crossRelation, field: "FIELD_ADAPTER2"}));
+    setAttr.add(new NumericAttribute("FIELD7", {ru: {name: "Поле 7"}}, false,
+      4, 2, 40, 1000, 40.36));
+    setAttr.add(new NumericAttribute("FIELD8", {ru: {name: "Поле 8"}}, false,
+      4, 2, 40, 1000, undefined));
+
+    setAttr.add(new BooleanAttribute("FIELD9", {ru: {name: "Поле 9"}}, true, true,
+      [], {relation: crossRelation, field: "FIELD_ADAPTER3"}));
+    setAttr.add(new BooleanAttribute("FIELD10", {ru: {name: "Поле 10"}}, false, false));
+
+    setAttr.add(new StringAttribute("FIELD11", {ru: {name: "Поле 11"}}, true,
+      5, 30, "test default", true, undefined,
+      [], {relation: crossRelation, field: "FIELD_ADAPTER4"}));
+    setAttr.add(new StringAttribute("FIELD12", {ru: {name: "Поле 12"}}, false,
+      1, 160, "test default", true, undefined));
+    setAttr.add(new StringAttribute("FIELD13", {ru: {name: "Поле 13"}}, false,
+      1, 160, undefined, true, undefined));
+
+    setAttr.add(new FloatAttribute("FIELD14", {ru: {name: "Поле 14"}}, true,
+      -123, 123123123123123123123123, 40,
+      [], {relation: crossRelation, field: "FIELD_ADAPTER5"}));
+    // entity.add(new FloatAttribute("FIELD15", {ru: {name: "Поле 15"}}, false,
+    //   Number.MIN_VALUE, Number.MAX_VALUE, 40));
+    setAttr.add(new FloatAttribute("FIELD16", {ru: {name: "Поле 16"}}, true,
+      -123, 123123123123123123123123, undefined));
+
+    setAttr.add(new EnumAttribute("FIELD17", {ru: {name: "Поле 17"}}, true, [
+      {
+        value: "Z",
+        lName: {ru: {name: "Перечисление Z"}}
+      },
+      {
+        value: "X",
+        lName: {ru: {name: "Перечисление X"}}
+      },
+      {
+        value: "Y",
+        lName: {ru: {name: "Перечисление Y"}}
+      }
+    ], "Z", [], {relation: crossRelation, field: "FIELD_ADAPTER6"}));
+    setAttr.add(new EnumAttribute("FIELD18", {ru: {name: "Поле 18"}}, false,
+      [{value: "Z"}, {value: "X"}, {value: "Y"}], "Z"));
+    setAttr.add(new EnumAttribute("FIELD19", {ru: {name: "Поле 19"}}, false,
+      [{value: "Z"}, {value: "X"}, {value: "Y"}], undefined));
+
+    entity1.add(setAttr);
+
+    await erBridge.importToDatabase(erModel);
+
+    const loadedERModel = await loadERModel();
+    const loadEntity1 = loadedERModel.entity("TEST1");
+    const loadEntity2 = loadedERModel.entity("TEST2");
+    expect(loadEntity1).toEqual(entity1);
+    expect(loadEntity2).toEqual(entity2);
+    expect(loadEntity1.serialize()).toEqual(entity1.serialize());
+    expect(loadEntity2.serialize()).toEqual(entity2.serialize());
   });
 });

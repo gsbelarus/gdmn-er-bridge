@@ -1,4 +1,5 @@
 import { AConnection, ATransaction } from "gdmn-db";
+import { DDLUniqueGenerator } from "./DDLUniqueGenerator";
 export interface IColumnsProps {
     notNull?: boolean;
     default?: string;
@@ -22,6 +23,7 @@ export declare class DDLHelper {
     private _logs;
     constructor(connection: AConnection, transaction: ATransaction);
     readonly logs: string[];
+    readonly ddlUniqueGen: DDLUniqueGenerator;
     private static _getColumnProps;
     prepare(): Promise<void>;
     dispose(): Promise<void>;

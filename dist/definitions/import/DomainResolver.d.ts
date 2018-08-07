@@ -7,4 +7,7 @@ export declare class DomainResolver {
     private static _getDefaultValue;
     private static _val2Str;
     private static _getIntTypeByRange;
+    private static _date2Str;
+    private static _dateTime2Str;
+    private static _time2Str;
 }

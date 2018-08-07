@@ -10,7 +10,7 @@ class Update2 extends BaseUpdate_1.BaseUpdate {
         super(...arguments);
         this.version = 2;
     }
-    async do() {
+    async run() {
         await this._executeTransaction(async (transaction) => {
             const ddlHelper = new DDLHelper_1.DDLHelper(this._connection, transaction);
             await ddlHelper.addSequence(exports.GLOBAL_DDL_GENERATOR);
@@ -29,6 +29,7 @@ class Update2 extends BaseUpdate_1.BaseUpdate {
                 await ddlHelper.dispose();
             }
         });
+        await this._executeTransaction((transaction) => this._updateDatabaseVersion(transaction));
     }
 }
 exports.Update2 = Update2;

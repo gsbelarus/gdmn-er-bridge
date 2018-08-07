@@ -41,6 +41,10 @@ export class DDLHelper {
     return this._logs;
   }
 
+  get ddlUniqueGen(): DDLUniqueGenerator {
+    return this._ddlUniqueGen;
+  }
+
   private static _getColumnProps(props: IColumnsProps): string {
     return (
       (props.default ? `DEFAULT ${props.default}` : " ").padEnd(40) +

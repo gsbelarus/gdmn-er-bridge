@@ -30,13 +30,7 @@ export class UpdateManager {
 
     const newUpdates = updates.filter((item) => item.version > version);
     for (const update of newUpdates) {
-      await update.do();
-    }
-    if (newUpdates.length) {
-      await AConnection.executeTransaction({
-        connection,
-        callback: (transaction) => this._updateDBVersion(connection, transaction)
-      });
+      await update.run();
     }
   }
 
@@ -86,15 +80,5 @@ export class UpdateManager {
       FROM AT_DATABASE
     `);
     return await result.getNumber("VERSION");
-  }
-
-  private async _updateDBVersion(connection: AConnection, transaction: ATransaction): Promise<void> {
-    await connection.execute(transaction, `
-      UPDATE OR INSERT INTO AT_DATABASE (ID, VERSION)
-      VALUES (1, :version)
-      MATCHING (ID)
-    `, {
-      version: UpdateManager.CURRENT_DATABASE_VERSION
-    });
   }
 }

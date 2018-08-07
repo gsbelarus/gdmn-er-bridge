@@ -1,12 +1,6 @@
 import {ContextVariables} from "gdmn-orm";
 import moment from "moment";
-
-export const MIN_TIMESTAMP = moment().utc().year(1900).startOf("year").toDate();
-export const MAX_TIMESTAMP = moment().utc().year(9999).endOf("year").toDate();
-
-export const TIME_TEMPLATE = "HH:mm:ss.SSS";
-export const DATE_TEMPLATE = "DD.MM.YYYY";
-export const TIMESTAMP_TEMPLATE = "DD.MM.YYYY HH:mm:ss.SSS";
+import {Constants} from "../Constants";
 
 export interface IRange<T> {
   minValue: T | undefined;
@@ -81,33 +75,33 @@ export function check2NumberRange(validationSource: string | null,
 
 export function check2TimestampRange(validationSource: string | null): IRange<Date> {
   const range = checkRange(validationSource);
-  let minDate = moment.utc(range.min, TIMESTAMP_TEMPLATE);
-  let maxDate = moment.utc(range.max, TIMESTAMP_TEMPLATE);
-  if (minDate.isValid() && minDate.isBefore(MIN_TIMESTAMP)) {
-    minDate = moment.utc(MIN_TIMESTAMP, TIMESTAMP_TEMPLATE);
+  let minDate = moment.utc(range.min, Constants.TIMESTAMP_TEMPLATE);
+  let maxDate = moment.utc(range.max, Constants.TIMESTAMP_TEMPLATE);
+  if (minDate.isValid() && minDate.isBefore(Constants.MIN_TIMESTAMP)) {
+    minDate = moment.utc(Constants.MIN_TIMESTAMP, Constants.TIMESTAMP_TEMPLATE);
   }
-  if (maxDate.isValid() && maxDate.isAfter(MAX_TIMESTAMP)) {
-    maxDate = moment.utc(MAX_TIMESTAMP, TIMESTAMP_TEMPLATE);
+  if (maxDate.isValid() && maxDate.isAfter(Constants.MAX_TIMESTAMP)) {
+    maxDate = moment.utc(Constants.MAX_TIMESTAMP, Constants.TIMESTAMP_TEMPLATE);
   }
   return {
-    minValue: minDate.isValid() ? minDate.local().toDate() : MIN_TIMESTAMP,
-    maxValue: maxDate.isValid() ? maxDate.local().toDate() : MAX_TIMESTAMP
+    minValue: minDate.isValid() ? minDate.local().toDate() : Constants.MIN_TIMESTAMP,
+    maxValue: maxDate.isValid() ? maxDate.local().toDate() : Constants.MAX_TIMESTAMP
   };
 }
 
 export function check2TimeRange(validationSource: string | null): IRange<Date> {
   const range = checkRange(validationSource);
-  const minDate = moment.utc(range.min, TIME_TEMPLATE);
-  const maxDate = moment.utc(range.max, TIME_TEMPLATE);
+  const minDate = moment.utc(range.min, Constants.TIME_TEMPLATE);
+  const maxDate = moment.utc(range.max, Constants.TIME_TEMPLATE);
   if (minDate.isValid()) {
-    minDate.year(MIN_TIMESTAMP.getUTCFullYear())
-      .month(MIN_TIMESTAMP.getUTCMonth())
-      .date(MIN_TIMESTAMP.getUTCDate());
+    minDate.year(Constants.MIN_TIMESTAMP.getUTCFullYear())
+      .month(Constants.MIN_TIMESTAMP.getUTCMonth())
+      .date(Constants.MIN_TIMESTAMP.getUTCDate());
   }
   if (maxDate.isValid()) {
-    maxDate.year(MIN_TIMESTAMP.getUTCFullYear())
-      .month(MIN_TIMESTAMP.getUTCMonth())
-      .date(MIN_TIMESTAMP.getUTCDate());
+    maxDate.year(Constants.MIN_TIMESTAMP.getUTCFullYear())
+      .month(Constants.MIN_TIMESTAMP.getUTCMonth())
+      .date(Constants.MIN_TIMESTAMP.getUTCDate());
   }
   return {
     minValue: minDate.isValid() ? minDate.local().toDate() : undefined,
@@ -117,17 +111,17 @@ export function check2TimeRange(validationSource: string | null): IRange<Date> {
 
 export function check2DateRange(validationSource: string | null): IRange<Date> {
   const range = checkRange(validationSource);
-  let minDate = moment.utc(range.min, DATE_TEMPLATE);
-  let maxDate = moment.utc(range.max, DATE_TEMPLATE);
-  if (minDate.isValid() && minDate.isBefore(MIN_TIMESTAMP)) {
-    minDate = moment.utc(MIN_TIMESTAMP, DATE_TEMPLATE);
+  let minDate = moment.utc(range.min, Constants.DATE_TEMPLATE);
+  let maxDate = moment.utc(range.max, Constants.DATE_TEMPLATE);
+  if (minDate.isValid() && minDate.isBefore(Constants.MIN_TIMESTAMP)) {
+    minDate = moment.utc(Constants.MIN_TIMESTAMP, Constants.DATE_TEMPLATE);
   }
-  if (maxDate.isValid() && maxDate.isAfter(MAX_TIMESTAMP)) {
-    maxDate = moment.utc(MAX_TIMESTAMP, DATE_TEMPLATE);
+  if (maxDate.isValid() && maxDate.isAfter(Constants.MAX_TIMESTAMP)) {
+    maxDate = moment.utc(Constants.MAX_TIMESTAMP, Constants.DATE_TEMPLATE);
   }
   return {
-    minValue: minDate.isValid() ? minDate.local().toDate() : MIN_TIMESTAMP,
-    maxValue: maxDate.isValid() ? maxDate.local().toDate() : MAX_TIMESTAMP
+    minValue: minDate.isValid() ? minDate.local().toDate() : Constants.MIN_TIMESTAMP,
+    maxValue: maxDate.isValid() ? maxDate.local().toDate() : Constants.MAX_TIMESTAMP
   };
 }
 
@@ -213,12 +207,12 @@ export function default2Time(defaultSource: string | null): Date | ContextVariab
   if (defaultSource === "CURRENT_TIME") {
     return defaultSource;
   }
-  const mDate = moment.utc(defaultSource!, TIME_TEMPLATE);
+  const mDate = moment.utc(defaultSource!, Constants.TIME_TEMPLATE);
   if (mDate.isValid()) {
     return mDate
-      .year(MIN_TIMESTAMP.getUTCFullYear())
-      .month(MIN_TIMESTAMP.getUTCMonth())
-      .date(MIN_TIMESTAMP.getUTCDate())
+      .year(Constants.MIN_TIMESTAMP.getUTCFullYear())
+      .month(Constants.MIN_TIMESTAMP.getUTCMonth())
+      .date(Constants.MIN_TIMESTAMP.getUTCDate())
       .local().toDate();
   }
 }
@@ -231,7 +225,7 @@ export function default2Timestamp(defaultSource: string | null): Date | ContextV
   if (defaultSource === "CURRENT_TIMESTAMP(0)") {
     return defaultSource;
   }
-  const mDate = moment.utc(defaultSource!, TIMESTAMP_TEMPLATE);
+  const mDate = moment.utc(defaultSource!, Constants.TIMESTAMP_TEMPLATE);
   if (mDate.isValid()) {
     return mDate.local().toDate();
   }
@@ -242,29 +236,8 @@ export function default2Date(defaultSource: string | null): Date | ContextVariab
   if (defaultSource === "CURRENT_DATE") {
     return defaultSource;
   }
-  const mDate = moment.utc(defaultSource!, DATE_TEMPLATE);
+  const mDate = moment.utc(defaultSource!, Constants.DATE_TEMPLATE);
   if (mDate.isValid()) {
     return mDate.local().toDate();
   }
-}
-
-export function date2Str(date: Date | ContextVariables): string {
-  if (date instanceof Date) {
-    return `'${moment(date).utc().format(DATE_TEMPLATE)}'`;
-  }
-  return date;
-}
-
-export function dateTime2Str(date: Date | ContextVariables): string {
-  if (date instanceof Date) {
-    return `'${moment(date).utc().format(TIMESTAMP_TEMPLATE)}'`;
-  }
-  return date;
-}
-
-export function time2Str(date: Date | ContextVariables): string {
-  if (date instanceof Date) {
-    return `'${moment(date).utc().format(TIME_TEMPLATE)}'`;
-  }
-  return date;
 }

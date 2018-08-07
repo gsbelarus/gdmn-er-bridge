@@ -1,7 +1,11 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const gdmn_orm_1 = require("gdmn-orm");
-const util_1 = require("../util");
+const moment_1 = __importDefault(require("moment"));
+const Constants_1 = require("../Constants");
 class DomainResolver {
     static resolve(attr) {
         return {
@@ -93,13 +97,13 @@ class DomainResolver {
     }
     static _val2Str(attr, value) {
         if (gdmn_orm_1.isDateAttribute(attr)) {
-            return util_1.date2Str(value);
+            return DomainResolver._date2Str(value);
         }
         else if (gdmn_orm_1.isTimeAttribute(attr)) {
-            return util_1.time2Str(value);
+            return DomainResolver._time2Str(value);
         }
         else if (gdmn_orm_1.isTimeStampAttribute(attr)) {
-            return util_1.dateTime2Str(value);
+            return DomainResolver._dateTime2Str(value);
         }
         else if (gdmn_orm_1.isNumberAttribute(attr)) {
             return `${value}`;
@@ -132,6 +136,24 @@ class DomainResolver {
             default:
                 return "INTEGER";
         }
+    }
+    static _date2Str(date) {
+        if (date instanceof Date) {
+            return `'${moment_1.default(date).utc().format(Constants_1.Constants.DATE_TEMPLATE)}'`;
+        }
+        return date;
+    }
+    static _dateTime2Str(date) {
+        if (date instanceof Date) {
+            return `'${moment_1.default(date).utc().format(Constants_1.Constants.TIMESTAMP_TEMPLATE)}'`;
+        }
+        return date;
+    }
+    static _time2Str(date) {
+        if (date instanceof Date) {
+            return `'${moment_1.default(date).utc().format(Constants_1.Constants.TIME_TEMPLATE)}'`;
+        }
+        return date;
     }
 }
 exports.DomainResolver = DomainResolver;

@@ -5,7 +5,7 @@ const gdmn_nlp_1 = require("gdmn-nlp");
 const gdmn_orm_1 = require("gdmn-orm");
 const Constants_1 = require("../Constants");
 const Update1_1 = require("../updates/Update1");
-const util_1 = require("../util");
+const util_1 = require("./util");
 const atdata_1 = require("./atdata");
 const document_1 = require("./document");
 const gddomains_1 = require("./gddomains");
@@ -116,12 +116,12 @@ async function erExport(dbs, connection, transaction, erModel) {
                         value: 0
                     },
                     fields: [
-                        Constants_1.Constants.DEFAULT_PARENT_KET_NAME,
+                        Constants_1.Constants.DEFAULT_PARENT_KEY_NAME,
                         "NAME"
                     ]
                 }]
         }, false, "Folder", { ru: { name: "Папка" } });
-        Folder.add(new gdmn_orm_1.ParentAttribute(Constants_1.Constants.DEFAULT_PARENT_KET_NAME, { ru: { name: "Входит в папку" } }, [Folder]));
+        Folder.add(new gdmn_orm_1.ParentAttribute(Constants_1.Constants.DEFAULT_PARENT_KEY_NAME, { ru: { name: "Входит в папку" } }, [Folder]));
         /**
          * Компания хранится в трех таблицах.
          * Две обязательные GD_CONTACT - GD_COMPANY. В адаптере они указываются
@@ -153,7 +153,7 @@ async function erExport(dbs, connection, transaction, erModel) {
             ],
             refresh: true
         }, false, "Company", { ru: { name: "Организация" } }, [gdmn_nlp_1.SemCategory.Company], [
-            new gdmn_orm_1.ParentAttribute(Constants_1.Constants.DEFAULT_PARENT_KET_NAME, { ru: { name: "Входит в папку" } }, [Folder]),
+            new gdmn_orm_1.ParentAttribute(Constants_1.Constants.DEFAULT_PARENT_KEY_NAME, { ru: { name: "Входит в папку" } }, [Folder]),
             new gdmn_orm_1.StringAttribute("NAME", { ru: { name: "Краткое наименование" } }, true, undefined, 60, undefined, true, undefined)
         ]);
         createEntity(Company, {
@@ -219,7 +219,7 @@ async function erExport(dbs, connection, transaction, erModel) {
                     }
                 }]
         }, false, "Department", { ru: { name: "Подразделение" } });
-        Department.add(new gdmn_orm_1.ParentAttribute(Constants_1.Constants.DEFAULT_PARENT_KET_NAME, { ru: { name: "Входит в организацию (подразделение)" } }, [Company, Department]));
+        Department.add(new gdmn_orm_1.ParentAttribute(Constants_1.Constants.DEFAULT_PARENT_KEY_NAME, { ru: { name: "Входит в организацию (подразделение)" } }, [Company, Department]));
         Department.add(new gdmn_orm_1.StringAttribute("NAME", { ru: { name: "Наименование" } }, true, undefined, 60, undefined, true, undefined));
         /**
          * Физическое лицо хранится в двух таблицах GD_CONTACT - GD_PEOPLE.
@@ -239,7 +239,7 @@ async function erExport(dbs, connection, transaction, erModel) {
             ],
             refresh: true
         }, false, "Person", { ru: { name: "Физическое лицо" } });
-        Person.add(new gdmn_orm_1.ParentAttribute(Constants_1.Constants.DEFAULT_PARENT_KET_NAME, { ru: { name: "Входит в папку" } }, [Folder]));
+        Person.add(new gdmn_orm_1.ParentAttribute(Constants_1.Constants.DEFAULT_PARENT_KEY_NAME, { ru: { name: "Входит в папку" } }, [Folder]));
         Person.add(new gdmn_orm_1.StringAttribute("NAME", { ru: { name: "ФИО" } }, true, undefined, 60, undefined, true, undefined));
         /**
          * Сотрудник, частный случай физического лица.
@@ -262,7 +262,7 @@ async function erExport(dbs, connection, transaction, erModel) {
                 }
             ]
         }, false, "Employee", { ru: { name: "Сотрудник предприятия" } });
-        Employee.add(new gdmn_orm_1.ParentAttribute(Constants_1.Constants.DEFAULT_PARENT_KET_NAME, { ru: { name: "Организация или подразделение" } }, [Company, Department]));
+        Employee.add(new gdmn_orm_1.ParentAttribute(Constants_1.Constants.DEFAULT_PARENT_KEY_NAME, { ru: { name: "Организация или подразделение" } }, [Company, Department]));
         /**
          * Группа контактов.
          * CONTACTLIST -- множество, которое хранится в кросс-таблице.
@@ -275,12 +275,12 @@ async function erExport(dbs, connection, transaction, erModel) {
                         value: 1
                     },
                     fields: [
-                        Constants_1.Constants.DEFAULT_PARENT_KET_NAME,
+                        Constants_1.Constants.DEFAULT_PARENT_KEY_NAME,
                         "NAME"
                     ]
                 }]
         }, false, "Group", { ru: { name: "Группа" } });
-        Group.add(new gdmn_orm_1.ParentAttribute(Constants_1.Constants.DEFAULT_PARENT_KET_NAME, { ru: { name: "Входит в папку" } }, [Folder]));
+        Group.add(new gdmn_orm_1.ParentAttribute(Constants_1.Constants.DEFAULT_PARENT_KEY_NAME, { ru: { name: "Входит в папку" } }, [Folder]));
         Group.add(new gdmn_orm_1.SetAttribute("CONTACTLIST", { ru: { name: "Контакты" } }, false, [Company, Person], 0, [], {
             crossRelation: "GD_CONTACTLIST"
         }));
@@ -341,12 +341,12 @@ async function erExport(dbs, connection, transaction, erModel) {
                 const lineAdapter = gdmn_orm_1.appendAdapter(lineParent.adapter, setLR);
                 lineAdapter.relation[0].selector = { field: "DOCUMENTTYPEKEY", value: id };
                 const line = createEntity(lineParent, lineAdapter, false, `LINE_${ruid}_${setLR}`, { ru: { name: `Позиция: ${name}` } });
-                line.add(new gdmn_orm_1.ParentAttribute(Constants_1.Constants.DEFAULT_PARENT_KET_NAME, { ru: { name: "Шапка документа" } }, [header]));
+                line.add(new gdmn_orm_1.ParentAttribute(Constants_1.Constants.DEFAULT_PARENT_KEY_NAME, { ru: { name: "Шапка документа" } }, [header]));
                 documentClasses[ruid] = { ...documentClasses[ruid], line };
                 const masterLinks = [
                     {
                         detailRelation: "GD_DOCUMENT",
-                        link2masterField: Constants_1.Constants.DEFAULT_PARENT_KET_NAME
+                        link2masterField: Constants_1.Constants.DEFAULT_PARENT_KEY_NAME
                     }
                 ];
                 if (dbs.relations[setLR] && dbs.relations[setLR].relationFields[Constants_1.Constants.DEFAULT_MASTER_KEY_NAME]) {
@@ -546,12 +546,12 @@ async function erExport(dbs, connection, transaction, erModel) {
                     entity.add(attr);
                 }
             });
-            Object.entries(r.unique).forEach(uq => {
-                entity.addUnique(uq[1].fields.map(f => entity.attribute(f)));
+            Object.values(r.unique).forEach((uq) => {
+                entity.addUnique(uq.fields.map(f => entity.attribute(f)));
             });
         });
     }
-    Object.entries(erModel.entities).forEach(([, entity]) => createAttributes(entity));
+    Object.values(erModel.entities).forEach((entity) => createAttributes(entity));
     /**
      * Looking for cross-tables and construct set attributes.
      *
@@ -600,13 +600,21 @@ async function erExport(dbs, connection, transaction, erModel) {
             const setFieldSource = setField ? dbs.fields[setField.fieldSource] : undefined;
             const atCrossRelation = atrelations[crossName];
             entitiesOwner.forEach(e => {
-                if (!Object.entries(e.attributes).find(([, attr]) => (attr instanceof gdmn_orm_1.SetAttribute) && !!attr.adapter && attr.adapter.crossRelation === crossName)) {
+                if (!Object.values(e.attributes).find((attr) => (attr instanceof gdmn_orm_1.SetAttribute) && !!attr.adapter && attr.adapter.crossRelation === crossName)) {
                     const setAttr = new gdmn_orm_1.SetAttribute(atSetField ? atSetField[0] : crossName, atSetField ? atSetField[1].lName : (atCrossRelation ? atCrossRelation.lName : { en: { name: crossName } }), (!!setField && setField.notNull) || (!!setFieldSource && setFieldSource.notNull), referenceEntities, (setFieldSource && setFieldSource.fieldType === gdmn_db_1.FieldType.VARCHAR) ? setFieldSource.fieldLength : 0, atCrossRelation.semCategories, {
                         crossRelation: crossName
                     });
                     Object.entries(crossRelation.relationFields).forEach(([addName, addField]) => {
                         if (!crossRelation.primaryKey.fields.find(f => f === addName)) {
-                            setAttr.add(createAttribute(crossRelation, addField, atCrossRelation ? atCrossRelation.relationFields[addName] : undefined, addName, atCrossRelation.relationFields[addName].semCategories, undefined));
+                            const atCrossRelationsFields = atCrossRelation ? atCrossRelation.relationFields[addName] : undefined;
+                            let attrName = addName;
+                            let adapter = undefined;
+                            // for custom field adapters
+                            if (atCrossRelationsFields && atCrossRelationsFields.attrName !== undefined) {
+                                attrName = atCrossRelationsFields.attrName;
+                                adapter = { relation: crossRelation.name, field: addName };
+                            }
+                            setAttr.add(createAttribute(crossRelation, addField, atCrossRelation ? atCrossRelation.relationFields[addName] : undefined, attrName, atCrossRelation.relationFields[addName].semCategories, adapter));
                         }
                     });
                     e.add(setAttr);

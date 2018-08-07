@@ -32,7 +32,9 @@ export interface atRelationField {
     isParent: boolean;
     lName: LName;
     fieldSource: string;
+    fieldSourceKey: number;
     crossTable: string | undefined;
+    crossTableKey: number | undefined;
     crossField: string | undefined;
     semCategories: SemCategory[];
 }

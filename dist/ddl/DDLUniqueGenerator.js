@@ -2,6 +2,9 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const Update2_1 = require("../updates/Update2");
 class DDLUniqueGenerator {
+    get prepared() {
+        return !!this._nextUnique;
+    }
     async prepare(connection, transaction) {
         this._nextUnique = await connection.prepare(transaction, `SELECT NEXT VALUE FOR ${Update2_1.GLOBAL_DDL_GENERATOR} FROM RDB$DATABASE`);
     }

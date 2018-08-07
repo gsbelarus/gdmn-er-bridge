@@ -1,5 +1,6 @@
 import {
   Attribute,
+  ContextVariables,
   isBlobAttribute,
   isBooleanAttribute,
   isDateAttribute,
@@ -21,8 +22,9 @@ import {
   MIN_64BIT_INT,
   ScalarAttribute
 } from "gdmn-orm";
+import moment from "moment";
+import {Constants} from "../Constants";
 import {IDomainProps} from "../ddl/DDLHelper";
-import {date2Str, dateTime2Str, time2Str} from "../util";
 
 export class DomainResolver {
 
@@ -103,11 +105,11 @@ export class DomainResolver {
 
   private static _val2Str(attr: ScalarAttribute, value: any): string | undefined {
     if (isDateAttribute(attr)) {
-      return date2Str(value);
+      return DomainResolver._date2Str(value);
     } else if (isTimeAttribute(attr)) {
-      return time2Str(value);
+      return DomainResolver._time2Str(value);
     } else if (isTimeStampAttribute(attr)) {
-      return dateTime2Str(value);
+      return DomainResolver._dateTime2Str(value);
     } else if (isNumberAttribute(attr)) {
       return `${value}`;
     } else if (isStringAttribute(attr)) {
@@ -137,5 +139,26 @@ export class DomainResolver {
       default:
         return "INTEGER";
     }
+  }
+
+  private static _date2Str(date: Date | ContextVariables): string {
+    if (date instanceof Date) {
+      return `'${moment(date).utc().format(Constants.DATE_TEMPLATE)}'`;
+    }
+    return date;
+  }
+
+  private static _dateTime2Str(date: Date | ContextVariables): string {
+    if (date instanceof Date) {
+      return `'${moment(date).utc().format(Constants.TIMESTAMP_TEMPLATE)}'`;
+    }
+    return date;
+  }
+
+  private static _time2Str(date: Date | ContextVariables): string {
+    if (date instanceof Date) {
+      return `'${moment(date).utc().format(Constants.TIME_TEMPLATE)}'`;
+    }
+    return date;
   }
 }

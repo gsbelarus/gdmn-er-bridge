@@ -5,7 +5,7 @@ export class Update3 extends BaseUpdate {
 
   public version: number = 3;
 
-  public async do(): Promise<void> {
+  public async run(): Promise<void> {
     await this._executeTransaction(async (transaction) => {
       const ddlHelper = new DDLHelper(this._connection, transaction);
 
@@ -18,6 +18,7 @@ export class Update3 extends BaseUpdate {
       } finally {
         await ddlHelper.dispose();
       }
+      await this._updateDatabaseVersion(transaction);
     });
   }
 }
