@@ -5,11 +5,11 @@ const gdmn_nlp_1 = require("gdmn-nlp");
 const gdmn_orm_1 = require("gdmn-orm");
 const Constants_1 = require("../Constants");
 const Update1_1 = require("../updates/Update1");
-const util_1 = require("./util");
 const atdata_1 = require("./atdata");
 const document_1 = require("./document");
 const gddomains_1 = require("./gddomains");
 const gdtables_1 = require("./gdtables");
+const util_1 = require("./util");
 async function erExport(dbs, connection, transaction, erModel) {
     const { atfields, atrelations } = await atdata_1.load(connection, transaction);
     const crossRelationsAdapters = {

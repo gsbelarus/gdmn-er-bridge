@@ -2,8 +2,8 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const gdmn_db_1 = require("gdmn-db");
 const gdmn_orm_1 = require("gdmn-orm");
-const Constants_1 = require("../Constants");
 const ATHelper_1 = require("../ATHelper");
+const Constants_1 = require("../Constants");
 const DDLHelper_1 = require("../ddl/DDLHelper");
 const Prefix_1 = require("../Prefix");
 const Update1_1 = require("../updates/Update1");
@@ -178,10 +178,14 @@ class ERImport {
         const tableName = entity.name;
         const fields = [];
         const pkFields = [];
+        const seqAttrs = [];
         for (const attr of Object.values(entity.attributes).filter((attr) => gdmn_orm_1.isScalarAttribute(attr))) {
             const domainName = await this._getDDLHelper().addDomain(DomainResolver_1.DomainResolver.resolve(attr));
             const fieldName = ERImport._getScalarFieldName(attr);
             await this._bindATAttr(attr, { relationName: tableName, fieldName, domainName });
+            if (gdmn_orm_1.isSequenceAttribute(attr)) {
+                seqAttrs.push(attr);
+            }
             const field = {
                 name: fieldName,
                 domain: domainName
@@ -193,6 +197,11 @@ class ERImport {
         }
         await this._getDDLHelper().addTable(tableName, fields);
         await this._getDDLHelper().addPrimaryKey(tableName, pkFields.map((i) => i.name));
+        for (const seqAttr of seqAttrs) {
+            const fieldName = ERImport._getScalarFieldName(seqAttr);
+            const seqAdapter = seqAttr.sequence.adapter;
+            await this._getDDLHelper().addAutoIncrementTrigger(tableName, fieldName, seqAdapter ? seqAdapter.sequence : seqAttr.sequence.name);
+        }
         await this._bindATEntity(entity, { relationName: tableName });
     }
     async _bindATEntity(entity, options) {

@@ -1,7 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const Prefix_1 = require("../Prefix");
-const Update1_1 = require("../updates/Update1");
 const DDLUniqueGenerator_1 = require("./DDLUniqueGenerator");
 class DDLHelper {
     constructor(connection, transaction) {
@@ -88,8 +87,9 @@ class DDLHelper {
         await this._connection.execute(this._transaction, sql);
         return domainName;
     }
-    async addAutoIncrementTrigger(triggerName, tableName, fieldName) {
-        if (!fieldName) {
+    async addAutoIncrementTrigger(triggerName, tableName, fieldName, sequenceName) {
+        if (!sequenceName) {
+            sequenceName = fieldName;
             fieldName = tableName;
             tableName = triggerName;
             triggerName = undefined;
@@ -102,7 +102,7 @@ class DDLHelper {
         ACTIVE BEFORE INSERT POSITION 0
       AS
       BEGIN
-        IF (NEW.${fieldName} IS NULL) THEN NEW.${fieldName} = NEXT VALUE FOR ${Update1_1.GLOBAL_GENERATOR};
+        IF (NEW.${fieldName} IS NULL) THEN NEW.${fieldName} = NEXT VALUE FOR ${sequenceName};
       END
     `;
         this._logs.push(sql);

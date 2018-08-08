@@ -23,8 +23,8 @@ import {
   TimeStampAttribute
 } from "gdmn-orm";
 import moment from "moment";
-import {Constants} from "../Constants";
-import {ERBridge} from "../ERBridge";
+import {Constants} from "../src/Constants";
+import {ERBridge} from "../src/ERBridge";
 import {importTestDBDetail} from "./testDB";
 
 describe("ERBridge", () => {
@@ -426,7 +426,7 @@ describe("ERBridge", () => {
       {ru: {name: "entity name", fullName: "full entity name"}},
       false));
 
-    const crossRelation = "CROSS_5"; // generated value
+    const crossRelation = "CROSS_7"; // generated value
     const setAttr = new SetAttribute("SET1", {ru: {name: "Ссылка"}}, true, [entity2], 0, [], {crossRelation});
 
     setAttr.add(new IntegerAttribute("FIELD1", {ru: {name: "Поле 1", fullName: "FULLNAME"}}, true,

@@ -1,6 +1,5 @@
 import {AConnection, ATransaction} from "gdmn-db";
 import {Prefix} from "../Prefix";
-import {GLOBAL_GENERATOR} from "../updates/Update1";
 import {DDLUniqueGenerator} from "./DDLUniqueGenerator";
 
 export interface IColumnsProps {
@@ -136,10 +135,11 @@ export class DDLHelper {
     return domainName;
   }
 
-  public async addAutoIncrementTrigger(tableName: string, fieldName: string): Promise<void>;
-  public async addAutoIncrementTrigger(triggerName: string, tableName: string, fieldName: string): Promise<void>;
-  public async addAutoIncrementTrigger(triggerName: any, tableName: any, fieldName?: any): Promise<void> {
-    if (!fieldName) {
+  public async addAutoIncrementTrigger(tableName: string, fieldName: string, sequenceName: string): Promise<void>;
+  public async addAutoIncrementTrigger(triggerName: string, tableName: string, fieldName: string, sequenceName: string): Promise<void>;
+  public async addAutoIncrementTrigger(triggerName: any, tableName: any, fieldName: any, sequenceName?: any): Promise<void> {
+    if (!sequenceName) {
+      sequenceName = fieldName;
       fieldName = tableName;
       tableName = triggerName;
       triggerName = undefined;
@@ -152,7 +152,7 @@ export class DDLHelper {
         ACTIVE BEFORE INSERT POSITION 0
       AS
       BEGIN
-        IF (NEW.${fieldName} IS NULL) THEN NEW.${fieldName} = NEXT VALUE FOR ${GLOBAL_GENERATOR};
+        IF (NEW.${fieldName} IS NULL) THEN NEW.${fieldName} = NEXT VALUE FOR ${sequenceName};
       END
     `;
     this._logs.push(sql);

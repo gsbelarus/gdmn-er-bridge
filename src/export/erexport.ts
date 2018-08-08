@@ -4,7 +4,7 @@ import {
   adjustName,
   appendAdapter,
   Attribute,
-  Attribute2FieldMap,
+  AttributeAdapter,
   BlobAttribute,
   BooleanAttribute,
   condition2Selectors,
@@ -12,7 +12,7 @@ import {
   DateAttribute,
   DetailAttribute,
   Entity,
-  Entity2RelationMap,
+  EntityAdapter,
   EntityAttribute,
   EntitySelector,
   EnumAttribute,
@@ -43,6 +43,10 @@ import {
 } from "gdmn-orm";
 import {Constants} from "../Constants";
 import {GLOBAL_GENERATOR} from "../updates/Update1";
+import {atRelationField, load} from "./atdata";
+import {loadDocument} from "./document";
+import {gdDomains} from "./gddomains";
+import {gedeminTables} from "./gdtables";
 import {
   check2DateRange,
   check2Enum,
@@ -60,10 +64,6 @@ import {
   IRange,
   isCheckForBoolean
 } from "./util";
-import {atRelationField, load} from "./atdata";
-import {loadDocument} from "./document";
-import {gdDomains} from "./gddomains";
-import {gedeminTables} from "./gdtables";
 
 export async function erExport(dbs: DBStructure, connection: AConnection, transaction: ATransaction, erModel: ERModel): Promise<ERModel> {
 
@@ -119,7 +119,7 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
     return found;
   }
 
-  function createEntity(parent: Entity | undefined, adapter: Entity2RelationMap,
+  function createEntity(parent: Entity | undefined, adapter: EntityAdapter,
                         abstract?: boolean, entityName?: string, lName?: LName, semCategories: SemCategory[] = [], attributes?: Attribute[]): Entity {
     if (!abstract) {
       const found = Object.entries(erModel.entities).find(
@@ -575,7 +575,7 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
                            atRelationField: atRelationField | undefined,
                            attrName: string,
                            semCategories: SemCategory[],
-                           adapter: Attribute2FieldMap | undefined) {
+                           adapter: AttributeAdapter | undefined) {
     const attributeName = adjustName(attrName);
     const atField = atfields[rf.fieldSource];
     const fieldSource = dbs.fields[rf.fieldSource];

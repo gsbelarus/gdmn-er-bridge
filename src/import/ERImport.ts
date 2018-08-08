@@ -1,8 +1,6 @@
 import {AConnection} from "gdmn-db";
 import {
   Attribute,
-  Attribute2FieldMap,
-  DetailAttributeMap,
   Entity,
   ERModel,
   isDetailAttribute,
@@ -10,11 +8,13 @@ import {
   isEnumAttribute,
   isParentAttribute,
   isScalarAttribute,
+  isSequenceAttribute,
   isSetAttribute,
-  ScalarAttribute
+  ScalarAttribute,
+  SequenceAttribute
 } from "gdmn-orm";
-import {Constants} from "../Constants";
 import {ATHelper} from "../ATHelper";
+import {Constants} from "../Constants";
 import {DDLHelper, IFieldProps} from "../ddl/DDLHelper";
 import {Prefix} from "../Prefix";
 import {GLOBAL_GENERATOR} from "../updates/Update1";
@@ -48,7 +48,7 @@ export class ERImport {
   }
 
   public static _getScalarFieldName(attr: ScalarAttribute): string {
-    const attrAdapter = attr.adapter as Attribute2FieldMap;
+    const attrAdapter = attr.adapter;
     return attrAdapter ? attrAdapter.field : attr.name;
   }
 
@@ -89,7 +89,7 @@ export class ERImport {
 
   private async _createERSchema(): Promise<void> {
     for (const sequence of Object.values(this._erModel.sequencies)) {
-      const sequenceName = sequence.adapter ? (sequence.adapter as any).sequence : sequence.name;
+      const sequenceName = sequence.adapter ? sequence.adapter.sequence : sequence.name;
       if (sequenceName !== GLOBAL_GENERATOR) {
         await this._getDDLHelper().addSequence(sequenceName);
       }
@@ -109,7 +109,7 @@ export class ERImport {
     for (const attr of Object.values(entity.attributes).filter((attr) => isEntityAttribute(attr))) {
       if (isDetailAttribute(attr)) {
         const fieldName = ERImport._getScalarFieldName(entity.pk[0]);
-        const adapter = attr.adapter as DetailAttributeMap;
+        const adapter = attr.adapter;
         let detailTableName: string;
         let detailLinkFieldName: string;
         if (adapter && adapter.masterLinks.length) {
@@ -229,10 +229,14 @@ export class ERImport {
 
     const fields: IFieldProps[] = [];
     const pkFields: IFieldProps[] = [];
+    const seqAttrs: SequenceAttribute[] = [];
     for (const attr of Object.values(entity.attributes).filter((attr) => isScalarAttribute(attr))) {
       const domainName = await this._getDDLHelper().addDomain(DomainResolver.resolve(attr));
       const fieldName = ERImport._getScalarFieldName(attr);
       await this._bindATAttr(attr, {relationName: tableName, fieldName, domainName});
+      if (isSequenceAttribute(attr)) {
+        seqAttrs.push(attr);
+      }
       const field = {
         name: fieldName,
         domain: domainName
@@ -244,6 +248,12 @@ export class ERImport {
     }
     await this._getDDLHelper().addTable(tableName, fields);
     await this._getDDLHelper().addPrimaryKey(tableName, pkFields.map((i) => i.name));
+    for (const seqAttr of seqAttrs) {
+      const fieldName = ERImport._getScalarFieldName(seqAttr);
+      const seqAdapter = seqAttr.sequence.adapter;
+      await this._getDDLHelper().addAutoIncrementTrigger(tableName, fieldName,
+        seqAdapter ? seqAdapter.sequence : seqAttr.sequence.name);
+    }
 
     await this._bindATEntity(entity, {relationName: tableName});
   }
