@@ -1,6 +1,5 @@
 import {existsSync, unlinkSync} from "fs";
 import {AConnection} from "gdmn-db";
-import {SemCategory} from "gdmn-nlp";
 import {
   BlobAttribute,
   BooleanAttribute,
@@ -18,19 +17,14 @@ import {
   MIN_32BIT_INT,
   NumericAttribute,
   ParentAttribute,
-  Sequence,
-  SequenceAttribute,
   SetAttribute,
   StringAttribute,
   TimeAttribute,
   TimeStampAttribute
 } from "gdmn-orm";
-import {Entity2RelationMap} from "gdmn-orm/src/rdbadapter";
-import {LName} from "gdmn-orm/src/types";
 import moment from "moment";
 import {Constants} from "../Constants";
 import {ERBridge} from "../ERBridge";
-import {GLOBAL_GENERATOR} from "../updates/Update1";
 import {importTestDBDetail} from "./testDB";
 
 describe("ERBridge", () => {
@@ -38,26 +32,6 @@ describe("ERBridge", () => {
   const connection = driver.newConnection();
   const erBridge = new ERBridge(connection);
 
-  const createERModel = () => {
-    const erModel = new ERModel();
-    erModel.addSequence(new Sequence(GLOBAL_GENERATOR));
-    return erModel;
-  };
-  const createEntity = (erModel: ERModel,
-                        parent: Entity | undefined,
-                        name: string,
-                        lName: LName,
-                        isAbstract: boolean,
-                        semCategories: SemCategory[] = [],
-                        adapter?: Entity2RelationMap) => {
-    const entity = new Entity(parent, name, lName, isAbstract, semCategories, adapter);
-    // auto added field
-    if (!parent) {
-      entity.add(new SequenceAttribute("ID", {ru: {name: "Идентификатор"}}, erModel.sequencies[GLOBAL_GENERATOR]));
-    }
-    erModel.add(entity);
-    return entity;
-  };
   const loadERModel = () => AConnection.executeTransaction({
     connection,
     callback: async (transaction) => {
@@ -79,12 +53,12 @@ describe("ERBridge", () => {
   });
 
   it("empty entity", async () => {
-    const erModel = createERModel();
-    const entity = createEntity(erModel,
-      undefined,
+    const erModel = ERBridge.completeERModel(new ERModel());
+    const entity = ERBridge.addEntityToERModel(erModel, new Entity(undefined,
       "TEST",
       {ru: {name: "entity name", fullName: "full entity name"}},
-      false);
+      false));
+
 
     await erBridge.importToDatabase(erModel);
 
@@ -95,12 +69,12 @@ describe("ERBridge", () => {
   });
 
   it("integer", async () => {
-    const erModel = createERModel();
-    const entity = createEntity(erModel,
-      undefined,
+    const erModel = ERBridge.completeERModel(new ERModel());
+    const entity = ERBridge.addEntityToERModel(erModel, new Entity(undefined,
       "TEST",
       {ru: {name: "entity name", fullName: "full entity name"}},
-      false);
+      false));
+
     entity.add(new IntegerAttribute("FIELD1", {ru: {name: "Поле 1", fullName: "FULLNAME"}}, true,
       MIN_16BIT_INT, MAX_16BIT_INT, -100, [], {relation: "TEST", field: "FIELD_ADAPTER"}));
     entity.add(new IntegerAttribute("FIELD2", {ru: {name: "Поле 2", fullName: "FULLNAME"}}, true,
@@ -121,12 +95,12 @@ describe("ERBridge", () => {
   });
 
   it("numeric", async () => {
-    const erModel = createERModel();
-    const entity = createEntity(erModel,
-      undefined,
+    const erModel = ERBridge.completeERModel(new ERModel());
+    const entity = ERBridge.addEntityToERModel(erModel, new Entity(undefined,
       "TEST",
       {ru: {name: "entity name", fullName: "full entity name"}},
-      false);
+      false));
+
     entity.add(new NumericAttribute("FIELD1", {ru: {name: "Поле 1"}}, true,
       4, 2, 40, 1000, 40.36, [], {relation: "TEST", field: "FIELD_ADAPTER"}));
     entity.add(new NumericAttribute("FIELD2", {ru: {name: "Поле 2"}}, false,
@@ -143,12 +117,12 @@ describe("ERBridge", () => {
   });
 
   it("blob", async () => {
-    const erModel = createERModel();
-    const entity = createEntity(erModel,
-      undefined,
+    const erModel = ERBridge.completeERModel(new ERModel());
+    const entity = ERBridge.addEntityToERModel(erModel, new Entity(undefined,
       "TEST",
       {ru: {name: "entity name", fullName: "full entity name"}},
-      false);
+      false));
+
     entity.add(new BlobAttribute("FIELD1", {ru: {name: "Поле 1"}}, true,
       [], {relation: "TEST", field: "FIELD_ADAPTER"}));
     entity.add(new BlobAttribute("FIELD2", {ru: {name: "Поле 2"}}, false));
@@ -162,12 +136,12 @@ describe("ERBridge", () => {
   });
 
   it("boolean", async () => {
-    const erModel = createERModel();
-    const entity = createEntity(erModel,
-      undefined,
+    const erModel = ERBridge.completeERModel(new ERModel());
+    const entity = ERBridge.addEntityToERModel(erModel, new Entity(undefined,
       "TEST",
       {ru: {name: "entity name", fullName: "full entity name"}},
-      false);
+      false));
+
     entity.add(new BooleanAttribute("FIELD1", {ru: {name: "Поле 1"}}, true, true,
       [], {relation: "TEST", field: "FIELD_ADAPTER"}));
     entity.add(new BooleanAttribute("FIELD2", {ru: {name: "Поле 2"}}, false, false));
@@ -181,12 +155,12 @@ describe("ERBridge", () => {
   });
 
   it("string", async () => {
-    const erModel = createERModel();
-    const entity = createEntity(erModel,
-      undefined,
+    const erModel = ERBridge.completeERModel(new ERModel());
+    const entity = ERBridge.addEntityToERModel(erModel, new Entity(undefined,
       "TEST",
       {ru: {name: "entity name", fullName: "full entity name"}},
-      false);
+      false));
+
     entity.add(new StringAttribute("FIELD1", {ru: {name: "Поле 1"}}, true,
       5, 30, "test default", true, undefined,
       [], {relation: "TEST", field: "FIELD_ADAPTER"}));
@@ -204,12 +178,12 @@ describe("ERBridge", () => {
   });
 
   it("date", async () => {
-    const erModel = createERModel();
-    const entity = createEntity(erModel,
-      undefined,
+    const erModel = ERBridge.completeERModel(new ERModel());
+    const entity = ERBridge.addEntityToERModel(erModel, new Entity(undefined,
       "TEST",
       {ru: {name: "entity name", fullName: "full entity name"}},
-      false);
+      false));
+
     entity.add(new DateAttribute("FIELD1", {ru: {name: "Поле 1"}}, true,
       moment.utc().year(1999).month(10).date(3).startOf("date").local().toDate(),
       moment.utc().year(2099).startOf("year").local().toDate(),
@@ -233,12 +207,12 @@ describe("ERBridge", () => {
   });
 
   it("time", async () => {
-    const erModel = createERModel();
-    const entity = createEntity(erModel,
-      undefined,
+    const erModel = ERBridge.completeERModel(new ERModel());
+    const entity = ERBridge.addEntityToERModel(erModel, new Entity(undefined,
       "TEST",
       {ru: {name: "entity name", fullName: "full entity name"}},
-      false);
+      false));
+
     entity.add(new TimeAttribute("FIELD1", {ru: {name: "Поле 1"}}, true,
       moment.utc().year(Constants.MIN_TIMESTAMP.getUTCFullYear()).month(Constants.MIN_TIMESTAMP.getUTCMonth())
         .date(Constants.MIN_TIMESTAMP.getDate()).startOf("date").local().toDate(),
@@ -269,12 +243,12 @@ describe("ERBridge", () => {
   });
 
   it("timestamp", async () => {
-    const erModel = createERModel();
-    const entity = createEntity(erModel,
-      undefined,
+    const erModel = ERBridge.completeERModel(new ERModel());
+    const entity = ERBridge.addEntityToERModel(erModel, new Entity(undefined,
       "TEST",
       {ru: {name: "entity name", fullName: "full entity name"}},
-      false);
+      false));
+
     entity.add(new TimeStampAttribute("FIELD1", {ru: {name: "Поле 1"}}, true,
       moment.utc().year(1999).month(10).startOf("month").local().toDate(),
       moment.utc().year(2099).month(1).date(1).endOf("date").local().toDate(),
@@ -298,12 +272,12 @@ describe("ERBridge", () => {
   });
 
   it("float", async () => {
-    const erModel = createERModel();
-    const entity = createEntity(erModel,
-      undefined,
+    const erModel = ERBridge.completeERModel(new ERModel());
+    const entity = ERBridge.addEntityToERModel(erModel, new Entity(undefined,
       "TEST",
       {ru: {name: "entity name", fullName: "full entity name"}},
-      false);
+      false));
+
     entity.add(new FloatAttribute("FIELD1", {ru: {name: "Поле 1"}}, true,
       -123, 123123123123123123123123, 40,
       [], {relation: "TEST", field: "FIELD_ADAPTER"}));
@@ -321,12 +295,12 @@ describe("ERBridge", () => {
   });
 
   it("enum", async () => {
-    const erModel = createERModel();
-    const entity = createEntity(erModel,
-      undefined,
+    const erModel = ERBridge.completeERModel(new ERModel());
+    const entity = ERBridge.addEntityToERModel(erModel, new Entity(undefined,
       "TEST",
       {ru: {name: "entity name", fullName: "full entity name"}},
-      false);
+      false));
+
     entity.add(new EnumAttribute("FIELD1", {ru: {name: "Поле 1"}}, true, [
       {
         value: "Z",
@@ -355,17 +329,15 @@ describe("ERBridge", () => {
   });
 
   it("link to entity", async () => {
-    const erModel = createERModel();
-    const entity1 = createEntity(erModel,
-      undefined,
+    const erModel = ERBridge.completeERModel(new ERModel());
+    const entity1 = ERBridge.addEntityToERModel(erModel, new Entity(undefined,
       "TEST1",
       {ru: {name: "entity name", fullName: "full entity name"}},
-      false);
-    const entity2 = createEntity(erModel,
-      undefined,
+      false));
+    const entity2 = ERBridge.addEntityToERModel(erModel, new Entity(undefined,
       "TEST2",
       {ru: {name: "entity name", fullName: "full entity name"}},
-      false);
+      false));
 
     entity1.add(new EntityAttribute("LINK", {ru: {name: "Ссылка"}}, true, [entity2]));
     entity2.add(new EntityAttribute("LINK", {ru: {name: "Ссылка"}}, false, [entity1]));
@@ -382,17 +354,15 @@ describe("ERBridge", () => {
   });
 
   it("parent link to entity", async () => {
-    const erModel = createERModel();
-    const entity1 = createEntity(erModel,
-      undefined,
+    const erModel = ERBridge.completeERModel(new ERModel());
+    const entity1 = ERBridge.addEntityToERModel(erModel, new Entity(undefined,
       "TEST1",
       {ru: {name: "entity name", fullName: "full entity name"}},
-      false);
-    const entity2 = createEntity(erModel,
-      undefined,
+      false));
+    const entity2 = ERBridge.addEntityToERModel(erModel, new Entity(undefined,
       "TEST2",
       {ru: {name: "entity name", fullName: "full entity name"}},
-      false);
+      false));
 
     entity1.add(new ParentAttribute("PARENT", {ru: {name: "Ссылка"}}, [entity2]));
     entity1.add(new ParentAttribute("LINK", {ru: {name: "Ссылка"}}, [entity2]));
@@ -409,22 +379,19 @@ describe("ERBridge", () => {
   });
 
   it("detail entity", async () => {
-    const erModel = createERModel();
-    const entity2 = createEntity(erModel,
-      undefined,
+    const erModel = ERBridge.completeERModel(new ERModel());
+    const entity2 = ERBridge.addEntityToERModel(erModel, new Entity(undefined,
       "TEST2",
       {ru: {name: "entity name", fullName: "full entity name"}},
-      false);
-    const entity1 = createEntity(erModel,
-      undefined,
+      false));
+    const entity1 = ERBridge.addEntityToERModel(erModel, new Entity(undefined,
       "TEST1",
       {ru: {name: "entity name", fullName: "full entity name"}},
-      false);
-    const entity3 = createEntity(erModel,
-      undefined,
+      false));
+    const entity3 = ERBridge.addEntityToERModel(erModel, new Entity(undefined,
       "TEST3",
       {ru: {name: "entity name", fullName: "full entity name"}},
-      false);
+      false));
 
     entity1.add(new DetailAttribute("DETAILLINK", {ru: {name: "Позиции 1"}}, true, [entity2], [], {
       masterLinks: [{
@@ -449,17 +416,15 @@ describe("ERBridge", () => {
   });
 
   it("set link to entity", async () => {
-    const erModel = createERModel();
-    const entity1 = createEntity(erModel,
-      undefined,
+    const erModel = ERBridge.completeERModel(new ERModel());
+    const entity1 = ERBridge.addEntityToERModel(erModel, new Entity(undefined,
       "TEST1",
       {ru: {name: "entity name", fullName: "full entity name"}},
-      false);
-    const entity2 = createEntity(erModel,
-      undefined,
+      false));
+    const entity2 = ERBridge.addEntityToERModel(erModel, new Entity(undefined,
       "TEST2",
       {ru: {name: "entity name", fullName: "full entity name"}},
-      false);
+      false));
 
     const crossRelation = "CROSS_5"; // generated value
     const setAttr = new SetAttribute("SET1", {ru: {name: "Ссылка"}}, true, [entity2], 0, [], {crossRelation});
