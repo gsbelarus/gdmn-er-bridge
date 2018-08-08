@@ -44,6 +44,20 @@ class DDLHelper {
             await this._connection.execute(this._transaction, sql);
         }
     }
+    async addUnique(constraintName, tableName, fieldNames) {
+        if (!fieldNames) {
+            fieldNames = tableName;
+            tableName = constraintName;
+            constraintName = undefined;
+        }
+        if (!constraintName) {
+            constraintName = Prefix_1.Prefix.join(`${await this._ddlUniqueGen.next()}`, Prefix_1.Prefix.UNIQUE);
+        }
+        const sql = `ALTER TABLE ${tableName} ADD CONSTRAINT ${constraintName} UNIQUE (${fieldNames.join(", ")})`;
+        this._logs.push(sql);
+        await this._connection.execute(this._transaction, sql);
+        return constraintName;
+    }
     async addPrimaryKey(constraintName, tableName, fieldNames) {
         if (!fieldNames) {
             fieldNames = tableName;

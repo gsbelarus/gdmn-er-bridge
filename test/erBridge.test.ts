@@ -59,7 +59,6 @@ describe("ERBridge", () => {
       {ru: {name: "entity name", fullName: "full entity name"}},
       false));
 
-
     await erBridge.importToDatabase(erModel);
 
     const loadedERModel = await loadERModel();
@@ -497,5 +496,32 @@ describe("ERBridge", () => {
     expect(loadEntity2).toEqual(entity2);
     expect(loadEntity1.serialize()).toEqual(entity1.serialize());
     expect(loadEntity2.serialize()).toEqual(entity2.serialize());
+  });
+
+  it("entity with unique fields", async () => {
+    const erModel = ERBridge.completeERModel(new ERModel());
+    const entity = ERBridge.addEntityToERModel(erModel, new Entity(undefined,
+      "TEST",
+      {ru: {name: "entity name", fullName: "full entity name"}},
+      false));
+
+    entity.add(new StringAttribute("FIELD1", {ru: {name: "Поле 1"}}, true,
+      5, 30, "test default", true, undefined,
+      [], {relation: "TEST", field: "FIELD_ADAPTER1"}));
+    entity.add(new IntegerAttribute("FIELD2", {ru: {name: "Поле 2", fullName: "FULLNAME"}}, true,
+      MIN_16BIT_INT, MAX_16BIT_INT, -100, [], {relation: "TEST", field: "FIELD_ADAPTER2"}));
+    entity.add(new FloatAttribute("FIELD3", {ru: {name: "Поле 3"}}, true,
+      -123, 123123123123123123123123, 40,
+      [], {relation: "TEST", field: "FIELD_ADAPTER3"}));
+
+    entity.addUnique([entity.attribute("FIELD1"), entity.attribute("FIELD2")]);
+    entity.addUnique([entity.attribute("FIELD2"), entity.attribute("FIELD3")]);
+
+    await erBridge.importToDatabase(erModel);
+
+    const loadedERModel = await loadERModel();
+    const loadEntity = loadedERModel.entity("TEST");
+    expect(loadEntity).toEqual(entity);
+    expect(loadEntity.serialize()).toEqual(entity.serialize());
   });
 });

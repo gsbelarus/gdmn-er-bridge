@@ -61,6 +61,15 @@ class ERImport {
         for (const entity of Object.values(this._erModel.entities)) {
             await this._addLinks(entity);
         }
+        for (const entity of Object.values(this._erModel.entities)) {
+            await this._addUnique(entity);
+        }
+    }
+    async _addUnique(entity) {
+        const tableName = entity.name;
+        for (const attrs of entity.unique) {
+            await this._getDDLHelper().addUnique(tableName, attrs.map((attr) => ERImport._getScalarFieldName(attr)));
+        }
     }
     async _addLinks(entity) {
         const tableName = entity.name;

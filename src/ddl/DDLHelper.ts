@@ -83,6 +83,23 @@ export class DDLHelper {
     }
   }
 
+  public async addUnique(tableName: string, fieldNames: string[]): Promise<string>;
+  public async addUnique(constraintName: string, tableName: string, fieldNames: string[]): Promise<string>;
+  public async addUnique(constraintName: any, tableName: any, fieldNames?: any): Promise<string> {
+    if (!fieldNames) {
+      fieldNames = tableName;
+      tableName = constraintName;
+      constraintName = undefined;
+    }
+    if (!constraintName) {
+      constraintName = Prefix.join(`${await this._ddlUniqueGen.next()}`, Prefix.UNIQUE);
+    }
+    const sql = `ALTER TABLE ${tableName} ADD CONSTRAINT ${constraintName} UNIQUE (${fieldNames.join(", ")})`;
+    this._logs.push(sql);
+    await this._connection.execute(this._transaction, sql);
+    return constraintName;
+  }
+
   public async addPrimaryKey(tableName: string, fieldNames: string[]): Promise<string>;
   public async addPrimaryKey(constraintName: string, tableName: string, fieldNames: string[]): Promise<string>;
   public async addPrimaryKey(constraintName: any, tableName: any, fieldNames?: any): Promise<string> {

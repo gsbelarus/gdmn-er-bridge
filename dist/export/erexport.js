@@ -547,7 +547,22 @@ async function erExport(dbs, connection, transaction, erModel) {
                 }
             });
             Object.values(r.unique).forEach((uq) => {
-                entity.addUnique(uq.fields.map(f => entity.attribute(f)));
+                const attrs = uq.fields.map((field) => {
+                    const uqAttr = Object.values(entity.attributes).find((attr) => {
+                        if (gdmn_orm_1.isScalarAttribute(attr)) {
+                            const attrField = attr.adapter ? attr.adapter.field : attr.name;
+                            if (attrField === field) {
+                                return true;
+                            }
+                        }
+                        return false;
+                    });
+                    if (!uqAttr) {
+                        throw new Error("Unique attribute not found");
+                    }
+                    return uqAttr;
+                });
+                entity.addUnique(attrs);
             });
         });
     }

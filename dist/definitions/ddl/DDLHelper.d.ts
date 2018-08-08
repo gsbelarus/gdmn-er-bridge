@@ -30,6 +30,8 @@ export declare class DDLHelper {
     addSequence(sequenceName: string): Promise<void>;
     addTable(tableName: string, scalarFields: IFieldProps[]): Promise<void>;
     addColumns(tableName: string, scalarFields: IFieldProps[]): Promise<void>;
+    addUnique(tableName: string, fieldNames: string[]): Promise<string>;
+    addUnique(constraintName: string, tableName: string, fieldNames: string[]): Promise<string>;
     addPrimaryKey(tableName: string, fieldNames: string[]): Promise<string>;
     addPrimaryKey(constraintName: string, tableName: string, fieldNames: string[]): Promise<string>;
     addForeignKey(from: IRelation, to: IRelation): Promise<string>;

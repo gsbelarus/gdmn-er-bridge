@@ -11,6 +11,7 @@ export declare class ERImport {
     private _getDDLHelper;
     private _getATHelper;
     private _createERSchema;
+    private _addUnique;
     private _addLinks;
     private _addEntity;
     private _bindATEntity;
