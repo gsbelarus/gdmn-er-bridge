@@ -871,7 +871,7 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
           });
           if (!uqAttr) {
             uqAttr = entity.attribute(field);
-            throw new Error("Unique attribute not found");
+            // throw new Error("Unique attribute not found");
           }
           return uqAttr;
         });
