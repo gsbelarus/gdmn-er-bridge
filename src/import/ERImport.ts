@@ -146,7 +146,9 @@ export class ERImport {
         });
 
       } else if (SetAttribute.isType(attr)) {
-        const crossTableName = Prefix.join(`${await this._getDDLHelper().ddlUniqueGen.next()}`, Prefix.CROSS);
+        const crossTableName = attr.adapter
+          ? attr.adapter.crossRelation
+          : Prefix.join(`${await this._getDDLHelper().ddlUniqueGen.next()}`, Prefix.CROSS);
 
         // create cross table
         const fields: IFieldProps[] = [];

@@ -104,7 +104,9 @@ class ERImport {
                 });
             }
             else if (gdmn_orm_1.SetAttribute.isType(attr)) {
-                const crossTableName = Prefix_1.Prefix.join(`${await this._getDDLHelper().ddlUniqueGen.next()}`, Prefix_1.Prefix.CROSS);
+                const crossTableName = attr.adapter
+                    ? attr.adapter.crossRelation
+                    : Prefix_1.Prefix.join(`${await this._getDDLHelper().ddlUniqueGen.next()}`, Prefix_1.Prefix.CROSS);
                 // create cross table
                 const fields = [];
                 for (const crossAttr of Object.values(attr.attributes).filter((attr) => gdmn_orm_1.ScalarAttribute.isType(attr))) {

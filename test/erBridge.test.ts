@@ -672,13 +672,22 @@ describe("ERBridge", () => {
     appEntity.addUnique([appUid]);
 
     const appSet = new SetAttribute({
-      name: "APPLICAITONS", lName: {ru: {name: "Приложения"}}, required: true, entities: [appEntity]
+      name: "APPLICAITONS", lName: {ru: {name: "Приложения"}}, required: true, entities: [appEntity],
+      adapter: {crossRelation: "APP_USER_APPLICATIONS"}
     });
     appSet.add(new StringAttribute({
       name: "ALIAS", lName: {ru: {name: "Название приложения"}}, required: true, minLength: 1, maxLength: 120
     }));
     userEntity.add(appSet);
 
-    await new ERBridge(connection).importToDatabase(erModel);
+    await erBridge.importToDatabase(erModel);
+
+    const loadedERModel = await loadERModel();
+    const loadUserEntity = loadedERModel.entity("APP_USER");
+    const loadAppEntity = loadedERModel.entity("APPLICATION");
+    expect(loadUserEntity).toEqual(userEntity);
+    expect(loadUserEntity.serialize()).toEqual(userEntity.serialize());
+    expect(loadAppEntity).toEqual(appEntity);
+    expect(loadAppEntity.serialize()).toEqual(appEntity.serialize());
   });
 });
