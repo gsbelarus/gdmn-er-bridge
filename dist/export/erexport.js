@@ -27,8 +27,8 @@ async function erExport(dbs, connection, transaction, erModel) {
     /**
      * Если имя генератора совпадает с именем объекта в БД, то адаптер можем не указывать.
      */
-    const GDGUnique = erModel.addSequence(new gdmn_orm_1.Sequence(Update1_1.GLOBAL_GENERATOR));
-    erModel.addSequence(new gdmn_orm_1.Sequence("Offset", { sequence: "GD_G_OFFSET" }));
+    const GDGUnique = erModel.addSequence(new gdmn_orm_1.Sequence({ name: Update1_1.GLOBAL_GENERATOR }));
+    erModel.addSequence(new gdmn_orm_1.Sequence({ name: "Offset", sequence: "GD_G_OFFSET" }));
     function findEntities(relationName, selectors = []) {
         const found = Object.entries(erModel.entities).reduce((p, e) => {
             if (e[1].adapter) {
@@ -66,12 +66,23 @@ async function erExport(dbs, connection, transaction, erModel) {
         if (!relation || !relation.relationName) {
             throw new Error("Invalid entity adapter");
         }
-        const setEntityName = gdmn_orm_1.adjustName(entityName ? entityName : relation.relationName);
+        const name = gdmn_orm_1.adjustName(entityName ? entityName : relation.relationName);
         const atRelation = atrelations[relation.relationName];
-        const fake = gdmn_orm_1.relationName2Adapter(setEntityName);
-        const entity = new gdmn_orm_1.Entity(parent, setEntityName, lName ? lName : (atRelation ? atRelation.lName : {}), !!abstract, semCategories, JSON.stringify(adapter) !== JSON.stringify(fake) ? adapter : undefined);
+        const fake = gdmn_orm_1.relationName2Adapter(name);
+        const entity = new gdmn_orm_1.Entity({
+            parent,
+            name,
+            lName: lName ? lName : (atRelation ? atRelation.lName : {}),
+            isAbstract: !!abstract,
+            semCategories,
+            adapter: JSON.stringify(adapter) !== JSON.stringify(fake) ? adapter : undefined
+        });
         if (!parent) {
-            entity.add(new gdmn_orm_1.SequenceAttribute(Constants_1.Constants.DEFAULT_ID_NAME, { ru: { name: "Идентификатор" } }, GDGUnique));
+            entity.add(new gdmn_orm_1.SequenceAttribute({
+                name: Constants_1.Constants.DEFAULT_ID_NAME,
+                lName: { ru: { name: "Идентификатор" } },
+                sequence: GDGUnique
+            }));
         }
         if (attributes) {
             attributes.forEach(attr => entity.add(attr));
@@ -91,14 +102,13 @@ async function erExport(dbs, connection, transaction, erModel) {
      */
     if (dbs.findRelation((rel) => rel.name === "GD_PLACE")) {
         createEntity(undefined, gdmn_orm_1.relationName2Adapter("GD_PLACE"), false, undefined, undefined, [gdmn_nlp_1.SemCategory.Place], [
-            new gdmn_orm_1.EnumAttribute("PLACETYPE", { ru: { name: "Тип" } }, true, [
-                {
-                    value: "Область"
-                },
-                {
-                    value: "Район"
-                }
-            ], "Область")
+            new gdmn_orm_1.EnumAttribute({
+                name: "PLACETYPE",
+                lName: { ru: { name: "Тип" } },
+                required: true,
+                values: [{ value: "Область" }, { value: "Район" }],
+                defaultValue: "Область"
+            })
         ]);
     }
     /**
@@ -121,7 +131,11 @@ async function erExport(dbs, connection, transaction, erModel) {
                     ]
                 }]
         }, false, "Folder", { ru: { name: "Папка" } });
-        Folder.add(new gdmn_orm_1.ParentAttribute(Constants_1.Constants.DEFAULT_PARENT_KEY_NAME, { ru: { name: "Входит в папку" } }, [Folder]));
+        Folder.add(new gdmn_orm_1.ParentAttribute({
+            name: Constants_1.Constants.DEFAULT_PARENT_KEY_NAME,
+            lName: { ru: { name: "Входит в папку" } },
+            entities: [Folder]
+        }));
         /**
          * Компания хранится в трех таблицах.
          * Две обязательные GD_CONTACT - GD_COMPANY. В адаптере они указываются
@@ -153,8 +167,18 @@ async function erExport(dbs, connection, transaction, erModel) {
             ],
             refresh: true
         }, false, "Company", { ru: { name: "Организация" } }, [gdmn_nlp_1.SemCategory.Company], [
-            new gdmn_orm_1.ParentAttribute(Constants_1.Constants.DEFAULT_PARENT_KEY_NAME, { ru: { name: "Входит в папку" } }, [Folder]),
-            new gdmn_orm_1.StringAttribute("NAME", { ru: { name: "Краткое наименование" } }, true, undefined, 60, undefined, true, undefined)
+            new gdmn_orm_1.ParentAttribute({
+                name: Constants_1.Constants.DEFAULT_PARENT_KEY_NAME,
+                lName: { ru: { name: "Входит в папку" } },
+                entities: [Folder]
+            }),
+            new gdmn_orm_1.StringAttribute({
+                name: "NAME",
+                lName: { ru: { name: "Краткое наименование" } },
+                required: true,
+                maxLength: 60,
+                autoTrim: true
+            })
         ]);
         createEntity(Company, {
             relation: [
@@ -219,8 +243,15 @@ async function erExport(dbs, connection, transaction, erModel) {
                     }
                 }]
         }, false, "Department", { ru: { name: "Подразделение" } });
-        Department.add(new gdmn_orm_1.ParentAttribute(Constants_1.Constants.DEFAULT_PARENT_KEY_NAME, { ru: { name: "Входит в организацию (подразделение)" } }, [Company, Department]));
-        Department.add(new gdmn_orm_1.StringAttribute("NAME", { ru: { name: "Наименование" } }, true, undefined, 60, undefined, true, undefined));
+        Department.add(new gdmn_orm_1.ParentAttribute({
+            name: Constants_1.Constants.DEFAULT_PARENT_KEY_NAME,
+            lName: { ru: { name: "Входит в организацию (подразделение)" } },
+            entities: [Company, Department]
+        }));
+        Department.add(new gdmn_orm_1.StringAttribute({
+            name: "NAME", lName: { ru: { name: "Наименование" } }, required: true,
+            maxLength: 60, autoTrim: true
+        }));
         /**
          * Физическое лицо хранится в двух таблицах GD_CONTACT - GD_PEOPLE.
          */
@@ -239,8 +270,15 @@ async function erExport(dbs, connection, transaction, erModel) {
             ],
             refresh: true
         }, false, "Person", { ru: { name: "Физическое лицо" } });
-        Person.add(new gdmn_orm_1.ParentAttribute(Constants_1.Constants.DEFAULT_PARENT_KEY_NAME, { ru: { name: "Входит в папку" } }, [Folder]));
-        Person.add(new gdmn_orm_1.StringAttribute("NAME", { ru: { name: "ФИО" } }, true, undefined, 60, undefined, true, undefined));
+        Person.add(new gdmn_orm_1.ParentAttribute({
+            name: Constants_1.Constants.DEFAULT_PARENT_KEY_NAME,
+            lName: { ru: { name: "Входит в папку" } },
+            entities: [Folder]
+        }));
+        Person.add(new gdmn_orm_1.StringAttribute({
+            name: "NAME", lName: { ru: { name: "ФИО" } }, required: true,
+            maxLength: 60, autoTrim: true
+        }));
         /**
          * Сотрудник, частный случай физического лица.
          * Добавляется таблица GD_EMPLOYEE.
@@ -262,7 +300,11 @@ async function erExport(dbs, connection, transaction, erModel) {
                 }
             ]
         }, false, "Employee", { ru: { name: "Сотрудник предприятия" } });
-        Employee.add(new gdmn_orm_1.ParentAttribute(Constants_1.Constants.DEFAULT_PARENT_KEY_NAME, { ru: { name: "Организация или подразделение" } }, [Company, Department]));
+        Employee.add(new gdmn_orm_1.ParentAttribute({
+            name: Constants_1.Constants.DEFAULT_PARENT_KEY_NAME,
+            lName: { ru: { name: "Организация или подразделение" } },
+            entities: [Company, Department]
+        }));
         /**
          * Группа контактов.
          * CONTACTLIST -- множество, которое хранится в кросс-таблице.
@@ -280,18 +322,28 @@ async function erExport(dbs, connection, transaction, erModel) {
                     ]
                 }]
         }, false, "Group", { ru: { name: "Группа" } });
-        Group.add(new gdmn_orm_1.ParentAttribute(Constants_1.Constants.DEFAULT_PARENT_KEY_NAME, { ru: { name: "Входит в папку" } }, [Folder]));
-        Group.add(new gdmn_orm_1.SetAttribute("CONTACTLIST", { ru: { name: "Контакты" } }, false, [Company, Person], 0, [], {
-            crossRelation: "GD_CONTACTLIST"
+        Group.add(new gdmn_orm_1.ParentAttribute({
+            name: Constants_1.Constants.DEFAULT_PARENT_KEY_NAME,
+            lName: { ru: { name: "Входит в папку" } },
+            entities: [Folder]
+        }));
+        Group.add(new gdmn_orm_1.SetAttribute({
+            name: "CONTACTLIST", lName: { ru: { name: "Контакты" } }, entities: [Company, Person],
+            adapter: {
+                crossRelation: "GD_CONTACTLIST"
+            }
         }));
         const companyAccount = createEntity(undefined, gdmn_orm_1.relationName2Adapter("GD_COMPANYACCOUNT"));
-        Company.add(new gdmn_orm_1.DetailAttribute("GD_COMPANYACCOUNT", { ru: { name: "Банковские счета" } }, false, [companyAccount], [], {
-            masterLinks: [
-                {
-                    detailRelation: "GD_COMPANYACCOUNT",
-                    link2masterField: "COMPANYKEY"
-                }
-            ]
+        Company.add(new gdmn_orm_1.DetailAttribute({
+            name: "GD_COMPANYACCOUNT", lName: { ru: { name: "Банковские счета" } }, entities: [companyAccount],
+            adapter: {
+                masterLinks: [
+                    {
+                        detailRelation: "GD_COMPANYACCOUNT",
+                        link2masterField: "COMPANYKEY"
+                    }
+                ]
+            }
         }));
         gdtables_1.gedeminTables.forEach((t) => {
             if (dbs.findRelation((rel) => rel.name === t)) {
@@ -341,7 +393,11 @@ async function erExport(dbs, connection, transaction, erModel) {
                 const lineAdapter = gdmn_orm_1.appendAdapter(lineParent.adapter, setLR);
                 lineAdapter.relation[0].selector = { field: "DOCUMENTTYPEKEY", value: id };
                 const line = createEntity(lineParent, lineAdapter, false, `LINE_${ruid}_${setLR}`, { ru: { name: `Позиция: ${name}` } });
-                line.add(new gdmn_orm_1.ParentAttribute(Constants_1.Constants.DEFAULT_PARENT_KEY_NAME, { ru: { name: "Шапка документа" } }, [header]));
+                line.add(new gdmn_orm_1.ParentAttribute({
+                    name: Constants_1.Constants.DEFAULT_PARENT_KEY_NAME,
+                    lName: { ru: { name: "Шапка документа" } },
+                    entities: [header]
+                }));
                 documentClasses[ruid] = { ...documentClasses[ruid], line };
                 const masterLinks = [
                     {
@@ -355,7 +411,7 @@ async function erExport(dbs, connection, transaction, erModel) {
                         link2masterField: Constants_1.Constants.DEFAULT_MASTER_KEY_NAME
                     });
                 }
-                header.add(new gdmn_orm_1.DetailAttribute(line.name, line.lName, false, [line], [], { masterLinks }));
+                header.add(new gdmn_orm_1.DetailAttribute({ name: line.name, lName: line.lName, entities: [line], adapter: { masterLinks } }));
             }
         }
         await document_1.loadDocument(connection, transaction, createDocument);
@@ -383,15 +439,15 @@ async function erExport(dbs, connection, transaction, erModel) {
         }
     }, true);
     function createAttribute(r, rf, atRelationField, attrName, semCategories, adapter) {
-        const attributeName = gdmn_orm_1.adjustName(attrName);
+        const name = gdmn_orm_1.adjustName(attrName);
         const atField = atfields[rf.fieldSource];
         const fieldSource = dbs.fields[rf.fieldSource];
         const required = rf.notNull || fieldSource.notNull;
-        const defaultValue = rf.defaultSource || fieldSource.defaultSource;
+        const defaultValueSource = rf.defaultSource || fieldSource.defaultSource;
         const lName = atRelationField ? atRelationField.lName : (atField ? atField.lName : {});
         const createDomainFunc = gddomains_1.gdDomains[rf.fieldSource];
         if (createDomainFunc) {
-            return createDomainFunc(attributeName, lName, adapter);
+            return createDomainFunc(name, lName, adapter);
         }
         // numeric and decimal
         if (fieldSource.fieldSubType === 1 || fieldSource.fieldSubType === 2) {
@@ -418,12 +474,18 @@ async function erExport(dbs, connection, transaction, erModel) {
                     break;
             }
             if (range) {
-                return new gdmn_orm_1.NumericAttribute(attributeName, lName, required, fieldSource.fieldPrecision, Math.abs(fieldSource.fieldScale), range.minValue, range.maxValue, util_1.default2Float(defaultValue), semCategories, adapter);
+                return new gdmn_orm_1.NumericAttribute({
+                    name, lName, required, semCategories, adapter,
+                    precision: fieldSource.fieldPrecision,
+                    scale: Math.abs(fieldSource.fieldScale),
+                    minValue: range.minValue, maxValue: range.maxValue,
+                    defaultValue: util_1.default2Float(defaultValueSource)
+                });
             }
         }
         switch (fieldSource.fieldType) {
             case gdmn_db_1.FieldType.INTEGER: {
-                const fk = Object.entries(r.foreignKeys).find(([, f]) => !!f.fields.find(fld => fld === attributeName));
+                const fk = Object.entries(r.foreignKeys).find(([, f]) => !!f.fields.find(fld => fld === name));
                 if (fk && fk[1].fields.length === 1) {
                     const refRelationName = dbs.relationByUqConstraint(fk[1].constNameUq).name;
                     const cond = atField && atField.refCondition ? gdmn_orm_1.condition2Selectors(atField.refCondition) : undefined;
@@ -432,13 +494,19 @@ async function erExport(dbs, connection, transaction, erModel) {
                         console.warn(`${r.name}.${rf.name}: no entities for table ${refRelationName}${cond ? ", condition: " + JSON.stringify(cond) : ""}`);
                     }
                     if (atRelationField && atRelationField.isParent) {
-                        return new gdmn_orm_1.ParentAttribute(attributeName, lName, refEntities, semCategories, adapter);
+                        return new gdmn_orm_1.ParentAttribute({ name, lName, entities: refEntities, semCategories, adapter });
                     }
-                    return new gdmn_orm_1.EntityAttribute(attributeName, lName, required, refEntities, semCategories, adapter);
+                    return new gdmn_orm_1.EntityAttribute({ name, lName, required, entities: refEntities, semCategories, adapter });
                 }
                 else {
-                    const iRange = util_1.check2NumberRange(fieldSource.validationSource, { min: gdmn_orm_1.MIN_32BIT_INT, max: gdmn_orm_1.MAX_32BIT_INT });
-                    return new gdmn_orm_1.IntegerAttribute(attributeName, lName, required, iRange.minValue, iRange.maxValue, util_1.default2Int(defaultValue), semCategories, adapter);
+                    const { minValue, maxValue } = util_1.check2NumberRange(fieldSource.validationSource, {
+                        min: gdmn_orm_1.MIN_32BIT_INT,
+                        max: gdmn_orm_1.MAX_32BIT_INT
+                    });
+                    const defaultValue = util_1.default2Int(defaultValueSource);
+                    return new gdmn_orm_1.IntegerAttribute({
+                        name, lName, required, minValue, maxValue, defaultValue, semCategories, adapter
+                    });
                 }
             }
             case gdmn_db_1.FieldType.CHAR:
@@ -452,46 +520,79 @@ async function erExport(dbs, connection, transaction, erModel) {
                             map[key] = value;
                             return map;
                         }, {});
-                        return new gdmn_orm_1.EnumAttribute(attributeName, lName, required, values.map((value) => ({
-                            value,
-                            lName: mapValues[value] ? { ru: { name: mapValues[value] } } : undefined
-                        })), util_1.default2String(defaultValue), semCategories, adapter);
+                        const defaultValue = util_1.default2String(defaultValueSource);
+                        return new gdmn_orm_1.EnumAttribute({
+                            name, lName, required,
+                            values: values.map((value) => ({
+                                value,
+                                lName: mapValues[value] ? { ru: { name: mapValues[value] } } : undefined
+                            })),
+                            defaultValue, semCategories, adapter
+                        });
                     }
                 }
                 const minLength = util_1.check2StrMin(fieldSource.validationSource);
-                return new gdmn_orm_1.StringAttribute(attributeName, lName, required, minLength, fieldSource.fieldLength, util_1.default2String(defaultValue), true, undefined, semCategories, adapter);
+                const defaultValue = util_1.default2String(defaultValueSource);
+                return new gdmn_orm_1.StringAttribute({
+                    name, lName, required, minLength, maxLength: fieldSource.fieldLength,
+                    defaultValue, autoTrim: true, semCategories, adapter
+                });
             }
-            case gdmn_db_1.FieldType.TIMESTAMP:
-                const tsRange = util_1.check2TimestampRange(fieldSource.validationSource);
-                return new gdmn_orm_1.TimeStampAttribute(attributeName, lName, required, tsRange.minValue, tsRange.maxValue, util_1.default2Timestamp(defaultValue), semCategories, adapter);
-            case gdmn_db_1.FieldType.DATE:
-                const dRange = util_1.check2DateRange(fieldSource.validationSource);
-                return new gdmn_orm_1.DateAttribute(attributeName, lName, required, dRange.minValue, dRange.maxValue, util_1.default2Date(defaultValue), semCategories, adapter);
-            case gdmn_db_1.FieldType.TIME:
-                const tRange = util_1.check2TimeRange(fieldSource.validationSource);
-                return new gdmn_orm_1.TimeAttribute(attributeName, lName, required, tRange.minValue, tRange.maxValue, util_1.default2Time(defaultValue), semCategories, adapter);
+            case gdmn_db_1.FieldType.TIMESTAMP: {
+                const { minValue, maxValue } = util_1.check2TimestampRange(fieldSource.validationSource);
+                const defaultValue = util_1.default2Timestamp(defaultValueSource);
+                return new gdmn_orm_1.TimeStampAttribute({
+                    name, lName, required, minValue, maxValue, defaultValue, semCategories, adapter
+                });
+            }
+            case gdmn_db_1.FieldType.DATE: {
+                const { minValue, maxValue } = util_1.check2DateRange(fieldSource.validationSource);
+                const defaultValue = util_1.default2Date(defaultValueSource);
+                return new gdmn_orm_1.DateAttribute({ name, lName, required, minValue, maxValue, defaultValue, semCategories, adapter });
+            }
+            case gdmn_db_1.FieldType.TIME: {
+                const { minValue, maxValue } = util_1.check2TimeRange(fieldSource.validationSource);
+                const defaultValue = util_1.default2Time(defaultValueSource);
+                return new gdmn_orm_1.TimeAttribute({ name, lName, required, minValue, maxValue, defaultValue, semCategories, adapter });
+            }
             case gdmn_db_1.FieldType.FLOAT:
-            case gdmn_db_1.FieldType.DOUBLE:
-                const fRange = util_1.check2NumberRange(fieldSource.validationSource);
-                return new gdmn_orm_1.FloatAttribute(attributeName, lName, required, fRange.minValue, fRange.maxValue, util_1.default2Float(defaultValue), semCategories, adapter);
-            case gdmn_db_1.FieldType.SMALL_INTEGER:
+            case gdmn_db_1.FieldType.DOUBLE: {
+                const { minValue, maxValue } = util_1.check2NumberRange(fieldSource.validationSource);
+                const defaultValue = util_1.default2Float(defaultValueSource);
+                return new gdmn_orm_1.FloatAttribute({ name, lName, required, minValue, maxValue, defaultValue, semCategories, adapter });
+            }
+            case gdmn_db_1.FieldType.SMALL_INTEGER: {
                 if (util_1.isCheckForBoolean(fieldSource.validationSource)) {
-                    return new gdmn_orm_1.BooleanAttribute(attributeName, lName, required, util_1.default2Boolean(defaultValue), semCategories, adapter);
+                    const defaultValue = util_1.default2Boolean(defaultValueSource);
+                    return new gdmn_orm_1.BooleanAttribute({ name, lName, required, defaultValue, semCategories, adapter });
                 }
-                const siRange = util_1.check2NumberRange(fieldSource.validationSource, { min: gdmn_orm_1.MIN_16BIT_INT, max: gdmn_orm_1.MAX_16BIT_INT });
-                return new gdmn_orm_1.IntegerAttribute(attributeName, lName, required, siRange.minValue, siRange.maxValue, util_1.default2Int(defaultValue), semCategories, adapter);
-            case gdmn_db_1.FieldType.BIG_INTEGER:
-                const biRange = util_1.check2NumberRange(fieldSource.validationSource, { min: gdmn_orm_1.MIN_64BIT_INT, max: gdmn_orm_1.MAX_64BIT_INT });
-                return new gdmn_orm_1.IntegerAttribute(attributeName, lName, required, biRange.minValue, biRange.maxValue, util_1.default2Int(defaultValue), semCategories, adapter);
-            case gdmn_db_1.FieldType.BLOB:
+                const { minValue, maxValue } = util_1.check2NumberRange(fieldSource.validationSource, {
+                    min: gdmn_orm_1.MIN_16BIT_INT,
+                    max: gdmn_orm_1.MAX_16BIT_INT
+                });
+                const defaultValue = util_1.default2Int(defaultValueSource);
+                return new gdmn_orm_1.IntegerAttribute({ name, lName, required, minValue, maxValue, defaultValue, semCategories, adapter });
+            }
+            case gdmn_db_1.FieldType.BIG_INTEGER: {
+                const { minValue, maxValue } = util_1.check2NumberRange(fieldSource.validationSource, {
+                    min: gdmn_orm_1.MIN_64BIT_INT,
+                    max: gdmn_orm_1.MAX_64BIT_INT
+                });
+                const defaultValue = util_1.default2Int(defaultValueSource);
+                return new gdmn_orm_1.IntegerAttribute({ name, lName, required, minValue, maxValue, defaultValue, semCategories, adapter });
+            }
+            case gdmn_db_1.FieldType.BLOB: {
                 if (fieldSource.fieldSubType === 1) {
-                    return new gdmn_orm_1.StringAttribute(attributeName, lName, required, 0, undefined, util_1.default2String(defaultValue), false, undefined, semCategories, adapter);
+                    const defaultValue = util_1.default2String(defaultValueSource);
+                    return new gdmn_orm_1.StringAttribute({
+                        name, lName, required, minLength: 0,
+                        defaultValue, autoTrim: false, semCategories, adapter
+                    });
                 }
-                else {
-                    return new gdmn_orm_1.BlobAttribute(attributeName, lName, required, semCategories, adapter);
-                }
+                return new gdmn_orm_1.BlobAttribute({ name, lName, required, semCategories, adapter });
+            }
             default:
-                throw new Error(`Unknown data type ${fieldSource}=${fieldSource.fieldType} for field ${r.name}.${attributeName}`);
+                throw new Error(`Unknown data type ${fieldSource}=${fieldSource.fieldType} for field ${r.name}.${name}`);
         }
     }
     function createAttributes(entity) {
@@ -538,7 +639,11 @@ async function erExport(dbs, connection, transaction, erModel) {
                                 link2masterField: adapter ? adapter.field : attrName
                             }]
                     } : undefined;
-                    masterEntity.add(new gdmn_orm_1.DetailAttribute(attributeName, lName, required, [entity], atRelationField ? atRelationField.semCategories : [], detailAdapter));
+                    masterEntity.add(new gdmn_orm_1.DetailAttribute({
+                        name: attributeName, lName, required, entities: [entity],
+                        semCategories: atRelationField ? atRelationField.semCategories : [],
+                        adapter: detailAdapter
+                    }));
                     return;
                 }
                 const attr = createAttribute(r, rf, atRelationField, attrName, atRelationField ? atRelationField.semCategories : [], adapter);
@@ -549,7 +654,7 @@ async function erExport(dbs, connection, transaction, erModel) {
             Object.values(r.unique).forEach((uq) => {
                 const attrs = uq.fields.map((field) => {
                     const uqAttr = Object.values(entity.attributes).find((attr) => {
-                        if (gdmn_orm_1.isScalarAttribute(attr)) {
+                        if (gdmn_orm_1.ScalarAttribute.isType(attr)) {
                             const attrField = attr.adapter ? attr.adapter.field : attr.name;
                             if (attrField === field) {
                                 return true;
@@ -616,8 +721,14 @@ async function erExport(dbs, connection, transaction, erModel) {
             const atCrossRelation = atrelations[crossName];
             entitiesOwner.forEach(e => {
                 if (!Object.values(e.attributes).find((attr) => (attr instanceof gdmn_orm_1.SetAttribute) && !!attr.adapter && attr.adapter.crossRelation === crossName)) {
-                    const setAttr = new gdmn_orm_1.SetAttribute(atSetField ? atSetField[0] : crossName, atSetField ? atSetField[1].lName : (atCrossRelation ? atCrossRelation.lName : { en: { name: crossName } }), (!!setField && setField.notNull) || (!!setFieldSource && setFieldSource.notNull), referenceEntities, (setFieldSource && setFieldSource.fieldType === gdmn_db_1.FieldType.VARCHAR) ? setFieldSource.fieldLength : 0, atCrossRelation.semCategories, {
-                        crossRelation: crossName
+                    const setAttr = new gdmn_orm_1.SetAttribute({
+                        name: atSetField ? atSetField[0] : crossName,
+                        lName: atSetField ? atSetField[1].lName : (atCrossRelation ? atCrossRelation.lName : { en: { name: crossName } }),
+                        required: (!!setField && setField.notNull) || (!!setFieldSource && setFieldSource.notNull),
+                        entities: referenceEntities,
+                        presLen: (setFieldSource && setFieldSource.fieldType === gdmn_db_1.FieldType.VARCHAR) ? setFieldSource.fieldLength : 0,
+                        semCategories: atCrossRelation.semCategories,
+                        adapter: { crossRelation: crossName }
                     });
                     Object.entries(crossRelation.relationFields).forEach(([addName, addField]) => {
                         if (!crossRelation.primaryKey.fields.find(f => f === addName)) {

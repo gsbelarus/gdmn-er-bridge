@@ -1,5 +1,5 @@
 import {AConnection, ATransaction, DBStructure} from "gdmn-db";
-import {Entity, ERModel, isSequenceAttribute, Sequence, SequenceAttribute} from "gdmn-orm";
+import {Entity, ERModel, Sequence, SequenceAttribute} from "gdmn-orm";
 import {Constants} from "./Constants";
 import {erExport} from "./export/erexport";
 import {ERImport} from "./import/ERImport";
@@ -16,7 +16,7 @@ export class ERBridge {
 
   public static completeERModel(erModel: ERModel): ERModel {
     if (!Object.values(erModel.sequencies).some((seq) => seq.name == GLOBAL_GENERATOR)) {
-      erModel.addSequence(new Sequence(GLOBAL_GENERATOR));
+      erModel.addSequence(new Sequence({name: GLOBAL_GENERATOR}));
     }
 
     return erModel;
@@ -25,11 +25,15 @@ export class ERBridge {
   public static addEntityToERModel(erModel: ERModel, entity: Entity): Entity {
     const idAttr = Object.values(entity.attributes).find((attr) => attr.name === Constants.DEFAULT_ID_NAME);
     if (idAttr) {
-      if (!isSequenceAttribute(idAttr)) {
+      if (!SequenceAttribute.isType(idAttr)) {
         throw new Error("Attribute named 'ID' must be SequenceAttribute");
       }
     } else if (!entity.parent) {
-      entity.add(new SequenceAttribute(Constants.DEFAULT_ID_NAME, {ru: {name: "Идентификатор"}}, erModel.sequencies[GLOBAL_GENERATOR]));
+      entity.add(new SequenceAttribute({
+        name: Constants.DEFAULT_ID_NAME,
+        lName: {ru: {name: "Идентификатор"}},
+        sequence: erModel.sequencies[GLOBAL_GENERATOR]
+      }));
     }
     erModel.add(entity);
 

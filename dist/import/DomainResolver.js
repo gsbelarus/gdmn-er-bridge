@@ -18,40 +18,40 @@ class DomainResolver {
     static _getType(attr) {
         let expr = "";
         // TODO TimeIntervalAttribute
-        if (gdmn_orm_1.isEntityAttribute(attr)) {
+        if (gdmn_orm_1.EntityAttribute.isType(attr)) {
             expr = `INTEGER`;
         }
-        else if (gdmn_orm_1.isEnumAttribute(attr)) {
+        else if (gdmn_orm_1.EnumAttribute.isType(attr)) {
             expr = `VARCHAR(1)`;
         }
-        else if (gdmn_orm_1.isDateAttribute(attr)) {
+        else if (gdmn_orm_1.DateAttribute.isType(attr)) {
             expr = `DATE`;
         }
-        else if (gdmn_orm_1.isTimeAttribute(attr)) {
+        else if (gdmn_orm_1.TimeAttribute.isType(attr)) {
             expr = `TIME`;
         }
-        else if (gdmn_orm_1.isTimeStampAttribute(attr)) {
+        else if (gdmn_orm_1.TimeStampAttribute.isType(attr)) {
             expr = `TIMESTAMP`;
         }
-        else if (gdmn_orm_1.isSequenceAttribute(attr)) {
+        else if (gdmn_orm_1.SequenceAttribute.isType(attr)) {
             expr = `INTEGER`;
         }
-        else if (gdmn_orm_1.isIntegerAttribute(attr)) {
+        else if (gdmn_orm_1.IntegerAttribute.isType(attr)) {
             expr = DomainResolver._getIntTypeByRange(attr.minValue, attr.maxValue);
         }
-        else if (gdmn_orm_1.isNumericAttribute(attr)) {
+        else if (gdmn_orm_1.NumericAttribute.isType(attr)) {
             expr = `NUMERIC(${attr.precision}, ${attr.scale})`;
         }
-        else if (gdmn_orm_1.isFloatAttribute(attr)) {
+        else if (gdmn_orm_1.FloatAttribute.isType(attr)) {
             expr = `FLOAT`;
         }
-        else if (gdmn_orm_1.isBooleanAttribute(attr)) {
+        else if (gdmn_orm_1.BooleanAttribute.isType(attr)) {
             expr = `SMALLINT`;
         }
-        else if (gdmn_orm_1.isStringAttribute(attr)) {
+        else if (gdmn_orm_1.StringAttribute.isType(attr)) {
             expr = `VARCHAR(${attr.maxLength})`;
         }
-        else if (gdmn_orm_1.isBlobAttribute(attr)) {
+        else if (gdmn_orm_1.BlobAttribute.isType(attr)) {
             expr = `BLOB`;
         }
         else {
@@ -61,7 +61,7 @@ class DomainResolver {
     }
     static _getChecker(attr) {
         let expr = "";
-        if (gdmn_orm_1.isNumberAttribute(attr)) {
+        if (gdmn_orm_1.NumberAttribute.isType(attr)) {
             const minCond = attr.minValue !== undefined ? DomainResolver._val2Str(attr, attr.minValue) : undefined;
             const maxCond = attr.maxValue !== undefined ? DomainResolver._val2Str(attr, attr.maxValue) : undefined;
             if (minCond && maxCond) {
@@ -74,16 +74,16 @@ class DomainResolver {
                 expr = `CHECK(VALUE <= ${maxCond})`;
             }
         }
-        else if (gdmn_orm_1.isStringAttribute(attr)) {
+        else if (gdmn_orm_1.StringAttribute.isType(attr)) {
             const minCond = attr.minLength !== undefined ? `CHAR_LENGTH(VALUE) >= ${attr.minLength}` : undefined;
             if (minCond) {
                 expr = `CHECK(${minCond})`;
             }
         }
-        else if (gdmn_orm_1.isEnumAttribute(attr)) {
+        else if (gdmn_orm_1.EnumAttribute.isType(attr)) {
             expr = `CHECK(VALUE IN (${attr.values.map((item) => `'${item.value}'`).join(", ")}))`;
         }
-        else if (gdmn_orm_1.isBooleanAttribute(attr)) {
+        else if (gdmn_orm_1.BooleanAttribute.isType(attr)) {
             expr = `CHECK(VALUE IN (0, 1))`;
         }
         return expr;
@@ -96,25 +96,25 @@ class DomainResolver {
         return expr;
     }
     static _val2Str(attr, value) {
-        if (gdmn_orm_1.isDateAttribute(attr)) {
+        if (gdmn_orm_1.DateAttribute.isType(attr)) {
             return DomainResolver._date2Str(value);
         }
-        else if (gdmn_orm_1.isTimeAttribute(attr)) {
+        else if (gdmn_orm_1.TimeAttribute.isType(attr)) {
             return DomainResolver._time2Str(value);
         }
-        else if (gdmn_orm_1.isTimeStampAttribute(attr)) {
+        else if (gdmn_orm_1.TimeStampAttribute.isType(attr)) {
             return DomainResolver._dateTime2Str(value);
         }
-        else if (gdmn_orm_1.isNumberAttribute(attr)) {
+        else if (gdmn_orm_1.NumberAttribute.isType(attr)) {
             return `${value}`;
         }
-        else if (gdmn_orm_1.isStringAttribute(attr)) {
+        else if (gdmn_orm_1.StringAttribute.isType(attr)) {
             return `'${value}'`;
         }
-        else if (gdmn_orm_1.isBooleanAttribute(attr)) {
+        else if (gdmn_orm_1.BooleanAttribute.isType(attr)) {
             return `${+value}`;
         }
-        else if (gdmn_orm_1.isEnumAttribute(attr)) {
+        else if (gdmn_orm_1.EnumAttribute.isType(attr)) {
             return `'${value}'`;
         }
     }

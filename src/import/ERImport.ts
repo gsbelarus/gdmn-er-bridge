@@ -1,17 +1,15 @@
 import {AConnection} from "gdmn-db";
 import {
   Attribute,
+  DetailAttribute,
   Entity,
+  EntityAttribute,
+  EnumAttribute,
   ERModel,
-  isDetailAttribute,
-  isEntityAttribute,
-  isEnumAttribute,
-  isParentAttribute,
-  isScalarAttribute,
-  isSequenceAttribute,
-  isSetAttribute,
+  ParentAttribute,
   ScalarAttribute,
-  SequenceAttribute
+  SequenceAttribute,
+  SetAttribute
 } from "gdmn-orm";
 import {ATHelper} from "../ATHelper";
 import {Constants} from "../Constants";
@@ -47,7 +45,7 @@ export class ERImport {
     this._erModel = erModel;
   }
 
-  public static _getScalarFieldName(attr: ScalarAttribute): string {
+  public static _getFieldName(attr: Attribute): string {
     const attrAdapter = attr.adapter;
     return attrAdapter ? attrAdapter.field : attr.name;
   }
@@ -111,15 +109,15 @@ export class ERImport {
   private async _addUnique(entity: Entity): Promise<void> {
     const tableName = entity.name;
     for (const attrs of entity.unique) {
-      await this._getDDLHelper().addUnique(tableName, attrs.map((attr) => ERImport._getScalarFieldName(attr)));
+      await this._getDDLHelper().addUnique(tableName, attrs.map((attr) => ERImport._getFieldName(attr)));
     }
   }
 
   private async _addLinks(entity: Entity): Promise<void> {
     const tableName = entity.name;
-    for (const attr of Object.values(entity.attributes).filter((attr) => isEntityAttribute(attr))) {
-      if (isDetailAttribute(attr)) {
-        const fieldName = ERImport._getScalarFieldName(entity.pk[0]);
+    for (const attr of Object.values(entity.attributes).filter((attr) => EntityAttribute.isType(attr))) {
+      if (DetailAttribute.isType(attr)) {
+        const fieldName = ERImport._getFieldName(entity.pk[0]);
         const adapter = attr.adapter;
         let detailTableName: string;
         let detailLinkFieldName: string;
@@ -147,14 +145,14 @@ export class ERImport {
           masterEntity: entity
         });
 
-      } else if (isSetAttribute(attr)) {
+      } else if (SetAttribute.isType(attr)) {
         const crossTableName = Prefix.join(`${await this._getDDLHelper().ddlUniqueGen.next()}`, Prefix.CROSS);
 
         // create cross table
         const fields: IFieldProps[] = [];
-        for (const crossAttr of Object.values(attr.attributes).filter((attr) => isScalarAttribute(attr))) {
+        for (const crossAttr of Object.values(attr.attributes).filter((attr) => ScalarAttribute.isType(attr))) {
           const domainName = await this._getDDLHelper().addDomain(DomainResolver.resolve(crossAttr));
-          const fieldName = ERImport._getScalarFieldName(crossAttr);
+          const fieldName = ERImport._getFieldName(crossAttr);
           await this._bindATAttr(crossAttr, {relationName: crossTableName, fieldName, domainName});
           const field = {
             name: fieldName,
@@ -193,7 +191,7 @@ export class ERImport {
 
         // create own table column
         const fieldName = attr.name;
-        const domainName = await this._getDDLHelper().addDomain(DomainResolver.resolve(attr));
+        const domainName = await this._getDDLHelper().addDomain(DomainResolver.resolve(attr));  // TODO varchar(presLen)
         await this._getDDLHelper().addColumns(tableName, [{name: fieldName, domain: domainName}]);
         await this._bindATAttr(attr, {
           relationName: tableName,
@@ -209,18 +207,18 @@ export class ERImport {
           fieldName: Constants.DEFAULT_CROSS_PK_OWN_NAME
         }, {
           tableName: entity.name,
-          fieldName: ERImport._getScalarFieldName(entity.pk[0])
+          fieldName: ERImport._getFieldName(entity.pk[0])
         });
         await this._getDDLHelper().addForeignKey({
           tableName: crossTableName,
           fieldName: Constants.DEFAULT_CROSS_PK_REF_NAME
         }, {
           tableName: attr.entity[0].name,
-          fieldName: ERImport._getScalarFieldName(attr.entity[0].pk[0])
+          fieldName: ERImport._getFieldName(attr.entity[0].pk[0])
         });
 
-      } else if (isParentAttribute(attr) || isEntityAttribute(attr)) {
-        const fieldName = attr.name;
+      } else if (ParentAttribute.isType(attr) || EntityAttribute.isType(attr)) {
+        const fieldName = ERImport._getFieldName(attr);
         const domainName = await this._getDDLHelper().addDomain(DomainResolver.resolve(attr));
         await this._getDDLHelper().addColumns(tableName, [{name: fieldName, domain: domainName}]);
         await this._getDDLHelper().addForeignKey({
@@ -228,7 +226,7 @@ export class ERImport {
           fieldName
         }, {
           tableName: attr.entity[0].name,
-          fieldName: ERImport._getScalarFieldName(attr.entity[0].pk[0])
+          fieldName: ERImport._getFieldName(attr.entity[0].pk[0])
         });
         await this._bindATAttr(attr, {relationName: tableName, fieldName, domainName});
       }
@@ -241,11 +239,11 @@ export class ERImport {
     const fields: IFieldProps[] = [];
     const pkFields: IFieldProps[] = [];
     const seqAttrs: SequenceAttribute[] = [];
-    for (const attr of Object.values(entity.attributes).filter((attr) => isScalarAttribute(attr))) {
+    for (const attr of Object.values(entity.attributes).filter((attr) => ScalarAttribute.isType(attr))) {
       const domainName = await this._getDDLHelper().addDomain(DomainResolver.resolve(attr));
-      const fieldName = ERImport._getScalarFieldName(attr);
+      const fieldName = ERImport._getFieldName(attr);
       await this._bindATAttr(attr, {relationName: tableName, fieldName, domainName});
-      if (isSequenceAttribute(attr)) {
+      if (SequenceAttribute.isType(attr)) {
         seqAttrs.push(attr);
       }
       const field = {
@@ -260,7 +258,7 @@ export class ERImport {
     await this._getDDLHelper().addTable(tableName, fields);
     await this._getDDLHelper().addPrimaryKey(tableName, pkFields.map((i) => i.name));
     for (const seqAttr of seqAttrs) {
-      const fieldName = ERImport._getScalarFieldName(seqAttr);
+      const fieldName = ERImport._getFieldName(seqAttr);
       const seqAdapter = seqAttr.sequence.adapter;
       await this._getDDLHelper().addAutoIncrementTrigger(tableName, fieldName,
         seqAdapter ? seqAdapter.sequence : seqAttr.sequence.name);
@@ -280,7 +278,7 @@ export class ERImport {
   }
 
   private async _bindATAttr(attr: Attribute, options: IATAttrOptions): Promise<void> {
-    const numeration = isEnumAttribute(attr)
+    const numeration = EnumAttribute.isType(attr)
       ? attr.values.map(({value, lName}) => `${value}=${lName && lName.ru ? lName.ru.name : ""}`).join("#13#10")
       : undefined;
 
@@ -302,7 +300,7 @@ export class ERImport {
       lName: attr.lName.ru ? attr.lName.ru.name : attr.name,
       description: attr.lName.ru ? attr.lName.ru.fullName : attr.name,
       attrName: options.fieldName !== attr.name ? attr.name : undefined,
-      isParent: isParentAttribute(attr) || undefined,
+      isParent: ParentAttribute.isType(attr) || undefined,
       masterEntityName: options.masterEntity ? options.masterEntity.name : undefined,
       fieldSource: options.domainName,
       fieldSourceKey,

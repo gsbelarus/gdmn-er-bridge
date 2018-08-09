@@ -1,26 +1,26 @@
 import {
   Attribute,
+  BlobAttribute,
+  BooleanAttribute,
   ContextVariables,
-  isBlobAttribute,
-  isBooleanAttribute,
-  isDateAttribute,
-  isEntityAttribute,
-  isEnumAttribute,
-  isFloatAttribute,
-  isIntegerAttribute,
-  isNumberAttribute,
-  isNumericAttribute,
-  isSequenceAttribute,
-  isStringAttribute,
-  isTimeAttribute,
-  isTimeStampAttribute,
+  DateAttribute,
+  EntityAttribute,
+  EnumAttribute,
+  FloatAttribute,
+  IntegerAttribute,
   MAX_16BIT_INT,
   MAX_32BIT_INT,
   MAX_64BIT_INT,
   MIN_16BIT_INT,
   MIN_32BIT_INT,
   MIN_64BIT_INT,
-  ScalarAttribute
+  NumberAttribute,
+  NumericAttribute,
+  ScalarAttribute,
+  SequenceAttribute,
+  StringAttribute,
+  TimeAttribute,
+  TimeStampAttribute
 } from "gdmn-orm";
 import moment from "moment";
 import {Constants} from "../Constants";
@@ -40,29 +40,29 @@ export class DomainResolver {
   private static _getType(attr: Attribute): string {
     let expr = "";
     // TODO TimeIntervalAttribute
-    if (isEntityAttribute(attr)) {
+    if (EntityAttribute.isType(attr)) {
       expr = `INTEGER`;
-    } else if (isEnumAttribute(attr)) {
+    } else if (EnumAttribute.isType(attr)) {
       expr = `VARCHAR(1)`;
-    } else if (isDateAttribute(attr)) {
+    } else if (DateAttribute.isType(attr)) {
       expr = `DATE`;
-    } else if (isTimeAttribute(attr)) {
+    } else if (TimeAttribute.isType(attr)) {
       expr = `TIME`;
-    } else if (isTimeStampAttribute(attr)) {
+    } else if (TimeStampAttribute.isType(attr)) {
       expr = `TIMESTAMP`;
-    } else if (isSequenceAttribute(attr)) {
+    } else if (SequenceAttribute.isType(attr)) {
       expr = `INTEGER`;
-    } else if (isIntegerAttribute(attr)) {
+    } else if (IntegerAttribute.isType(attr)) {
       expr = DomainResolver._getIntTypeByRange(attr.minValue, attr.maxValue);
-    } else if (isNumericAttribute(attr)) {
+    } else if (NumericAttribute.isType(attr)) {
       expr = `NUMERIC(${attr.precision}, ${attr.scale})`;
-    } else if (isFloatAttribute(attr)) {
+    } else if (FloatAttribute.isType(attr)) {
       expr = `FLOAT`;
-    } else if (isBooleanAttribute(attr)) {
+    } else if (BooleanAttribute.isType(attr)) {
       expr = `SMALLINT`;
-    } else if (isStringAttribute(attr)) {
+    } else if (StringAttribute.isType(attr)) {
       expr = `VARCHAR(${attr.maxLength})`;
-    } else if (isBlobAttribute(attr)) {
+    } else if (BlobAttribute.isType(attr)) {
       expr = `BLOB`;
     } else {
       expr = `BLOB SUB_TYPE TEXT`;
@@ -72,7 +72,7 @@ export class DomainResolver {
 
   private static _getChecker(attr: Attribute): string {
     let expr = "";
-    if (isNumberAttribute(attr)) {
+    if (NumberAttribute.isType(attr)) {
       const minCond = attr.minValue !== undefined ? DomainResolver._val2Str(attr, attr.minValue) : undefined;
       const maxCond = attr.maxValue !== undefined ? DomainResolver._val2Str(attr, attr.maxValue) : undefined;
       if (minCond && maxCond) {
@@ -82,14 +82,14 @@ export class DomainResolver {
       } else if (maxCond) {
         expr = `CHECK(VALUE <= ${maxCond})`;
       }
-    } else if (isStringAttribute(attr)) {
+    } else if (StringAttribute.isType(attr)) {
       const minCond = attr.minLength !== undefined ? `CHAR_LENGTH(VALUE) >= ${attr.minLength}` : undefined;
       if (minCond) {
         expr = `CHECK(${minCond})`;
       }
-    } else if (isEnumAttribute(attr)) {
+    } else if (EnumAttribute.isType(attr)) {
       expr = `CHECK(VALUE IN (${attr.values.map((item) => `'${item.value}'`).join(", ")}))`;
-    } else if (isBooleanAttribute(attr)) {
+    } else if (BooleanAttribute.isType(attr)) {
       expr = `CHECK(VALUE IN (0, 1))`;
     }
     return expr;
@@ -104,19 +104,19 @@ export class DomainResolver {
   }
 
   private static _val2Str(attr: ScalarAttribute, value: any): string | undefined {
-    if (isDateAttribute(attr)) {
+    if (DateAttribute.isType(attr)) {
       return DomainResolver._date2Str(value);
-    } else if (isTimeAttribute(attr)) {
+    } else if (TimeAttribute.isType(attr)) {
       return DomainResolver._time2Str(value);
-    } else if (isTimeStampAttribute(attr)) {
+    } else if (TimeStampAttribute.isType(attr)) {
       return DomainResolver._dateTime2Str(value);
-    } else if (isNumberAttribute(attr)) {
+    } else if (NumberAttribute.isType(attr)) {
       return `${value}`;
-    } else if (isStringAttribute(attr)) {
+    } else if (StringAttribute.isType(attr)) {
       return `'${value}'`;
-    } else if (isBooleanAttribute(attr)) {
+    } else if (BooleanAttribute.isType(attr)) {
       return `${+value}`;
-    } else if (isEnumAttribute(attr)) {
+    } else if (EnumAttribute.isType(attr)) {
       return `'${value}'`;
     }
   }

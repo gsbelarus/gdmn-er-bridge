@@ -20,7 +20,6 @@ import {
   FloatAttribute,
   hasField,
   IntegerAttribute,
-  isScalarAttribute,
   isUserDefined,
   LName,
   MAX_16BIT_INT,
@@ -34,6 +33,7 @@ import {
   relationName2Adapter,
   relationNames2Adapter,
   sameAdapter,
+  ScalarAttribute,
   Sequence,
   SequenceAttribute,
   SetAttribute,
@@ -89,8 +89,8 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
    * Если имя генератора совпадает с именем объекта в БД, то адаптер можем не указывать.
    */
 
-  const GDGUnique = erModel.addSequence(new Sequence(GLOBAL_GENERATOR));
-  erModel.addSequence(new Sequence("Offset", {sequence: "GD_G_OFFSET"}));
+  const GDGUnique = erModel.addSequence(new Sequence({name: GLOBAL_GENERATOR}));
+  erModel.addSequence(new Sequence({name: "Offset", sequence: "GD_G_OFFSET"}));
 
   function findEntities(relationName: string, selectors: EntitySelector[] = []): Entity[] {
     const found = Object.entries(erModel.entities).reduce((p, e) => {
@@ -138,22 +138,26 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
       throw new Error("Invalid entity adapter");
     }
 
-    const setEntityName = adjustName(entityName ? entityName : relation.relationName);
+    const name = adjustName(entityName ? entityName : relation.relationName);
     const atRelation = atrelations[relation.relationName];
-    const fake = relationName2Adapter(setEntityName);
+    const fake = relationName2Adapter(name);
 
-    const entity = new Entity(
+    const entity = new Entity({
       parent,
-      setEntityName,
-      lName ? lName : (atRelation ? atRelation.lName : {}),
-      !!abstract,
+      name,
+      lName: lName ? lName : (atRelation ? atRelation.lName : {}),
+      isAbstract: !!abstract,
       semCategories,
-      JSON.stringify(adapter) !== JSON.stringify(fake) ? adapter : undefined
-    );
+      adapter: JSON.stringify(adapter) !== JSON.stringify(fake) ? adapter : undefined
+    });
 
     if (!parent) {
       entity.add(
-        new SequenceAttribute(Constants.DEFAULT_ID_NAME, {ru: {name: "Идентификатор"}}, GDGUnique)
+        new SequenceAttribute({
+          name: Constants.DEFAULT_ID_NAME,
+          lName: {ru: {name: "Идентификатор"}},
+          sequence: GDGUnique
+        })
       );
     }
 
@@ -182,17 +186,13 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
   if (dbs.findRelation((rel) => rel.name === "GD_PLACE")) {
     createEntity(undefined, relationName2Adapter("GD_PLACE"), false, undefined, undefined, [SemCategory.Place],
       [
-        new EnumAttribute("PLACETYPE", {ru: {name: "Тип"}}, true,
-          [
-            {
-              value: "Область"
-            },
-            {
-              value: "Район"
-            }
-          ],
-          "Область"
-        )
+        new EnumAttribute({
+          name: "PLACETYPE",
+          lName: {ru: {name: "Тип"}},
+          required: true,
+          values: [{value: "Область"}, {value: "Район"}],
+          defaultValue: "Область"
+        })
       ]);
   }
 
@@ -221,7 +221,11 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
       "Folder", {ru: {name: "Папка"}}
     );
     Folder.add(
-      new ParentAttribute(Constants.DEFAULT_PARENT_KEY_NAME, {ru: {name: "Входит в папку"}}, [Folder])
+      new ParentAttribute({
+        name: Constants.DEFAULT_PARENT_KEY_NAME,
+        lName: {ru: {name: "Входит в папку"}},
+        entities: [Folder]
+      })
     );
 
     /**
@@ -260,9 +264,18 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
       "Company", {ru: {name: "Организация"}},
       [SemCategory.Company],
       [
-        new ParentAttribute(Constants.DEFAULT_PARENT_KEY_NAME, {ru: {name: "Входит в папку"}}, [Folder]),
-        new StringAttribute("NAME", {ru: {name: "Краткое наименование"}}, true,
-          undefined, 60, undefined, true, undefined)
+        new ParentAttribute({
+          name: Constants.DEFAULT_PARENT_KEY_NAME,
+          lName: {ru: {name: "Входит в папку"}},
+          entities: [Folder]
+        }),
+        new StringAttribute({
+          name: "NAME",
+          lName: {ru: {name: "Краткое наименование"}},
+          required: true,
+          maxLength: 60,
+          autoTrim: true
+        })
       ]
     );
 
@@ -344,11 +357,17 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
       "Department", {ru: {name: "Подразделение"}}
     );
     Department.add(
-      new ParentAttribute(Constants.DEFAULT_PARENT_KEY_NAME, {ru: {name: "Входит в организацию (подразделение)"}}, [Company, Department])
+      new ParentAttribute({
+        name: Constants.DEFAULT_PARENT_KEY_NAME,
+        lName: {ru: {name: "Входит в организацию (подразделение)"}},
+        entities: [Company, Department]
+      })
     );
     Department.add(
-      new StringAttribute("NAME", {ru: {name: "Наименование"}}, true,
-        undefined, 60, undefined, true, undefined)
+      new StringAttribute({
+        name: "NAME", lName: {ru: {name: "Наименование"}}, required: true,
+        maxLength: 60, autoTrim: true
+      })
     );
 
     /**
@@ -374,11 +393,17 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
       "Person", {ru: {name: "Физическое лицо"}}
     );
     Person.add(
-      new ParentAttribute(Constants.DEFAULT_PARENT_KEY_NAME, {ru: {name: "Входит в папку"}}, [Folder])
+      new ParentAttribute({
+        name: Constants.DEFAULT_PARENT_KEY_NAME,
+        lName: {ru: {name: "Входит в папку"}},
+        entities: [Folder]
+      })
     );
     Person.add(
-      new StringAttribute("NAME", {ru: {name: "ФИО"}}, true,
-        undefined, 60, undefined, true, undefined)
+      new StringAttribute({
+        name: "NAME", lName: {ru: {name: "ФИО"}}, required: true,
+        maxLength: 60, autoTrim: true
+      })
     );
 
     /**
@@ -407,7 +432,11 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
       "Employee", {ru: {name: "Сотрудник предприятия"}}
     );
     Employee.add(
-      new ParentAttribute(Constants.DEFAULT_PARENT_KEY_NAME, {ru: {name: "Организация или подразделение"}}, [Company, Department])
+      new ParentAttribute({
+        name: Constants.DEFAULT_PARENT_KEY_NAME,
+        lName: {ru: {name: "Организация или подразделение"}},
+        entities: [Company, Department]
+      })
     );
 
     /**
@@ -433,27 +462,35 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
       "Group", {ru: {name: "Группа"}}
     );
     Group.add(
-      new ParentAttribute(Constants.DEFAULT_PARENT_KEY_NAME, {ru: {name: "Входит в папку"}}, [Folder])
+      new ParentAttribute({
+        name: Constants.DEFAULT_PARENT_KEY_NAME,
+        lName: {ru: {name: "Входит в папку"}},
+        entities: [Folder]
+      })
     );
     Group.add(
-      new SetAttribute("CONTACTLIST", {ru: {name: "Контакты"}}, false, [Company, Person], 0, [],
-        {
-          crossRelation: "GD_CONTACTLIST"
+      new SetAttribute({
+          name: "CONTACTLIST", lName: {ru: {name: "Контакты"}}, entities: [Company, Person],
+          adapter: {
+            crossRelation: "GD_CONTACTLIST"
+          }
         }
       )
-    ) as SetAttribute;
+    );
 
     const companyAccount = createEntity(undefined, relationName2Adapter("GD_COMPANYACCOUNT"));
 
     Company.add(
-      new DetailAttribute("GD_COMPANYACCOUNT", {ru: {name: "Банковские счета"}}, false, [companyAccount], [],
-        {
-          masterLinks: [
-            {
-              detailRelation: "GD_COMPANYACCOUNT",
-              link2masterField: "COMPANYKEY"
-            }
-          ]
+      new DetailAttribute({
+          name: "GD_COMPANYACCOUNT", lName: {ru: {name: "Банковские счета"}}, entities: [companyAccount],
+          adapter: {
+            masterLinks: [
+              {
+                detailRelation: "GD_COMPANYACCOUNT",
+                link2masterField: "COMPANYKEY"
+              }
+            ]
+          }
         }
       )
     );
@@ -521,7 +558,11 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
         const line = createEntity(lineParent, lineAdapter,
           false, `LINE_${ruid}_${setLR}`, {ru: {name: `Позиция: ${name}`}});
         line.add(
-          new ParentAttribute(Constants.DEFAULT_PARENT_KEY_NAME, {ru: {name: "Шапка документа"}}, [header])
+          new ParentAttribute({
+            name: Constants.DEFAULT_PARENT_KEY_NAME,
+            lName: {ru: {name: "Шапка документа"}},
+            entities: [header]
+          })
         );
         documentClasses[ruid] = {...documentClasses[ruid], line};
         const masterLinks = [
@@ -537,7 +578,7 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
           });
         }
         header.add(
-          new DetailAttribute(line.name, line.lName, false, [line], [], {masterLinks})
+          new DetailAttribute({name: line.name, lName: line.lName, entities: [line], adapter: {masterLinks}})
         );
       }
     }
@@ -577,17 +618,17 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
                            attrName: string,
                            semCategories: SemCategory[],
                            adapter: AttributeAdapter | undefined) {
-    const attributeName = adjustName(attrName);
+    const name = adjustName(attrName);
     const atField = atfields[rf.fieldSource];
     const fieldSource = dbs.fields[rf.fieldSource];
     const required: boolean = rf.notNull || fieldSource.notNull;
-    const defaultValue: string | null = rf.defaultSource || fieldSource.defaultSource;
+    const defaultValueSource: string | null = rf.defaultSource || fieldSource.defaultSource;
     const lName = atRelationField ? atRelationField.lName : (atField ? atField.lName : {});
 
     const createDomainFunc = gdDomains[rf.fieldSource];
 
     if (createDomainFunc) {
-      return createDomainFunc(attributeName, lName, adapter);
+      return createDomainFunc(name, lName, adapter);
     }
 
     // numeric and decimal
@@ -615,20 +656,20 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
           break;
       }
       if (range) {
-        return new NumericAttribute(attributeName, lName, required,
-          fieldSource.fieldPrecision,
-          Math.abs(fieldSource.fieldScale),
-          range.minValue, range.maxValue,
-          default2Float(defaultValue),
-          semCategories,
-          adapter);
+        return new NumericAttribute({
+          name, lName, required, semCategories, adapter,
+          precision: fieldSource.fieldPrecision,
+          scale: Math.abs(fieldSource.fieldScale),
+          minValue: range.minValue, maxValue: range.maxValue,
+          defaultValue: default2Float(defaultValueSource)
+        });
       }
     }
 
     switch (fieldSource.fieldType) {
       case FieldType.INTEGER: {
         const fk = Object.entries(r.foreignKeys).find(
-          ([, f]) => !!f.fields.find(fld => fld === attributeName)
+          ([, f]) => !!f.fields.find(fld => fld === name)
         );
 
         if (fk && fk[1].fields.length === 1) {
@@ -641,16 +682,20 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
           }
 
           if (atRelationField && atRelationField.isParent) {
-            return new ParentAttribute(attributeName, lName, refEntities, semCategories, adapter);
+            return new ParentAttribute({name, lName, entities: refEntities, semCategories, adapter});
           }
-          return new EntityAttribute(attributeName, lName, required, refEntities, semCategories, adapter);
+          return new EntityAttribute({name, lName, required, entities: refEntities, semCategories, adapter});
         } else {
-          const iRange = check2NumberRange(fieldSource.validationSource, {min: MIN_32BIT_INT, max: MAX_32BIT_INT});
-          return new IntegerAttribute(attributeName, lName, required, iRange.minValue, iRange.maxValue,
-            default2Int(defaultValue), semCategories, adapter);
+          const {minValue, maxValue} = check2NumberRange(fieldSource.validationSource, {
+            min: MIN_32BIT_INT,
+            max: MAX_32BIT_INT
+          });
+          const defaultValue = default2Int(defaultValueSource);
+          return new IntegerAttribute({
+            name, lName, required, minValue, maxValue, defaultValue, semCategories, adapter
+          });
         }
       }
-
       case FieldType.CHAR:
       case FieldType.VARCHAR: {
         if (fieldSource.fieldLength === 1) {
@@ -662,64 +707,81 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
               map[key] = value;
               return map;
             }, {} as { [field: string]: string });
+            const defaultValue = default2String(defaultValueSource);
 
-            return new EnumAttribute(attributeName, lName, required, values.map((value) => ({
-              value,
-              lName: mapValues[value] ? {ru: {name: mapValues[value]}} : undefined
-            })), default2String(defaultValue), semCategories, adapter);
+            return new EnumAttribute({
+              name, lName, required,
+              values: values.map((value) => ({
+                value,
+                lName: mapValues[value] ? {ru: {name: mapValues[value]}} : undefined
+              })),
+              defaultValue, semCategories, adapter
+            });
           }
         }
 
         const minLength = check2StrMin(fieldSource.validationSource);
-        return new StringAttribute(attributeName, lName, required, minLength, fieldSource.fieldLength,
-          default2String(defaultValue), true, undefined, semCategories, adapter);
+        const defaultValue = default2String(defaultValueSource);
+        return new StringAttribute({
+          name, lName, required, minLength, maxLength: fieldSource.fieldLength,
+          defaultValue, autoTrim: true, semCategories, adapter
+        });
       }
-
-      case FieldType.TIMESTAMP:
-        const tsRange = check2TimestampRange(fieldSource.validationSource);
-        return new TimeStampAttribute(attributeName, lName, required, tsRange.minValue, tsRange.maxValue,
-          default2Timestamp(defaultValue), semCategories, adapter);
-
-      case FieldType.DATE:
-        const dRange = check2DateRange(fieldSource.validationSource);
-        return new DateAttribute(attributeName, lName, required, dRange.minValue, dRange.maxValue,
-          default2Date(defaultValue), semCategories, adapter);
-
-      case FieldType.TIME:
-        const tRange = check2TimeRange(fieldSource.validationSource);
-        return new TimeAttribute(attributeName, lName, required, tRange.minValue, tRange.maxValue,
-          default2Time(defaultValue), semCategories, adapter);
-
+      case FieldType.TIMESTAMP: {
+        const {minValue, maxValue} = check2TimestampRange(fieldSource.validationSource);
+        const defaultValue = default2Timestamp(defaultValueSource);
+        return new TimeStampAttribute({
+          name, lName, required, minValue, maxValue, defaultValue, semCategories, adapter
+        });
+      }
+      case FieldType.DATE: {
+        const {minValue, maxValue} = check2DateRange(fieldSource.validationSource);
+        const defaultValue = default2Date(defaultValueSource);
+        return new DateAttribute({name, lName, required, minValue, maxValue, defaultValue, semCategories, adapter});
+      }
+      case FieldType.TIME: {
+        const {minValue, maxValue} = check2TimeRange(fieldSource.validationSource);
+        const defaultValue = default2Time(defaultValueSource);
+        return new TimeAttribute({name, lName, required, minValue, maxValue, defaultValue, semCategories, adapter});
+      }
       case FieldType.FLOAT:
-      case FieldType.DOUBLE:
-        const fRange = check2NumberRange(fieldSource.validationSource);
-        return new FloatAttribute(attributeName, lName, required, fRange.minValue, fRange.maxValue,
-          default2Float(defaultValue), semCategories, adapter);
-
-      case FieldType.SMALL_INTEGER:
+      case FieldType.DOUBLE: {
+        const {minValue, maxValue} = check2NumberRange(fieldSource.validationSource);
+        const defaultValue = default2Float(defaultValueSource);
+        return new FloatAttribute({name, lName, required, minValue, maxValue, defaultValue, semCategories, adapter});
+      }
+      case FieldType.SMALL_INTEGER: {
         if (isCheckForBoolean(fieldSource.validationSource)) {
-          return new BooleanAttribute(attributeName, lName, required,
-            default2Boolean(defaultValue), semCategories, adapter);
+          const defaultValue = default2Boolean(defaultValueSource);
+          return new BooleanAttribute({name, lName, required, defaultValue, semCategories, adapter});
         }
-        const siRange = check2NumberRange(fieldSource.validationSource, {min: MIN_16BIT_INT, max: MAX_16BIT_INT});
-        return new IntegerAttribute(attributeName, lName, required, siRange.minValue, siRange.maxValue,
-          default2Int(defaultValue), semCategories, adapter);
-
-      case FieldType.BIG_INTEGER:
-        const biRange = check2NumberRange(fieldSource.validationSource, {min: MIN_64BIT_INT, max: MAX_64BIT_INT});
-        return new IntegerAttribute(attributeName, lName, required, biRange.minValue, biRange.maxValue,
-          default2Int(defaultValue), semCategories, adapter);
-
-      case FieldType.BLOB:
+        const {minValue, maxValue} = check2NumberRange(fieldSource.validationSource, {
+          min: MIN_16BIT_INT,
+          max: MAX_16BIT_INT
+        });
+        const defaultValue = default2Int(defaultValueSource);
+        return new IntegerAttribute({name, lName, required, minValue, maxValue, defaultValue, semCategories, adapter});
+      }
+      case FieldType.BIG_INTEGER: {
+        const {minValue, maxValue} = check2NumberRange(fieldSource.validationSource, {
+          min: MIN_64BIT_INT,
+          max: MAX_64BIT_INT
+        });
+        const defaultValue = default2Int(defaultValueSource);
+        return new IntegerAttribute({name, lName, required, minValue, maxValue, defaultValue, semCategories, adapter});
+      }
+      case FieldType.BLOB: {
         if (fieldSource.fieldSubType === 1) {
-          return new StringAttribute(attributeName, lName, required, 0, undefined,
-            default2String(defaultValue), false, undefined, semCategories, adapter);
-        } else {
-          return new BlobAttribute(attributeName, lName, required, semCategories, adapter);
+          const defaultValue = default2String(defaultValueSource);
+          return new StringAttribute({
+            name, lName, required, minLength: 0,
+            defaultValue, autoTrim: false, semCategories, adapter
+          });
         }
-
+        return new BlobAttribute({name, lName, required, semCategories, adapter});
+      }
       default:
-        throw new Error(`Unknown data type ${fieldSource}=${fieldSource.fieldType} for field ${r.name}.${attributeName}`);
+        throw new Error(`Unknown data type ${fieldSource}=${fieldSource.fieldType} for field ${r.name}.${name}`);
     }
   }
 
@@ -776,8 +838,11 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
               link2masterField: adapter ? adapter.field : attrName
             }]
           } : undefined;
-          masterEntity.add(new DetailAttribute(attributeName, lName, required, [entity],
-            atRelationField ? atRelationField.semCategories : [], detailAdapter));
+          masterEntity.add(new DetailAttribute({
+            name: attributeName, lName, required, entities: [entity],
+            semCategories: atRelationField ? atRelationField.semCategories : [],
+            adapter: detailAdapter
+          }));
           return;
         }
 
@@ -796,7 +861,7 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
       Object.values(r.unique).forEach((uq) => {
         const attrs = uq.fields.map((field) => {
           const uqAttr = Object.values(entity.attributes).find((attr) => {
-            if (isScalarAttribute(attr)) {
+            if (ScalarAttribute.isType(attr)) {
               const attrField = attr.adapter ? attr.adapter.field : attr.name;
               if (attrField === field) {
                 return true;
@@ -883,15 +948,14 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
       entitiesOwner.forEach(e => {
         if (!Object.values(e.attributes).find((attr) =>
           (attr instanceof SetAttribute) && !!attr.adapter && attr.adapter.crossRelation === crossName)) {
-          const setAttr = new SetAttribute(
-            atSetField ? atSetField[0] : crossName,
-            atSetField ? atSetField[1].lName : (atCrossRelation ? atCrossRelation.lName : {en: {name: crossName}}),
-            (!!setField && setField.notNull) || (!!setFieldSource && setFieldSource.notNull),
-            referenceEntities,
-            (setFieldSource && setFieldSource.fieldType === FieldType.VARCHAR) ? setFieldSource.fieldLength : 0,
-            atCrossRelation.semCategories,
-            {
-              crossRelation: crossName
+          const setAttr = new SetAttribute({
+              name: atSetField ? atSetField[0] : crossName,
+              lName: atSetField ? atSetField[1].lName : (atCrossRelation ? atCrossRelation.lName : {en: {name: crossName}}),
+              required: (!!setField && setField.notNull) || (!!setFieldSource && setFieldSource.notNull),
+              entities: referenceEntities,
+              presLen: (setFieldSource && setFieldSource.fieldType === FieldType.VARCHAR) ? setFieldSource.fieldLength : 0,
+              semCategories: atCrossRelation.semCategories,
+              adapter: {crossRelation: crossName}
             }
           );
 

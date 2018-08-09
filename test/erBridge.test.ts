@@ -54,10 +54,10 @@ describe("ERBridge", () => {
 
   it("empty entity", async () => {
     const erModel = ERBridge.completeERModel(new ERModel());
-    const entity = ERBridge.addEntityToERModel(erModel, new Entity(undefined,
-      "TEST",
-      {ru: {name: "entity name", fullName: "full entity name"}},
-      false));
+    const entity = ERBridge.addEntityToERModel(erModel, new Entity({
+      name: "TEST",
+      lName: {ru: {name: "entity name", fullName: "full entity name"}}
+    }));
 
     await erBridge.importToDatabase(erModel);
 
@@ -69,21 +69,32 @@ describe("ERBridge", () => {
 
   it("integer", async () => {
     const erModel = ERBridge.completeERModel(new ERModel());
-    const entity = ERBridge.addEntityToERModel(erModel, new Entity(undefined,
-      "TEST",
-      {ru: {name: "entity name", fullName: "full entity name"}},
-      false));
+    const entity = ERBridge.addEntityToERModel(erModel, new Entity({
+      name: "TEST",
+      lName: {ru: {name: "entity name", fullName: "full entity name"}}
+    }));
 
-    entity.add(new IntegerAttribute("FIELD1", {ru: {name: "Поле 1", fullName: "FULLNAME"}}, true,
-      MIN_16BIT_INT, MAX_16BIT_INT, -100, [], {relation: "TEST", field: "FIELD_ADAPTER"}));
-    entity.add(new IntegerAttribute("FIELD2", {ru: {name: "Поле 2", fullName: "FULLNAME"}}, true,
-      MIN_32BIT_INT, MAX_32BIT_INT, -10000, []));
-    // entity.add(new IntegerAttribute("FIELD3", {ru: {name: "Поле 3", fullName: "FULLNAME"}}, true,
-    //   MIN_64BIT_INT, MAX_64BIT_INT, -100000000000000, []));
-    entity.add(new IntegerAttribute("FIELD4", {ru: {name: "Поле 4", fullName: "FULLNAME"}}, false,
-      MIN_16BIT_INT, MAX_16BIT_INT + 1, 0, []));
-    entity.add(new IntegerAttribute("FIELD5", {ru: {name: "Поле 5", fullName: "FULLNAME"}}, false,
-      MIN_16BIT_INT, MAX_16BIT_INT + 1, undefined));
+    entity.add(new IntegerAttribute({
+      name: "FIELD1", lName: {ru: {name: "Поле 1", fullName: "FULLNAME"}}, required: true,
+      minValue: MIN_16BIT_INT, maxValue: MAX_16BIT_INT, defaultValue: -10000,
+      adapter: {relation: "TEST", field: "FIELD_ADAPTER"}
+    }));
+    entity.add(new IntegerAttribute({
+      name: "FIELD2", lName: {ru: {name: "Поле 2", fullName: "FULLNAME"}}, required: true,
+      minValue: MIN_32BIT_INT, maxValue: MAX_32BIT_INT, defaultValue: -10000
+    }));
+    // entity.add(new IntegerAttribute({
+    //   name: "FIELD3", lName: {ru: {name: "Поле 3", fullName: "FULLNAME"}}, required: true,
+    //   minValue: MIN_64BIT_INT, maxValue: MAX_64BIT_INT, defaultValue: -100000000000000
+    // }));
+    entity.add(new IntegerAttribute({
+      name: "FIELD4", lName: {ru: {name: "Поле 4", fullName: "FULLNAME"}},
+      minValue: MIN_16BIT_INT, maxValue: MAX_16BIT_INT + 1, defaultValue: 0
+    }));
+    entity.add(new IntegerAttribute({
+      name: "FIELD5", lName: {ru: {name: "Поле 5", fullName: "FULLNAME"}},
+      minValue: MIN_16BIT_INT, maxValue: MAX_16BIT_INT + 1
+    }));
 
     await erBridge.importToDatabase(erModel);
 
@@ -95,17 +106,24 @@ describe("ERBridge", () => {
 
   it("numeric", async () => {
     const erModel = ERBridge.completeERModel(new ERModel());
-    const entity = ERBridge.addEntityToERModel(erModel, new Entity(undefined,
-      "TEST",
-      {ru: {name: "entity name", fullName: "full entity name"}},
-      false));
+    const entity = ERBridge.addEntityToERModel(erModel, new Entity({
+      name: "TEST",
+      lName: {ru: {name: "entity name", fullName: "full entity name"}}
+    }));
 
-    entity.add(new NumericAttribute("FIELD1", {ru: {name: "Поле 1"}}, true,
-      4, 2, 40, 1000, 40.36, [], {relation: "TEST", field: "FIELD_ADAPTER"}));
-    entity.add(new NumericAttribute("FIELD2", {ru: {name: "Поле 2"}}, false,
-      4, 2, 40, 1000, 40.36));
-    entity.add(new NumericAttribute("FIELD3", {ru: {name: "Поле 3"}}, false,
-      4, 2, 40, 1000, undefined));
+    entity.add(new NumericAttribute({
+      name: "FIELD1", lName: {ru: {name: "Поле 1"}}, required: true,
+      precision: 4, scale: 2, minValue: 40, maxValue: 1000, defaultValue: 40.36,
+      adapter: {relation: "TEST", field: "FIELD_ADAPTER"}
+    }));
+    entity.add(new NumericAttribute({
+      name: "FIELD2", lName: {ru: {name: "Поле 2"}},
+      precision: 4, scale: 2, minValue: 40, maxValue: 1000, defaultValue: 40.36
+    }));
+    entity.add(new NumericAttribute({
+      name: "FIELD3", lName: {ru: {name: "Поле 3"}},
+      precision: 4, scale: 2, minValue: 40, maxValue: 1000
+    }));
 
     await erBridge.importToDatabase(erModel);
 
@@ -117,14 +135,18 @@ describe("ERBridge", () => {
 
   it("blob", async () => {
     const erModel = ERBridge.completeERModel(new ERModel());
-    const entity = ERBridge.addEntityToERModel(erModel, new Entity(undefined,
-      "TEST",
-      {ru: {name: "entity name", fullName: "full entity name"}},
-      false));
+    const entity = ERBridge.addEntityToERModel(erModel, new Entity({
+      name: "TEST",
+      lName: {ru: {name: "entity name", fullName: "full entity name"}}
+    }));
 
-    entity.add(new BlobAttribute("FIELD1", {ru: {name: "Поле 1"}}, true,
-      [], {relation: "TEST", field: "FIELD_ADAPTER"}));
-    entity.add(new BlobAttribute("FIELD2", {ru: {name: "Поле 2"}}, false));
+    entity.add(new BlobAttribute({
+      name: "FIELD1", lName: {ru: {name: "Поле 1"}}, required: true,
+      adapter: {relation: "TEST", field: "FIELD_ADAPTER"}
+    }));
+    entity.add(new BlobAttribute({
+      name: "FIELD2", lName: {ru: {name: "Поле 2"}}
+    }));
 
     await erBridge.importToDatabase(erModel);
 
@@ -136,14 +158,18 @@ describe("ERBridge", () => {
 
   it("boolean", async () => {
     const erModel = ERBridge.completeERModel(new ERModel());
-    const entity = ERBridge.addEntityToERModel(erModel, new Entity(undefined,
-      "TEST",
-      {ru: {name: "entity name", fullName: "full entity name"}},
-      false));
+    const entity = ERBridge.addEntityToERModel(erModel, new Entity({
+      name: "TEST",
+      lName: {ru: {name: "entity name", fullName: "full entity name"}}
+    }));
 
-    entity.add(new BooleanAttribute("FIELD1", {ru: {name: "Поле 1"}}, true, true,
-      [], {relation: "TEST", field: "FIELD_ADAPTER"}));
-    entity.add(new BooleanAttribute("FIELD2", {ru: {name: "Поле 2"}}, false, false));
+    entity.add(new BooleanAttribute({
+      name: "FIELD1", lName: {ru: {name: "Поле 1"}}, required: true,
+      defaultValue: true, adapter: {relation: "TEST", field: "FIELD_ADAPTER"}
+    }));
+    entity.add(new BooleanAttribute({
+      name: "FIELD2", lName: {ru: {name: "Поле 2"}}
+    }));
 
     await erBridge.importToDatabase(erModel);
 
@@ -155,18 +181,24 @@ describe("ERBridge", () => {
 
   it("string", async () => {
     const erModel = ERBridge.completeERModel(new ERModel());
-    const entity = ERBridge.addEntityToERModel(erModel, new Entity(undefined,
-      "TEST",
-      {ru: {name: "entity name", fullName: "full entity name"}},
-      false));
+    const entity = ERBridge.addEntityToERModel(erModel, new Entity({
+      name: "TEST",
+      lName: {ru: {name: "entity name", fullName: "full entity name"}}
+    }));
 
-    entity.add(new StringAttribute("FIELD1", {ru: {name: "Поле 1"}}, true,
-      5, 30, "test default", true, undefined,
-      [], {relation: "TEST", field: "FIELD_ADAPTER"}));
-    entity.add(new StringAttribute("FIELD2", {ru: {name: "Поле 2"}}, false,
-      1, 160, "test default", true, undefined));
-    entity.add(new StringAttribute("FIELD3", {ru: {name: "Поле 3"}}, false,
-      1, 160, undefined, true, undefined));
+    entity.add(new StringAttribute({
+      name: "FIELD1", lName: {ru: {name: "Поле 1"}}, required: true,
+      minLength: 5, maxLength: 30, defaultValue: "test default", autoTrim: true,
+      adapter: {relation: "TEST", field: "FIELD_ADAPTER"}
+    }));
+    entity.add(new StringAttribute({
+      name: "FIELD2", lName: {ru: {name: "Поле 2"}},
+      minLength: 1, maxLength: 160, defaultValue: "test default", autoTrim: true
+    }));
+    entity.add(new StringAttribute({
+      name: "FIELD3", lName: {ru: {name: "Поле 3"}},
+      minLength: 1, maxLength: 160, autoTrim: true
+    }));
 
     await erBridge.importToDatabase(erModel);
 
@@ -178,24 +210,29 @@ describe("ERBridge", () => {
 
   it("date", async () => {
     const erModel = ERBridge.completeERModel(new ERModel());
-    const entity = ERBridge.addEntityToERModel(erModel, new Entity(undefined,
-      "TEST",
-      {ru: {name: "entity name", fullName: "full entity name"}},
-      false));
+    const entity = ERBridge.addEntityToERModel(erModel, new Entity({
+      name: "TEST",
+      lName: {ru: {name: "entity name", fullName: "full entity name"}}
+    }));
 
-    entity.add(new DateAttribute("FIELD1", {ru: {name: "Поле 1"}}, true,
-      moment.utc().year(1999).month(10).date(3).startOf("date").local().toDate(),
-      moment.utc().year(2099).startOf("year").local().toDate(),
-      moment.utc().startOf("date").local().toDate(),
-      [], {relation: "TEST", field: "FIELD_ADAPTER"}));
-    entity.add(new DateAttribute("FIELD2", {ru: {name: "Поле 2"}}, false,
-      moment.utc(Constants.MIN_TIMESTAMP).startOf("date").local().toDate(),
-      moment.utc(Constants.MAX_TIMESTAMP).startOf("date").local().toDate(),
-      "CURRENT_DATE"));
-    entity.add(new DateAttribute("FIELD3", {ru: {name: "Поле 3"}}, false,
-      moment.utc(Constants.MIN_TIMESTAMP).startOf("date").local().toDate(),
-      moment.utc(Constants.MAX_TIMESTAMP).startOf("date").local().toDate(),
-      undefined));
+    entity.add(new DateAttribute({
+      name: "FIELD1", lName: {ru: {name: "Поле 1"}}, required: true,
+      minValue: moment.utc().year(1999).month(10).date(3).startOf("date").local().toDate(),
+      maxValue: moment.utc().year(2099).startOf("year").local().toDate(),
+      defaultValue: moment.utc().startOf("date").local().toDate(),
+      adapter: {relation: "TEST", field: "FIELD_ADAPTER"}
+    }));
+    entity.add(new DateAttribute({
+      name: "FIELD2", lName: {ru: {name: "Поле 2"}},
+      minValue: moment.utc(Constants.MIN_TIMESTAMP).startOf("date").local().toDate(),
+      maxValue: moment.utc(Constants.MAX_TIMESTAMP).startOf("date").local().toDate(),
+      defaultValue: "CURRENT_DATE"
+    }));
+    entity.add(new DateAttribute({
+      name: "FIELD3", lName: {ru: {name: "Поле 3"}},
+      minValue: moment.utc(Constants.MIN_TIMESTAMP).startOf("date").local().toDate(),
+      maxValue: moment.utc(Constants.MAX_TIMESTAMP).startOf("date").local().toDate()
+    }));
 
     await erBridge.importToDatabase(erModel);
 
@@ -207,31 +244,36 @@ describe("ERBridge", () => {
 
   it("time", async () => {
     const erModel = ERBridge.completeERModel(new ERModel());
-    const entity = ERBridge.addEntityToERModel(erModel, new Entity(undefined,
-      "TEST",
-      {ru: {name: "entity name", fullName: "full entity name"}},
-      false));
+    const entity = ERBridge.addEntityToERModel(erModel, new Entity({
+      name: "TEST",
+      lName: {ru: {name: "entity name", fullName: "full entity name"}}
+    }));
 
-    entity.add(new TimeAttribute("FIELD1", {ru: {name: "Поле 1"}}, true,
-      moment.utc().year(Constants.MIN_TIMESTAMP.getUTCFullYear()).month(Constants.MIN_TIMESTAMP.getUTCMonth())
+    entity.add(new TimeAttribute({
+      name: "FIELD1", lName: {ru: {name: "Поле 1"}}, required: true,
+      minValue: moment.utc().year(Constants.MIN_TIMESTAMP.getUTCFullYear()).month(Constants.MIN_TIMESTAMP.getUTCMonth())
         .date(Constants.MIN_TIMESTAMP.getDate()).startOf("date").local().toDate(),
-      moment.utc().year(Constants.MIN_TIMESTAMP.getUTCFullYear()).month(Constants.MIN_TIMESTAMP.getUTCMonth())
+      maxValue: moment.utc().year(Constants.MIN_TIMESTAMP.getUTCFullYear()).month(Constants.MIN_TIMESTAMP.getUTCMonth())
         .date(Constants.MIN_TIMESTAMP.getDate()).endOf("date").local().toDate(),
-      moment.utc().year(Constants.MIN_TIMESTAMP.getUTCFullYear()).month(Constants.MIN_TIMESTAMP.getUTCMonth())
+      defaultValue: moment.utc().year(Constants.MIN_TIMESTAMP.getUTCFullYear()).month(Constants.MIN_TIMESTAMP.getUTCMonth())
         .date(Constants.MIN_TIMESTAMP.getDate()).local().toDate(),
-      [], {relation: "TEST", field: "FIELD_ADAPTER"}));
-    entity.add(new TimeAttribute("FIELD2", {ru: {name: "Поле 2"}}, false,
-      moment.utc(Constants.MIN_TIMESTAMP, Constants.TIME_TEMPLATE).local().toDate(),
-      moment.utc(Constants.MAX_TIMESTAMP, Constants.TIME_TEMPLATE)
+      adapter: {relation: "TEST", field: "FIELD_ADAPTER"}
+    }));
+    entity.add(new TimeAttribute({
+      name: "FIELD2", lName: {ru: {name: "Поле 2"}},
+      minValue: moment.utc(Constants.MIN_TIMESTAMP, Constants.TIME_TEMPLATE).local().toDate(),
+      maxValue: moment.utc(Constants.MAX_TIMESTAMP, Constants.TIME_TEMPLATE)
         .year(Constants.MIN_TIMESTAMP.getUTCFullYear()).month(Constants.MIN_TIMESTAMP.getUTCMonth())
         .date(Constants.MIN_TIMESTAMP.getDate()).local().toDate(),
-      "CURRENT_TIME"));
-    entity.add(new TimeAttribute("FIELD3", {ru: {name: "Поле 3"}}, false,
-      moment.utc(Constants.MIN_TIMESTAMP, Constants.TIME_TEMPLATE).local().toDate(),
-      moment.utc(Constants.MAX_TIMESTAMP, Constants.TIME_TEMPLATE)
+      defaultValue: "CURRENT_TIME"
+    }));
+    entity.add(new TimeAttribute({
+      name: "FIELD3", lName: {ru: {name: "Поле 3"}},
+      minValue: moment.utc(Constants.MIN_TIMESTAMP, Constants.TIME_TEMPLATE).local().toDate(),
+      maxValue: moment.utc(Constants.MAX_TIMESTAMP, Constants.TIME_TEMPLATE)
         .year(Constants.MIN_TIMESTAMP.getUTCFullYear()).month(Constants.MIN_TIMESTAMP.getUTCMonth())
-        .date(Constants.MIN_TIMESTAMP.getDate()).local().toDate(),
-      undefined));
+        .date(Constants.MIN_TIMESTAMP.getDate()).local().toDate()
+    }));
 
     await erBridge.importToDatabase(erModel);
 
@@ -243,24 +285,29 @@ describe("ERBridge", () => {
 
   it("timestamp", async () => {
     const erModel = ERBridge.completeERModel(new ERModel());
-    const entity = ERBridge.addEntityToERModel(erModel, new Entity(undefined,
-      "TEST",
-      {ru: {name: "entity name", fullName: "full entity name"}},
-      false));
+    const entity = ERBridge.addEntityToERModel(erModel, new Entity({
+      name: "TEST",
+      lName: {ru: {name: "entity name", fullName: "full entity name"}}
+    }));
 
-    entity.add(new TimeStampAttribute("FIELD1", {ru: {name: "Поле 1"}}, true,
-      moment.utc().year(1999).month(10).startOf("month").local().toDate(),
-      moment.utc().year(2099).month(1).date(1).endOf("date").local().toDate(),
-      moment.utc().local().toDate(),
-      [], {relation: "TEST", field: "FIELD_ADAPTER"}));
-    entity.add(new TimeStampAttribute("FIELD2", {ru: {name: "Поле 2"}}, false,
-      moment.utc(Constants.MIN_TIMESTAMP).local().toDate(),
-      moment.utc(Constants.MAX_TIMESTAMP).local().toDate(),
-      "CURRENT_TIMESTAMP"));
-    entity.add(new TimeStampAttribute("FIELD3", {ru: {name: "Поле 3"}}, false,
-      moment.utc(Constants.MIN_TIMESTAMP).local().toDate(),
-      moment.utc(Constants.MAX_TIMESTAMP).local().toDate(),
-      undefined));
+    entity.add(new TimeStampAttribute({
+      name: "FIELD1", lName: {ru: {name: "Поле 1"}}, required: true,
+      minValue: moment.utc().year(1999).month(10).startOf("month").local().toDate(),
+      maxValue: moment.utc().year(2099).month(1).date(1).endOf("date").local().toDate(),
+      defaultValue: moment.utc().local().toDate(),
+      adapter: {relation: "TEST", field: "FIELD_ADAPTER"}
+    }));
+    entity.add(new TimeStampAttribute({
+      name: "FIELD2", lName: {ru: {name: "Поле 2"}},
+      minValue: moment.utc(Constants.MIN_TIMESTAMP).local().toDate(),
+      maxValue: moment.utc(Constants.MAX_TIMESTAMP).local().toDate(),
+      defaultValue: "CURRENT_TIMESTAMP"
+    }));
+    entity.add(new TimeStampAttribute({
+      name: "FIELD3", lName: {ru: {name: "Поле 3"}},
+      minValue: moment.utc(Constants.MIN_TIMESTAMP).local().toDate(),
+      maxValue: moment.utc(Constants.MAX_TIMESTAMP).local().toDate()
+    }));
 
     await erBridge.importToDatabase(erModel);
 
@@ -272,18 +319,24 @@ describe("ERBridge", () => {
 
   it("float", async () => {
     const erModel = ERBridge.completeERModel(new ERModel());
-    const entity = ERBridge.addEntityToERModel(erModel, new Entity(undefined,
-      "TEST",
-      {ru: {name: "entity name", fullName: "full entity name"}},
-      false));
+    const entity = ERBridge.addEntityToERModel(erModel, new Entity({
+      name: "TEST",
+      lName: {ru: {name: "entity name", fullName: "full entity name"}}
+    }));
 
-    entity.add(new FloatAttribute("FIELD1", {ru: {name: "Поле 1"}}, true,
-      -123, 123123123123123123123123, 40,
-      [], {relation: "TEST", field: "FIELD_ADAPTER"}));
-    // entity.add(new FloatAttribute("FIELD2", {ru: {name: "Поле 2"}}, false,
-    //   Number.MIN_VALUE, Number.MAX_VALUE, 40));
-    entity.add(new FloatAttribute("FIELD3", {ru: {name: "Поле 3"}}, true,
-      -123, 123123123123123123123123, undefined));
+    entity.add(new FloatAttribute({
+      name: "FIELD1", lName: {ru: {name: "Поле 1"}}, required: true,
+      minValue: -123, maxValue: 123123123123123123123123, defaultValue: 40,
+      adapter: {relation: "TEST", field: "FIELD_ADAPTER"}
+    }));
+    // entity.add(new FloatAttribute({
+    //   name: "FIELD2", lName: {ru: {name: "Поле 2"}},
+    //   minValue: Number.MIN_VALUE, maxValue: Number.MAX_VALUE, defaultValue: 40
+    // }));
+    entity.add(new FloatAttribute({
+      name: "FIELD3", lName: {ru: {name: "Поле 3"}}, required: true,
+      minValue: -123, maxValue: 123123123123123123123123
+    }));
 
     await erBridge.importToDatabase(erModel);
 
@@ -295,29 +348,37 @@ describe("ERBridge", () => {
 
   it("enum", async () => {
     const erModel = ERBridge.completeERModel(new ERModel());
-    const entity = ERBridge.addEntityToERModel(erModel, new Entity(undefined,
-      "TEST",
-      {ru: {name: "entity name", fullName: "full entity name"}},
-      false));
+    const entity = ERBridge.addEntityToERModel(erModel, new Entity({
+      name: "TEST",
+      lName: {ru: {name: "entity name", fullName: "full entity name"}}
+    }));
 
-    entity.add(new EnumAttribute("FIELD1", {ru: {name: "Поле 1"}}, true, [
-      {
-        value: "Z",
-        lName: {ru: {name: "Перечисление Z"}}
-      },
-      {
-        value: "X",
-        lName: {ru: {name: "Перечисление X"}}
-      },
-      {
-        value: "Y",
-        lName: {ru: {name: "Перечисление Y"}}
-      }
-    ], "Z", [], {relation: "TEST", field: "FIELD_ADAPTER"}));
-    entity.add(new EnumAttribute("FIELD2", {ru: {name: "Поле 2"}}, false,
-      [{value: "Z"}, {value: "X"}, {value: "Y"}], "Z"));
-    entity.add(new EnumAttribute("FIELD3", {ru: {name: "Поле 3"}}, false,
-      [{value: "Z"}, {value: "X"}, {value: "Y"}], undefined));
+    entity.add(new EnumAttribute({
+      name: "FIELD1", lName: {ru: {name: "Поле 1"}}, required: true,
+      values: [
+        {
+          value: "Z",
+          lName: {ru: {name: "Перечисление Z"}}
+        },
+        {
+          value: "X",
+          lName: {ru: {name: "Перечисление X"}}
+        },
+        {
+          value: "Y",
+          lName: {ru: {name: "Перечисление Y"}}
+        }
+      ], defaultValue: "Z",
+      adapter: {relation: "TEST", field: "FIELD_ADAPTER"}
+    }));
+    entity.add(new EnumAttribute({
+      name: "FIELD2", lName: {ru: {name: "Поле 2"}},
+      values: [{value: "Z"}, {value: "X"}, {value: "Y"}], defaultValue: "Z"
+    }));
+    entity.add(new EnumAttribute({
+      name: "FIELD3", lName: {ru: {name: "Поле 3"}},
+      values: [{value: "Z"}, {value: "X"}, {value: "Y"}]
+    }));
 
     await erBridge.importToDatabase(erModel);
 
@@ -329,17 +390,21 @@ describe("ERBridge", () => {
 
   it("link to entity", async () => {
     const erModel = ERBridge.completeERModel(new ERModel());
-    const entity1 = ERBridge.addEntityToERModel(erModel, new Entity(undefined,
-      "TEST1",
-      {ru: {name: "entity name", fullName: "full entity name"}},
-      false));
-    const entity2 = ERBridge.addEntityToERModel(erModel, new Entity(undefined,
-      "TEST2",
-      {ru: {name: "entity name", fullName: "full entity name"}},
-      false));
+    const entity1 = ERBridge.addEntityToERModel(erModel, new Entity({
+      name: "TEST1",
+      lName: {ru: {name: "entity name", fullName: "full entity name"}}
+    }));
+    const entity2 = ERBridge.addEntityToERModel(erModel, new Entity({
+      name: "TEST2",
+      lName: {ru: {name: "entity name", fullName: "full entity name"}}
+    }));
 
-    entity1.add(new EntityAttribute("LINK", {ru: {name: "Ссылка"}}, true, [entity2]));
-    entity2.add(new EntityAttribute("LINK", {ru: {name: "Ссылка"}}, false, [entity1]));
+    entity1.add(new EntityAttribute({
+      name: "LINK", lName: {ru: {name: "Ссылка"}}, required: true, entities: [entity2]
+    }));
+    entity2.add(new EntityAttribute({
+      name: "LINK", lName: {ru: {name: "Ссылка"}}, entities: [entity1]
+    }));
 
     await erBridge.importToDatabase(erModel);
 
@@ -354,17 +419,17 @@ describe("ERBridge", () => {
 
   it("parent link to entity", async () => {
     const erModel = ERBridge.completeERModel(new ERModel());
-    const entity1 = ERBridge.addEntityToERModel(erModel, new Entity(undefined,
-      "TEST1",
-      {ru: {name: "entity name", fullName: "full entity name"}},
-      false));
-    const entity2 = ERBridge.addEntityToERModel(erModel, new Entity(undefined,
-      "TEST2",
-      {ru: {name: "entity name", fullName: "full entity name"}},
-      false));
+    const entity1 = ERBridge.addEntityToERModel(erModel, new Entity({
+      name: "TEST1",
+      lName: {ru: {name: "entity name", fullName: "full entity name"}}
+    }));
+    const entity2 = ERBridge.addEntityToERModel(erModel, new Entity({
+      name: "TEST2",
+      lName: {ru: {name: "entity name", fullName: "full entity name"}}
+    }));
 
-    entity1.add(new ParentAttribute("PARENT", {ru: {name: "Ссылка"}}, [entity2]));
-    entity1.add(new ParentAttribute("LINK", {ru: {name: "Ссылка"}}, [entity2]));
+    entity1.add(new ParentAttribute({name: "PARENT", lName: {ru: {name: "Ссылка"}}, entities: [entity2]}));
+    entity1.add(new ParentAttribute({name: "LINK", lName: {ru: {name: "Ссылка"}}, entities: [entity2]}));
 
     await erBridge.importToDatabase(erModel);
 
@@ -379,26 +444,31 @@ describe("ERBridge", () => {
 
   it("detail entity", async () => {
     const erModel = ERBridge.completeERModel(new ERModel());
-    const entity2 = ERBridge.addEntityToERModel(erModel, new Entity(undefined,
-      "TEST2",
-      {ru: {name: "entity name", fullName: "full entity name"}},
-      false));
-    const entity1 = ERBridge.addEntityToERModel(erModel, new Entity(undefined,
-      "TEST1",
-      {ru: {name: "entity name", fullName: "full entity name"}},
-      false));
-    const entity3 = ERBridge.addEntityToERModel(erModel, new Entity(undefined,
-      "TEST3",
-      {ru: {name: "entity name", fullName: "full entity name"}},
-      false));
-
-    entity1.add(new DetailAttribute("DETAILLINK", {ru: {name: "Позиции 1"}}, true, [entity2], [], {
-      masterLinks: [{
-        detailRelation: "TEST2",
-        link2masterField: "MASTER_KEY"
-      }]
+    const entity2 = ERBridge.addEntityToERModel(erModel, new Entity({
+      name: "TEST2",
+      lName: {ru: {name: "entity name", fullName: "full entity name"}}
     }));
-    entity1.add(new DetailAttribute("TEST3", {ru: {name: "Позиции 2"}}, true, [entity3]));
+    const entity1 = ERBridge.addEntityToERModel(erModel, new Entity({
+      name: "TEST1",
+      lName: {ru: {name: "entity name", fullName: "full entity name"}}
+    }));
+    const entity3 = ERBridge.addEntityToERModel(erModel, new Entity({
+      name: "TEST3",
+      lName: {ru: {name: "entity name", fullName: "full entity name"}}
+    }));
+
+    entity1.add(new DetailAttribute({
+      name: "DETAILLINK", lName: {ru: {name: "Позиции 1"}}, required: true, entities: [entity2],
+      adapter: {
+        masterLinks: [{
+          detailRelation: "TEST2",
+          link2masterField: "MASTER_KEY"
+        }]
+      }
+    }));
+    entity1.add(new DetailAttribute({
+      name: "TEST3", lName: {ru: {name: "Позиции 2"}}, required: true, entities: [entity3]
+    }));
 
     await erBridge.importToDatabase(erModel);
 
@@ -416,74 +486,118 @@ describe("ERBridge", () => {
 
   it("set link to entity", async () => {
     const erModel = ERBridge.completeERModel(new ERModel());
-    const entity1 = ERBridge.addEntityToERModel(erModel, new Entity(undefined,
-      "TEST1",
-      {ru: {name: "entity name", fullName: "full entity name"}},
-      false));
-    const entity2 = ERBridge.addEntityToERModel(erModel, new Entity(undefined,
-      "TEST2",
-      {ru: {name: "entity name", fullName: "full entity name"}},
-      false));
+    const entity1 = ERBridge.addEntityToERModel(erModel, new Entity({
+      name: "TEST1",
+      lName: {ru: {name: "entity name", fullName: "full entity name"}}
+    }));
+    const entity2 = ERBridge.addEntityToERModel(erModel, new Entity({
+      name: "TEST2",
+      lName: {ru: {name: "entity name", fullName: "full entity name"}}
+    }));
 
     const crossRelation = "CROSS_7"; // generated value
-    const setAttr = new SetAttribute("SET1", {ru: {name: "Ссылка"}}, true, [entity2], 0, [], {crossRelation});
+    const setAttr = new SetAttribute({
+      name: "SET1", lName: {ru: {name: "Ссылка"}}, required: true, entities: [entity2], adapter: {crossRelation}
+    });
 
-    setAttr.add(new IntegerAttribute("FIELD1", {ru: {name: "Поле 1", fullName: "FULLNAME"}}, true,
-      MIN_16BIT_INT, MAX_16BIT_INT, -100, [], {relation: crossRelation, field: "FIELD_ADAPTER1"}));
-    setAttr.add(new IntegerAttribute("FIELD2", {ru: {name: "Поле 2", fullName: "FULLNAME"}}, true,
-      MIN_32BIT_INT, MAX_32BIT_INT, -10000, []));
-    // setAttr.add(new IntegerAttribute("FIELD3", {ru: {name: "Поле 3", fullName: "FULLNAME"}}, true,
-    //   MIN_64BIT_INT, MAX_64BIT_INT, -100000000000000, []));
-    setAttr.add(new IntegerAttribute("FIELD4", {ru: {name: "Поле 4", fullName: "FULLNAME"}}, false,
-      MIN_16BIT_INT, MAX_16BIT_INT + 1, 0, []));
-    setAttr.add(new IntegerAttribute("FIELD5", {ru: {name: "Поле 5", fullName: "FULLNAME"}}, false,
-      MIN_16BIT_INT, MAX_16BIT_INT + 1, undefined));
+    setAttr.add(new IntegerAttribute({
+      name: "FIELD1", lName: {ru: {name: "Поле 1", fullName: "FULLNAME"}}, required: true,
+      minValue: MIN_16BIT_INT, maxValue: MAX_16BIT_INT, defaultValue: -100,
+      adapter: {relation: crossRelation, field: "FIELD_ADAPTER1"}
+    }));
+    setAttr.add(new IntegerAttribute({
+      name: "FIELD2", lName: {ru: {name: "Поле 2", fullName: "FULLNAME"}}, required: true,
+      minValue: MIN_32BIT_INT, maxValue: MAX_32BIT_INT, defaultValue: -1000
+    }));
+    // setAttr.add(new IntegerAttribute({
+    //   name: "FIELD3", lName: {ru: {name: "Поле 3", fullName: "FULLNAME"}}, required: true,
+    //   minValue: MIN_64BIT_INT, maxValue: MAX_64BIT_INT, defaultValue: -100000000000000
+    // }));
+    setAttr.add(new IntegerAttribute({
+      name: "FIELD4", lName: {ru: {name: "Поле 4", fullName: "FULLNAME"}},
+      minValue: MIN_16BIT_INT, maxValue: MAX_16BIT_INT + 1, defaultValue: 0
+    }));
+    setAttr.add(new IntegerAttribute({
+      name: "FIELD5", lName: {ru: {name: "Поле 5", fullName: "FULLNAME"}},
+      minValue: MIN_16BIT_INT, maxValue: MAX_16BIT_INT + 1
+    }));
 
-    setAttr.add(new NumericAttribute("FIELD6", {ru: {name: "Поле 6"}}, true,
-      4, 2, 40, 1000, 40.36, [], {relation: crossRelation, field: "FIELD_ADAPTER2"}));
-    setAttr.add(new NumericAttribute("FIELD7", {ru: {name: "Поле 7"}}, false,
-      4, 2, 40, 1000, 40.36));
-    setAttr.add(new NumericAttribute("FIELD8", {ru: {name: "Поле 8"}}, false,
-      4, 2, 40, 1000, undefined));
+    setAttr.add(new NumericAttribute({
+      name: "FIELD6", lName: {ru: {name: "Поле 6"}}, required: true,
+      precision: 4, scale: 2, minValue: 40, maxValue: 1000, defaultValue: 40.36,
+      adapter: {relation: crossRelation, field: "FIELD_ADAPTER2"}
+    }));
+    setAttr.add(new NumericAttribute({
+      name: "FIELD7", lName: {ru: {name: "Поле 7"}},
+      precision: 4, scale: 2, minValue: 40, maxValue: 1000, defaultValue: 40.36
+    }));
+    setAttr.add(new NumericAttribute({
+      name: "FIELD8", lName: {ru: {name: "Поле 8"}},
+      precision: 4, scale: 2, minValue: 40, maxValue: 1000
+    }));
 
-    setAttr.add(new BooleanAttribute("FIELD9", {ru: {name: "Поле 9"}}, true, true,
-      [], {relation: crossRelation, field: "FIELD_ADAPTER3"}));
-    setAttr.add(new BooleanAttribute("FIELD10", {ru: {name: "Поле 10"}}, false, false));
+    setAttr.add(new BooleanAttribute({
+      name: "FIELD9", lName: {ru: {name: "Поле 9"}}, required: true,
+      defaultValue: true, adapter: {relation: crossRelation, field: "FIELD_ADAPTER3"}
+    }));
+    setAttr.add(new BooleanAttribute({
+      name: "FIELD10", lName: {ru: {name: "Поле 10"}}
+    }));
 
-    setAttr.add(new StringAttribute("FIELD11", {ru: {name: "Поле 11"}}, true,
-      5, 30, "test default", true, undefined,
-      [], {relation: crossRelation, field: "FIELD_ADAPTER4"}));
-    setAttr.add(new StringAttribute("FIELD12", {ru: {name: "Поле 12"}}, false,
-      1, 160, "test default", true, undefined));
-    setAttr.add(new StringAttribute("FIELD13", {ru: {name: "Поле 13"}}, false,
-      1, 160, undefined, true, undefined));
+    setAttr.add(new StringAttribute({
+      name: "FIELD11", lName: {ru: {name: "Поле 11"}}, required: true,
+      minLength: 5, maxLength: 30, defaultValue: "test default", autoTrim: true,
+      adapter: {relation: crossRelation, field: "FIELD_ADAPTER4"}
+    }));
+    setAttr.add(new StringAttribute({
+      name: "FIELD12", lName: {ru: {name: "Поле 12"}},
+      minLength: 1, maxLength: 160, defaultValue: "test default", autoTrim: true
+    }));
+    setAttr.add(new StringAttribute({
+      name: "FIELD13", lName: {ru: {name: "Поле 13"}},
+      minLength: 1, maxLength: 160, autoTrim: true
+    }));
 
-    setAttr.add(new FloatAttribute("FIELD14", {ru: {name: "Поле 14"}}, true,
-      -123, 123123123123123123123123, 40,
-      [], {relation: crossRelation, field: "FIELD_ADAPTER5"}));
-    // entity.add(new FloatAttribute("FIELD15", {ru: {name: "Поле 15"}}, false,
-    //   Number.MIN_VALUE, Number.MAX_VALUE, 40));
-    setAttr.add(new FloatAttribute("FIELD16", {ru: {name: "Поле 16"}}, true,
-      -123, 123123123123123123123123, undefined));
+    setAttr.add(new FloatAttribute({
+      name: "FIELD14", lName: {ru: {name: "Поле 14"}}, required: true,
+      minValue: -123, maxValue: 123123123123123123123123, defaultValue: 40,
+      adapter: {relation: crossRelation, field: "FIELD_ADAPTER5"}
+    }));
+    // setAttr.add(new FloatAttribute({
+    //   name: "FIELD15", lName: {ru: {name: "Поле 15"}},
+    //   minValue: Number.MIN_VALUE, maxValue: Number.MAX_VALUE, defaultValue: 40
+    // }));
+    setAttr.add(new FloatAttribute({
+      name: "FIELD16", lName: {ru: {name: "Поле 16"}}, required: true,
+      minValue: -123, maxValue: 123123123123123123123123
+    }));
 
-    setAttr.add(new EnumAttribute("FIELD17", {ru: {name: "Поле 17"}}, true, [
-      {
-        value: "Z",
-        lName: {ru: {name: "Перечисление Z"}}
-      },
-      {
-        value: "X",
-        lName: {ru: {name: "Перечисление X"}}
-      },
-      {
-        value: "Y",
-        lName: {ru: {name: "Перечисление Y"}}
-      }
-    ], "Z", [], {relation: crossRelation, field: "FIELD_ADAPTER6"}));
-    setAttr.add(new EnumAttribute("FIELD18", {ru: {name: "Поле 18"}}, false,
-      [{value: "Z"}, {value: "X"}, {value: "Y"}], "Z"));
-    setAttr.add(new EnumAttribute("FIELD19", {ru: {name: "Поле 19"}}, false,
-      [{value: "Z"}, {value: "X"}, {value: "Y"}], undefined));
+    setAttr.add(new EnumAttribute({
+      name: "FIELD17", lName: {ru: {name: "Поле 17"}}, required: true,
+      values: [
+        {
+          value: "Z",
+          lName: {ru: {name: "Перечисление Z"}}
+        },
+        {
+          value: "X",
+          lName: {ru: {name: "Перечисление X"}}
+        },
+        {
+          value: "Y",
+          lName: {ru: {name: "Перечисление Y"}}
+        }
+      ], defaultValue: "Z",
+      adapter: {relation: crossRelation, field: "FIELD_ADAPTER6"}
+    }));
+    setAttr.add(new EnumAttribute({
+      name: "FIELD18", lName: {ru: {name: "Поле 18"}},
+      values: [{value: "Z"}, {value: "X"}, {value: "Y"}], defaultValue: "Z"
+    }));
+    setAttr.add(new EnumAttribute({
+      name: "FIELD19", lName: {ru: {name: "Поле 19"}},
+      values: [{value: "Z"}, {value: "X"}, {value: "Y"}]
+    }));
 
     entity1.add(setAttr);
 
@@ -500,19 +614,26 @@ describe("ERBridge", () => {
 
   it("entity with unique fields", async () => {
     const erModel = ERBridge.completeERModel(new ERModel());
-    const entity = ERBridge.addEntityToERModel(erModel, new Entity(undefined,
-      "TEST",
-      {ru: {name: "entity name", fullName: "full entity name"}},
-      false));
+    const entity = ERBridge.addEntityToERModel(erModel, new Entity({
+      name: "TEST",
+      lName: {ru: {name: "entity name", fullName: "full entity name"}}
+    }));
 
-    entity.add(new StringAttribute("FIELD1", {ru: {name: "Поле 1"}}, true,
-      5, 30, "test default", true, undefined,
-      [], {relation: "TEST", field: "FIELD_ADAPTER1"}));
-    entity.add(new IntegerAttribute("FIELD2", {ru: {name: "Поле 2", fullName: "FULLNAME"}}, true,
-      MIN_16BIT_INT, MAX_16BIT_INT, -100, [], {relation: "TEST", field: "FIELD_ADAPTER2"}));
-    entity.add(new FloatAttribute("FIELD3", {ru: {name: "Поле 3"}}, true,
-      -123, 123123123123123123123123, 40,
-      [], {relation: "TEST", field: "FIELD_ADAPTER3"}));
+    entity.add(new StringAttribute({
+      name: "FIELD1", lName: {ru: {name: "Поле 1"}}, required: true,
+      minLength: 5, maxLength: 30, defaultValue: "test default", autoTrim: true,
+      adapter: {relation: "TEST", field: "FIELD_ADAPTER1"}
+    }));
+    entity.add(new IntegerAttribute({
+      name: "FIELD2", lName: {ru: {name: "Поле 2", fullName: "FULLNAME"}}, required: true,
+      minValue: MIN_16BIT_INT, maxValue: MAX_16BIT_INT, defaultValue: -100,
+      adapter: {relation: "TEST", field: "FIELD_ADAPTER2"}
+    }));
+    entity.add(new FloatAttribute({
+      name: "FIELD3", lName: {ru: {name: "Поле 3"}}, required: true,
+      minValue: -123, maxValue: 123123123123123123123123, defaultValue: 40,
+      adapter: {relation: "TEST", field: "FIELD_ADAPTER3"}
+    }));
 
     entity.addUnique([entity.attribute("FIELD1"), entity.attribute("FIELD2")]);
     entity.addUnique([entity.attribute("FIELD2"), entity.attribute("FIELD3")]);
@@ -523,5 +644,41 @@ describe("ERBridge", () => {
     const loadEntity = loadedERModel.entity("TEST");
     expect(loadEntity).toEqual(entity);
     expect(loadEntity.serialize()).toEqual(entity.serialize());
+  });
+
+  it("AUTH DATABASE", async () => {
+    const erModel = ERBridge.completeERModel(new ERModel());
+    const userEntity = ERBridge.addEntityToERModel(erModel,
+      new Entity({name: "APP_USER", lName: {ru: {name: "Пользователь"}}})
+    );
+    userEntity.add(new StringAttribute({
+      name: "LOGIN", lName: {ru: {name: "Логин"}}, required: true, minLength: 1, maxLength: 32
+    }));
+    userEntity.add(new BlobAttribute({
+      name: "PASSWORD_HASH", lName: {ru: {name: "Хешированный пароль"}}, required: true
+    }));
+    userEntity.add(new BlobAttribute({name: "SALT", lName: {ru: {name: "Примесь"}}, required: true}));
+    userEntity.add(new BooleanAttribute({
+      name: "IS_ADMIN", lName: {ru: {name: "Флаг администратора"}}
+    }));
+
+    const appEntity = ERBridge.addEntityToERModel(erModel,
+      new Entity({name: "APPLICATION", lName: {ru: {name: "Приложение"}}})
+    );
+    const appUid = new StringAttribute({
+      name: "UID", lName: {ru: {name: "Идентификатор приложения"}}, required: true, minLength: 1, maxLength: 36
+    });
+    appEntity.add(appUid);
+    appEntity.addUnique([appUid]);
+
+    const appSet = new SetAttribute({
+      name: "APPLICAITONS", lName: {ru: {name: "Приложения"}}, required: true, entities: [appEntity]
+    });
+    appSet.add(new StringAttribute({
+      name: "ALIAS", lName: {ru: {name: "Название приложения"}}, required: true, minLength: 1, maxLength: 120
+    }));
+    userEntity.add(appSet);
+
+    await new ERBridge(connection).importToDatabase(erModel);
   });
 });
