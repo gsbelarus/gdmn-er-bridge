@@ -860,16 +860,17 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
 
       Object.values(r.unique).forEach((uq) => {
         const attrs = uq.fields.map((field) => {
-          const uqAttr = Object.values(entity.attributes).find((attr) => {
+          let uqAttr = Object.values(entity.attributes).find((attr) => {
             if (ScalarAttribute.isType(attr)) {
               const attrField = attr.adapter ? attr.adapter.field : attr.name;
               if (attrField === field) {
                 return true;
               }
             }
-            return false;
+            return false; // TODO for EntityAttributes
           });
           if (!uqAttr) {
+            uqAttr = entity.attribute(field);
             throw new Error("Unique attribute not found");
           }
           return uqAttr;
