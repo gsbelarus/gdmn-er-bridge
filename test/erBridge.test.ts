@@ -658,9 +658,11 @@ describe("ERBridge", () => {
 
   it("AUTH DATABASE", async () => {
     const erModel = ERBridge.completeERModel(new ERModel());
-    const userEntity = ERBridge.addEntityToERModel(erModel,
-      new Entity({name: "APP_USER", lName: {ru: {name: "Пользователь"}}})
-    );
+
+    // APP_USER
+    const userEntity = ERBridge.addEntityToERModel(erModel, new Entity({
+      name: "APP_USER", lName: {ru: {name: "Пользователь"}}
+    }));
     userEntity.add(new StringAttribute({
       name: "LOGIN", lName: {ru: {name: "Логин"}}, required: true, minLength: 1, maxLength: 32
     }));
@@ -672,23 +674,48 @@ describe("ERBridge", () => {
       name: "IS_ADMIN", lName: {ru: {name: "Флаг администратора"}}
     }));
 
-    const appEntity = ERBridge.addEntityToERModel(erModel,
-      new Entity({name: "APPLICATION", lName: {ru: {name: "Приложение"}}})
-    );
+    // APPLICATION
+    const appEntity = ERBridge.addEntityToERModel(erModel, new Entity({
+      name: "APPLICATION", lName: {ru: {name: "Приложение"}}
+    }));
     const appUid = new StringAttribute({
       name: "UID", lName: {ru: {name: "Идентификатор приложения"}}, required: true, minLength: 1, maxLength: 36
     });
     appEntity.add(appUid);
     appEntity.addUnique([appUid]);
+    appEntity.add(new TimeStampAttribute({
+      name: "CREATIONDATE", lName: {ru: {name: "Дата создания"}}, required: true,
+      minValue: Constants.MIN_TIMESTAMP, maxValue: Constants.MAX_TIMESTAMP, defaultValue: "CURRENT_TIMESTAMP"
+    }));
 
     const appSet = new SetAttribute({
-      name: "APPLICAITONS", lName: {ru: {name: "Приложения"}}, required: true, entities: [appEntity],
+      name: "APPLICATIONS", lName: {ru: {name: "Приложения"}}, entities: [appEntity],
       adapter: {crossRelation: "APP_USER_APPLICATIONS"}
     });
     appSet.add(new StringAttribute({
       name: "ALIAS", lName: {ru: {name: "Название приложения"}}, required: true, minLength: 1, maxLength: 120
     }));
     userEntity.add(appSet);
+
+    // APPLICATION_BACKUPS
+    const backupEntity = ERBridge.addEntityToERModel(erModel, new Entity({
+      name: "APPLICATION_BACKUPS", lName: {ru: {name: "Бэкап"}}
+    }));
+    const backupUid = new StringAttribute({
+      name: "UID", lName: {ru: {name: "Идентификатор бэкапа"}}, required: true, minLength: 1, maxLength: 36
+    });
+    backupEntity.add(backupUid);
+    backupEntity.addUnique([backupUid]);
+    backupEntity.add(new EntityAttribute({
+      name: "APP", lName: {ru: {name: "Приложение"}}, required: true, entities: [appEntity]
+    }));
+    backupEntity.add(new TimeStampAttribute({
+      name: "CREATIONDATE", lName: {ru: {name: "Дата создания"}}, required: true,
+      minValue: Constants.MIN_TIMESTAMP, maxValue: Constants.MAX_TIMESTAMP, defaultValue: "CURRENT_TIMESTAMP"
+    }));
+    backupEntity.add(new StringAttribute({
+      name: "ALIAS", lName: {ru: {name: "Название бэкапа"}}, required: true, minLength: 1, maxLength: 120
+    }));
 
     await erBridge.importToDatabase(erModel);
 
