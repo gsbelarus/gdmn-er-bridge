@@ -52,6 +52,7 @@ import {gedeminTables} from "./gdtables";
 import {
   check2DateRange,
   check2Enum,
+  check2IntRange,
   check2NumberRange,
   check2StrMin,
   check2TimeRange,
@@ -635,22 +636,22 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
     // numeric and decimal
     if (fieldSource.fieldSubType === 1 || fieldSource.fieldSubType === 2) {
       const factor = Math.pow(10, Math.abs(fieldSource.fieldScale));
-      let range: IRange<number> | undefined;
+      let range: IRange<number | undefined> | undefined;
       switch (fieldSource.fieldType) {
         case FieldType.SMALL_INTEGER:
-          range = check2NumberRange(fieldSource.validationSource, {
+          range = check2IntRange(fieldSource.validationSource, {
             min: MIN_16BIT_INT * factor,
             max: MAX_16BIT_INT * factor
           });
           break;
         case FieldType.INTEGER:
-          range = check2NumberRange(fieldSource.validationSource, {
+          range = check2IntRange(fieldSource.validationSource, {
             min: MIN_32BIT_INT * factor,
             max: MAX_32BIT_INT * factor
           });
           break;
         case FieldType.BIG_INTEGER:
-          range = check2NumberRange(fieldSource.validationSource, {
+          range = check2IntRange(fieldSource.validationSource, {
             min: MIN_64BIT_INT * factor,
             max: MAX_64BIT_INT * factor
           });
@@ -668,6 +669,26 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
     }
 
     switch (fieldSource.fieldType) {
+      case FieldType.SMALL_INTEGER: {
+        if (isCheckForBoolean(fieldSource.validationSource)) {
+          const defaultValue = default2Boolean(defaultValueSource);
+          return new BooleanAttribute({name, lName, required, defaultValue, semCategories, adapter});
+        }
+        const {minValue, maxValue} = check2IntRange(fieldSource.validationSource, {
+          min: MIN_16BIT_INT,
+          max: MAX_16BIT_INT
+        });
+        const defaultValue = default2Int(defaultValueSource);
+        return new IntegerAttribute({name, lName, required, minValue, maxValue, defaultValue, semCategories, adapter});
+      }
+      case FieldType.BIG_INTEGER: {
+        const {minValue, maxValue} = check2IntRange(fieldSource.validationSource, {
+          min: MIN_64BIT_INT,
+          max: MAX_64BIT_INT
+        });
+        const defaultValue = default2Int(defaultValueSource);
+        return new IntegerAttribute({name, lName, required, minValue, maxValue, defaultValue, semCategories, adapter});
+      }
       case FieldType.INTEGER: {
         const fk = Object.entries(r.foreignKeys).find(
           ([, f]) => !!f.fields.find(fld => fld === name)
@@ -687,7 +708,7 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
           }
           return new EntityAttribute({name, lName, required, entities: refEntities, semCategories, adapter});
         } else {
-          const {minValue, maxValue} = check2NumberRange(fieldSource.validationSource, {
+          const {minValue, maxValue} = check2IntRange(fieldSource.validationSource, {
             min: MIN_32BIT_INT,
             max: MAX_32BIT_INT
           });
@@ -750,26 +771,6 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
         const {minValue, maxValue} = check2NumberRange(fieldSource.validationSource);
         const defaultValue = default2Float(defaultValueSource);
         return new FloatAttribute({name, lName, required, minValue, maxValue, defaultValue, semCategories, adapter});
-      }
-      case FieldType.SMALL_INTEGER: {
-        if (isCheckForBoolean(fieldSource.validationSource)) {
-          const defaultValue = default2Boolean(defaultValueSource);
-          return new BooleanAttribute({name, lName, required, defaultValue, semCategories, adapter});
-        }
-        const {minValue, maxValue} = check2NumberRange(fieldSource.validationSource, {
-          min: MIN_16BIT_INT,
-          max: MAX_16BIT_INT
-        });
-        const defaultValue = default2Int(defaultValueSource);
-        return new IntegerAttribute({name, lName, required, minValue, maxValue, defaultValue, semCategories, adapter});
-      }
-      case FieldType.BIG_INTEGER: {
-        const {minValue, maxValue} = check2NumberRange(fieldSource.validationSource, {
-          min: MIN_64BIT_INT,
-          max: MAX_64BIT_INT
-        });
-        const defaultValue = default2Int(defaultValueSource);
-        return new IntegerAttribute({name, lName, required, minValue, maxValue, defaultValue, semCategories, adapter});
       }
       case FieldType.BLOB: {
         if (fieldSource.fieldSubType === 1) {

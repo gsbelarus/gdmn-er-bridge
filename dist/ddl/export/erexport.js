@@ -455,19 +455,19 @@ async function erExport(dbs, connection, transaction, erModel) {
             let range;
             switch (fieldSource.fieldType) {
                 case gdmn_db_1.FieldType.SMALL_INTEGER:
-                    range = util_1.check2NumberRange(fieldSource.validationSource, {
+                    range = util_1.check2IntRange(fieldSource.validationSource, {
                         min: gdmn_orm_1.MIN_16BIT_INT * factor,
                         max: gdmn_orm_1.MAX_16BIT_INT * factor
                     });
                     break;
                 case gdmn_db_1.FieldType.INTEGER:
-                    range = util_1.check2NumberRange(fieldSource.validationSource, {
+                    range = util_1.check2IntRange(fieldSource.validationSource, {
                         min: gdmn_orm_1.MIN_32BIT_INT * factor,
                         max: gdmn_orm_1.MAX_32BIT_INT * factor
                     });
                     break;
                 case gdmn_db_1.FieldType.BIG_INTEGER:
-                    range = util_1.check2NumberRange(fieldSource.validationSource, {
+                    range = util_1.check2IntRange(fieldSource.validationSource, {
                         min: gdmn_orm_1.MIN_64BIT_INT * factor,
                         max: gdmn_orm_1.MAX_64BIT_INT * factor
                     });
@@ -484,6 +484,26 @@ async function erExport(dbs, connection, transaction, erModel) {
             }
         }
         switch (fieldSource.fieldType) {
+            case gdmn_db_1.FieldType.SMALL_INTEGER: {
+                if (util_1.isCheckForBoolean(fieldSource.validationSource)) {
+                    const defaultValue = util_1.default2Boolean(defaultValueSource);
+                    return new gdmn_orm_1.BooleanAttribute({ name, lName, required, defaultValue, semCategories, adapter });
+                }
+                const { minValue, maxValue } = util_1.check2IntRange(fieldSource.validationSource, {
+                    min: gdmn_orm_1.MIN_16BIT_INT,
+                    max: gdmn_orm_1.MAX_16BIT_INT
+                });
+                const defaultValue = util_1.default2Int(defaultValueSource);
+                return new gdmn_orm_1.IntegerAttribute({ name, lName, required, minValue, maxValue, defaultValue, semCategories, adapter });
+            }
+            case gdmn_db_1.FieldType.BIG_INTEGER: {
+                const { minValue, maxValue } = util_1.check2IntRange(fieldSource.validationSource, {
+                    min: gdmn_orm_1.MIN_64BIT_INT,
+                    max: gdmn_orm_1.MAX_64BIT_INT
+                });
+                const defaultValue = util_1.default2Int(defaultValueSource);
+                return new gdmn_orm_1.IntegerAttribute({ name, lName, required, minValue, maxValue, defaultValue, semCategories, adapter });
+            }
             case gdmn_db_1.FieldType.INTEGER: {
                 const fk = Object.entries(r.foreignKeys).find(([, f]) => !!f.fields.find(fld => fld === name));
                 if (fk && fk[1].fields.length === 1) {
@@ -499,7 +519,7 @@ async function erExport(dbs, connection, transaction, erModel) {
                     return new gdmn_orm_1.EntityAttribute({ name, lName, required, entities: refEntities, semCategories, adapter });
                 }
                 else {
-                    const { minValue, maxValue } = util_1.check2NumberRange(fieldSource.validationSource, {
+                    const { minValue, maxValue } = util_1.check2IntRange(fieldSource.validationSource, {
                         min: gdmn_orm_1.MIN_32BIT_INT,
                         max: gdmn_orm_1.MAX_32BIT_INT
                     });
@@ -560,26 +580,6 @@ async function erExport(dbs, connection, transaction, erModel) {
                 const { minValue, maxValue } = util_1.check2NumberRange(fieldSource.validationSource);
                 const defaultValue = util_1.default2Float(defaultValueSource);
                 return new gdmn_orm_1.FloatAttribute({ name, lName, required, minValue, maxValue, defaultValue, semCategories, adapter });
-            }
-            case gdmn_db_1.FieldType.SMALL_INTEGER: {
-                if (util_1.isCheckForBoolean(fieldSource.validationSource)) {
-                    const defaultValue = util_1.default2Boolean(defaultValueSource);
-                    return new gdmn_orm_1.BooleanAttribute({ name, lName, required, defaultValue, semCategories, adapter });
-                }
-                const { minValue, maxValue } = util_1.check2NumberRange(fieldSource.validationSource, {
-                    min: gdmn_orm_1.MIN_16BIT_INT,
-                    max: gdmn_orm_1.MAX_16BIT_INT
-                });
-                const defaultValue = util_1.default2Int(defaultValueSource);
-                return new gdmn_orm_1.IntegerAttribute({ name, lName, required, minValue, maxValue, defaultValue, semCategories, adapter });
-            }
-            case gdmn_db_1.FieldType.BIG_INTEGER: {
-                const { minValue, maxValue } = util_1.check2NumberRange(fieldSource.validationSource, {
-                    min: gdmn_orm_1.MIN_64BIT_INT,
-                    max: gdmn_orm_1.MAX_64BIT_INT
-                });
-                const defaultValue = util_1.default2Int(defaultValueSource);
-                return new gdmn_orm_1.IntegerAttribute({ name, lName, required, minValue, maxValue, defaultValue, semCategories, adapter });
             }
             case gdmn_db_1.FieldType.BLOB: {
                 if (fieldSource.fieldSubType === 1) {

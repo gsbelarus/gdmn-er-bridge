@@ -3,8 +3,8 @@ import moment from "moment";
 import {Constants} from "../Constants";
 
 export interface IRange<T> {
-  minValue: T | undefined;
-  maxValue: T | undefined;
+  minValue: T;
+  maxValue: T;
 }
 
 export function isCheckForBoolean(validationSource: string | null): boolean {
@@ -57,8 +57,18 @@ export function check2StrMin(validationSource: string | null): number | undefine
   }
 }
 
+export function check2IntRange(validationSource: string | null,
+                               rangeLimit?: { min: number, max: number }): IRange<number | undefined> {
+  switch (validationSource) {
+    case "CHECK (VALUE > 0)":
+      return {minValue: 1, maxValue: rangeLimit && rangeLimit.max !== undefined ? rangeLimit.max : undefined};
+    default:
+      return check2NumberRange(validationSource, rangeLimit);
+  }
+}
+
 export function check2NumberRange(validationSource: string | null,
-                                  rangeLimit?: { min: number, max: number }): IRange<number> {
+                                  rangeLimit?: { min: number, max: number }): IRange<number | undefined> {
   const {min, max} = rangeLimit || {min: undefined, max: undefined};
   const range = checkRange(validationSource);
 
@@ -89,7 +99,7 @@ export function check2TimestampRange(validationSource: string | null): IRange<Da
   };
 }
 
-export function check2TimeRange(validationSource: string | null): IRange<Date> {
+export function check2TimeRange(validationSource: string | null): IRange<Date | undefined> {
   const range = checkRange(validationSource);
   const minDate = moment.utc(range.min, Constants.TIME_TEMPLATE);
   const maxDate = moment.utc(range.max, Constants.TIME_TEMPLATE);
