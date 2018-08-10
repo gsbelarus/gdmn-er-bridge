@@ -1,8 +1,9 @@
 import {AConnection, ATransaction, DBStructure} from "gdmn-db";
-import {Entity, ERModel, Sequence, SequenceAttribute} from "gdmn-orm";
+import {Entity, ERModel, IEntityQueryInspector, Sequence, SequenceAttribute} from "gdmn-orm";
 import {Constants} from "./Constants";
 import {erExport} from "./export/erexport";
 import {ERImport} from "./import/ERImport";
+import {IQueryResponse, Query} from "./query/Query";
 import {GLOBAL_GENERATOR} from "./updates/Update1";
 import {UpdateManager} from "./updates/UpdateManager";
 
@@ -52,5 +53,9 @@ export class ERBridge {
 
   public async initDatabase(): Promise<void> {
     await new UpdateManager().updateDatabase(this._connection);
+  }
+
+  public async query(erModel: ERModel, dbStructure: DBStructure, query: IEntityQueryInspector): Promise<IQueryResponse> {
+    return await Query.execute(this._connection, erModel, dbStructure, query);
   }
 }

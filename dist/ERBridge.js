@@ -4,6 +4,7 @@ const gdmn_orm_1 = require("gdmn-orm");
 const Constants_1 = require("./Constants");
 const erexport_1 = require("./export/erexport");
 const ERImport_1 = require("./import/ERImport");
+const Query_1 = require("./query/Query");
 const Update1_1 = require("./updates/Update1");
 const UpdateManager_1 = require("./updates/UpdateManager");
 class ERBridge {
@@ -41,6 +42,9 @@ class ERBridge {
     }
     async initDatabase() {
         await new UpdateManager_1.UpdateManager().updateDatabase(this._connection);
+    }
+    async query(erModel, dbStructure, query) {
+        return await Query_1.Query.execute(this._connection, erModel, dbStructure, query);
     }
 }
 exports.ERBridge = ERBridge;
