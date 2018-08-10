@@ -18,7 +18,10 @@ class DomainResolver {
     static _getType(attr) {
         let expr = "";
         // TODO TimeIntervalAttribute
-        if (gdmn_orm_1.EntityAttribute.isType(attr)) {
+        if (gdmn_orm_1.SetAttribute.isType(attr)) {
+            expr = `VARCHAR(${attr.presLen})`;
+        }
+        else if (gdmn_orm_1.EntityAttribute.isType(attr)) {
             expr = `INTEGER`;
         }
         else if (gdmn_orm_1.EnumAttribute.isType(attr)) {

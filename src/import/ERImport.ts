@@ -193,7 +193,7 @@ export class ERImport {
 
         // create own table column
         const fieldName = attr.name;
-        const domainName = await this._getDDLHelper().addDomain(DomainResolver.resolve(attr));  // TODO varchar(presLen)
+        const domainName = await this._getDDLHelper().addDomain(DomainResolver.resolve(attr));
         await this._getDDLHelper().addColumns(tableName, [{name: fieldName, domain: domainName}]);
         await this._bindATAttr(attr, {
           relationName: tableName,

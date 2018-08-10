@@ -18,6 +18,7 @@ import {
   NumericAttribute,
   ScalarAttribute,
   SequenceAttribute,
+  SetAttribute,
   StringAttribute,
   TimeAttribute,
   TimeStampAttribute
@@ -40,7 +41,9 @@ export class DomainResolver {
   private static _getType(attr: Attribute): string {
     let expr = "";
     // TODO TimeIntervalAttribute
-    if (EntityAttribute.isType(attr)) {
+    if (SetAttribute.isType(attr)) {
+      expr = `VARCHAR(${attr.presLen})`;
+    } else if (EntityAttribute.isType(attr)) {
       expr = `INTEGER`;
     } else if (EnumAttribute.isType(attr)) {
       expr = `VARCHAR(1)`;
