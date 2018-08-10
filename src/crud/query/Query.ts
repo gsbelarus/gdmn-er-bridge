@@ -1,15 +1,7 @@
 import {AccessMode, AConnection, DBStructure} from "gdmn-db";
 import {EntityQuery, ERModel, IEntityQueryInspector} from "gdmn-orm";
+import {IQueryResponse} from "../../ERBridge";
 import {SQLBuilder} from "./SQLBuilder";
-
-export interface IQueryResponse {
-  data: any[];
-  aliases: Array<{ alias: string, attribute: string, values: any }>;
-  sql: {
-    query: string;
-    params: { [field: string]: any };
-  };
-}
 
 export abstract class Query {
 

@@ -1,10 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const gdmn_orm_1 = require("gdmn-orm");
+const Query_1 = require("./crud/query/Query");
 const Constants_1 = require("./ddl/Constants");
 const erexport_1 = require("./ddl/export/erexport");
 const ERImport_1 = require("./ddl/import/ERImport");
-const Query_1 = require("./crud/query/Query");
 const Update1_1 = require("./ddl/updates/Update1");
 const UpdateManager_1 = require("./ddl/updates/UpdateManager");
 class ERBridge {
