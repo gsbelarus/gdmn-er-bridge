@@ -722,14 +722,24 @@ async function erExport(dbs, connection, transaction, erModel) {
             const atCrossRelation = atrelations[crossName];
             entitiesOwner.forEach(e => {
                 if (!Object.values(e.attributes).find((attr) => (attr instanceof gdmn_orm_1.SetAttribute) && !!attr.adapter && attr.adapter.crossRelation === crossName)) {
+                    // for custom set field
+                    let name = atSetField && atSetField[0] || crossName;
+                    const setAdapter = { crossRelation: crossName };
+                    if (atSetField) {
+                        const [a, atSetRelField] = atSetField;
+                        name = atSetRelField && atSetRelField.attrName || name;
+                        if (a !== name) {
+                            setAdapter.presentationField = a;
+                        }
+                    }
                     const setAttr = new gdmn_orm_1.SetAttribute({
-                        name: atSetField ? atSetField[0] : crossName,
+                        name,
                         lName: atSetField ? atSetField[1].lName : (atCrossRelation ? atCrossRelation.lName : { en: { name: crossName } }),
                         required: (!!setField && setField.notNull) || (!!setFieldSource && setFieldSource.notNull),
                         entities: referenceEntities,
                         presLen: (setFieldSource && setFieldSource.fieldType === gdmn_db_1.FieldType.VARCHAR) ? setFieldSource.fieldLength : 0,
                         semCategories: atCrossRelation.semCategories,
-                        adapter: { crossRelation: crossName }
+                        adapter: setAdapter
                     });
                     Object.entries(crossRelation.relationFields).forEach(([addName, addField]) => {
                         if (!crossRelation.primaryKey.fields.find(f => f === addName)) {

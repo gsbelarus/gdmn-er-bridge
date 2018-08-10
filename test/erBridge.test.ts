@@ -495,10 +495,22 @@ describe("ERBridge", () => {
       lName: {ru: {name: "entity name", fullName: "full entity name"}}
     }));
 
+    // TODO correct ordering
     const crossRelation = "CROSS_7"; // generated value
-    const setAttr = new SetAttribute({
-      name: "SET1", lName: {ru: {name: "Ссылка"}}, required: true, entities: [entity2], adapter: {crossRelation}
-    });
+    const setAttr = entity1.add(new SetAttribute({
+      name: "SET3", lName: {ru: {name: "Ссылка3"}}, required: true, entities: [entity2],
+      adapter: {crossRelation}
+    }));
+
+    entity1.add(new SetAttribute({
+      name: "SET1", lName: {ru: {name: "Ссылка1"}}, required: true, entities: [entity2], presLen: 120,
+      adapter: {crossRelation: "CROSS_TABLE_ADAPTER1", presentationField: "SET_FIELD_ADAPTER"}
+    }));
+
+    entity1.add(new SetAttribute({
+      name: "SET2", lName: {ru: {name: "Ссылка2"}}, required: true, entities: [entity2], presLen: 120,
+      adapter: {crossRelation: "CROSS_TABLE_ADAPTER2"}
+    }));
 
     setAttr.add(new IntegerAttribute({
       name: "FIELD1", lName: {ru: {name: "Поле 1", fullName: "FULLNAME"}}, required: true,
@@ -598,8 +610,6 @@ describe("ERBridge", () => {
       name: "FIELD19", lName: {ru: {name: "Поле 19"}},
       values: [{value: "Z"}, {value: "X"}, {value: "Y"}]
     }));
-
-    entity1.add(setAttr);
 
     await erBridge.importToDatabase(erModel);
 

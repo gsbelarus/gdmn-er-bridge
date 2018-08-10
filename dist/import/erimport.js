@@ -14,8 +14,15 @@ class ERImport {
         this._erModel = erModel;
     }
     static _getFieldName(attr) {
-        const attrAdapter = attr.adapter;
-        return attrAdapter ? attrAdapter.field : attr.name;
+        if (gdmn_orm_1.ScalarAttribute.isType(attr)) {
+            if (attr.adapter)
+                return attr.adapter.field;
+        }
+        else if (gdmn_orm_1.SetAttribute.isType(attr)) {
+            if (attr.adapter && attr.adapter.presentationField)
+                return attr.adapter.presentationField;
+        }
+        return attr.name;
     }
     async execute() {
         await gdmn_db_1.AConnection.executeTransaction({
@@ -144,7 +151,7 @@ class ERImport {
                     semCategory: undefined
                 });
                 // create own table column
-                const fieldName = attr.name;
+                const fieldName = ERImport._getFieldName(attr);
                 const domainName = await this._getDDLHelper().addDomain(DomainResolver_1.DomainResolver.resolve(attr));
                 await this._getDDLHelper().addColumns(tableName, [{ name: fieldName, domain: domainName }]);
                 await this._bindATAttr(attr, {

@@ -46,8 +46,12 @@ export class ERImport {
   }
 
   public static _getFieldName(attr: Attribute): string {
-    const attrAdapter = attr.adapter;
-    return attrAdapter ? attrAdapter.field : attr.name;
+    if (ScalarAttribute.isType(attr)) {
+      if (attr.adapter) return attr.adapter.field;
+    } else if (SetAttribute.isType(attr)) {
+      if (attr.adapter && attr.adapter.presentationField) return attr.adapter.presentationField;
+    }
+    return attr.name;
   }
 
   public async execute(): Promise<void> {
@@ -192,7 +196,7 @@ export class ERImport {
         });
 
         // create own table column
-        const fieldName = attr.name;
+        const fieldName = ERImport._getFieldName(attr);
         const domainName = await this._getDDLHelper().addDomain(DomainResolver.resolve(attr));
         await this._getDDLHelper().addColumns(tableName, [{name: fieldName, domain: domainName}]);
         await this._bindATAttr(attr, {

@@ -37,6 +37,7 @@ import {
   Sequence,
   SequenceAttribute,
   SetAttribute,
+  SetAttributeAdapter,
   StringAttribute,
   systemFields,
   TimeAttribute,
@@ -891,7 +892,7 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
    * 4. Owner in this context is an Entity(s) a Set attribute belongs to.
    * 5. Reference in this context is an Entity(s) a Set attribute contains objects of which type.
    */
-  Object.entries(dbs.relations).forEach(([crossName, crossRelation]) => {
+  Object.entries(dbs.relations).forEach(([crossName, crossRelation]) => { // TODO correct ordering
     if (crossRelation.primaryKey && crossRelation.primaryKey.fields.length >= 2) {
       const fkOwner = Object.entries(crossRelation.foreignKeys).find(
         ([, f]) => f.fields.length === 1 && f.fields[0] === crossRelation.primaryKey!.fields[0]
@@ -949,14 +950,25 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
       entitiesOwner.forEach(e => {
         if (!Object.values(e.attributes).find((attr) =>
           (attr instanceof SetAttribute) && !!attr.adapter && attr.adapter.crossRelation === crossName)) {
+
+          // for custom set field
+          let name = atSetField && atSetField[0] || crossName;
+          const setAdapter: SetAttributeAdapter = {crossRelation: crossName};
+          if (atSetField) {
+            const [a, atSetRelField] = atSetField;
+            name = atSetRelField && atSetRelField.attrName || name;
+            if (a !== name) {
+              setAdapter.presentationField = a;
+            }
+          }
           const setAttr = new SetAttribute({
-              name: atSetField ? atSetField[0] : crossName,
+              name,
               lName: atSetField ? atSetField[1].lName : (atCrossRelation ? atCrossRelation.lName : {en: {name: crossName}}),
               required: (!!setField && setField.notNull) || (!!setFieldSource && setFieldSource.notNull),
               entities: referenceEntities,
               presLen: (setFieldSource && setFieldSource.fieldType === FieldType.VARCHAR) ? setFieldSource.fieldLength : 0,
               semCategories: atCrossRelation.semCategories,
-              adapter: {crossRelation: crossName}
+              adapter: setAdapter
             }
           );
 
