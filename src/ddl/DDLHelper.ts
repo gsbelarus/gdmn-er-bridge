@@ -1,5 +1,5 @@
 import {AConnection, ATransaction} from "gdmn-db";
-import {Prefix} from "../Prefix";
+import {Prefix} from "./Prefix";
 import {DDLUniqueGenerator} from "./DDLUniqueGenerator";
 
 export interface IColumnsProps {

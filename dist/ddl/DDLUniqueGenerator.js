@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const Update2_1 = require("../updates/Update2");
+const Update2_1 = require("./updates/Update2");
 class DDLUniqueGenerator {
     get prepared() {
         return !!this._nextUnique;

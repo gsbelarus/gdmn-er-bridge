@@ -1,5 +1,5 @@
 import {AConnection, AStatement, ATransaction} from "gdmn-db";
-import {GLOBAL_DDL_GENERATOR} from "../updates/Update2";
+import {GLOBAL_DDL_GENERATOR} from "./updates/Update2";
 
 export class DDLUniqueGenerator {
 
