@@ -1,11 +1,11 @@
 import {AConnection, ATransaction, DBStructure} from "gdmn-db";
 import {Entity, ERModel, IEntityQueryInspector, Sequence, SequenceAttribute} from "gdmn-orm";
-import {Constants} from "./Constants";
-import {erExport} from "./export/erexport";
-import {ERImport} from "./import/ERImport";
-import {IQueryResponse, Query} from "./query/Query";
-import {GLOBAL_GENERATOR} from "./updates/Update1";
-import {UpdateManager} from "./updates/UpdateManager";
+import {Constants} from "./ddl/Constants";
+import {erExport} from "./ddl/export/erexport";
+import {ERImport} from "./ddl/import/ERImport";
+import {IQueryResponse, Query} from "./crud/query/Query";
+import {GLOBAL_GENERATOR} from "./ddl/updates/Update1";
+import {UpdateManager} from "./ddl/updates/UpdateManager";
 
 export class ERBridge {
 

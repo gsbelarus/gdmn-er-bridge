@@ -2,7 +2,7 @@ import * as fs from "fs";
 import {AConnection} from "gdmn-db";
 import {deserializeERModel, ERModel} from "gdmn-orm";
 import {ERBridge} from "../src/ERBridge";
-import {IDBDetail} from "../src/export/dbdetail";
+import {IDBDetail} from "../src/ddl/export/dbdetail";
 import {exportTestDBDetail} from "./testDB";
 
 // async function createDatabaseAndLoadERModel(dbDetail: IDBDetail) {

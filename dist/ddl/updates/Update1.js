@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const DDLHelper_1 = require("../ddl/DDLHelper");
+const DDLHelper_1 = require("../DDLHelper");
 const Prefix_1 = require("../Prefix");
 const BaseUpdate_1 = require("./BaseUpdate");
 exports.GLOBAL_GENERATOR = Prefix_1.Prefix.join("UNIQUE", Prefix_1.Prefix.GDMN, Prefix_1.Prefix.GENERATOR);

@@ -1,4 +1,4 @@
-import {DDLHelper} from "../ddl/DDLHelper";
+import {DDLHelper} from "../DDLHelper";
 import {Prefix} from "../Prefix";
 import {BaseUpdate} from "./BaseUpdate";
 

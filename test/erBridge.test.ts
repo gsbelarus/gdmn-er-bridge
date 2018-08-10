@@ -23,7 +23,7 @@ import {
   TimeStampAttribute
 } from "gdmn-orm";
 import moment from "moment";
-import {Constants} from "../src/Constants";
+import {Constants} from "../src/ddl/Constants";
 import {ERBridge} from "../src/ERBridge";
 import {importTestDBDetail} from "./testDB";
 

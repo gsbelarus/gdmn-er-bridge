@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const Prefix_1 = require("../Prefix");
+const Prefix_1 = require("./Prefix");
 const DDLUniqueGenerator_1 = require("./DDLUniqueGenerator");
 class DDLHelper {
     constructor(connection, transaction) {

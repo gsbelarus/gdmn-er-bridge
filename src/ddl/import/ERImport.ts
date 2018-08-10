@@ -13,7 +13,7 @@ import {
 } from "gdmn-orm";
 import {ATHelper} from "../ATHelper";
 import {Constants} from "../Constants";
-import {DDLHelper, IFieldProps} from "../ddl/DDLHelper";
+import {DDLHelper, IFieldProps} from "../DDLHelper";
 import {Prefix} from "../Prefix";
 import {GLOBAL_GENERATOR} from "../updates/Update1";
 import {DomainResolver} from "./DomainResolver";

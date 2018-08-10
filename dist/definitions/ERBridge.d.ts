@@ -1,6 +1,6 @@
 import { AConnection, ATransaction, DBStructure } from "gdmn-db";
 import { Entity, ERModel, IEntityQueryInspector } from "gdmn-orm";
-import { IQueryResponse } from "./query/Query";
+import { IQueryResponse } from "./crud/query/Query";
 export declare class ERBridge {
     private readonly _connection;
     constructor(connection: AConnection);
