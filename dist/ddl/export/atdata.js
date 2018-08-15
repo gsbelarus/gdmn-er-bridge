@@ -11,7 +11,7 @@ const gdmn_db_1 = require("gdmn-db");
 const gdmn_nlp_1 = require("gdmn-nlp");
 const getTrimmedStringFunc = (resultSet) => (fieldName) => resultSet.isNull(fieldName) ? undefined : resultSet.getString(fieldName).trim();
 async function load(connection, transaction) {
-    const atfields = await gdmn_db_1.AConnection.executeQueryResultSet({
+    const atFields = await gdmn_db_1.AConnection.executeQueryResultSet({
         connection,
         transaction,
         sql: `
@@ -49,7 +49,7 @@ async function load(connection, transaction) {
             return fields;
         }
     });
-    const atrelations = await gdmn_db_1.AConnection.executeQueryResultSet({
+    const atRelations = await gdmn_db_1.AConnection.executeQueryResultSet({
         connection,
         transaction,
         sql: `
@@ -58,6 +58,7 @@ async function load(connection, transaction) {
         RELATIONNAME,
         LNAME,
         DESCRIPTION,
+        ENTITYNAME,
         SEMCATEGORY
       FROM
         AT_RELATIONS`,
@@ -72,6 +73,7 @@ async function load(connection, transaction) {
                 }
                 relations[resultSet.getString("RELATIONNAME")] = {
                     lName: { ru },
+                    entityName: getTrimmedString("ENTITYNAME"),
                     semCategories: gdmn_nlp_1.str2SemCategories(resultSet.getString("SEMCATEGORY")),
                     relationFields: {}
                 };
@@ -108,7 +110,7 @@ async function load(connection, transaction) {
             while (await resultSet.next()) {
                 if (relationName !== resultSet.getString("RELATIONNAME")) {
                     relationName = resultSet.getString("RELATIONNAME");
-                    rel = atrelations[relationName];
+                    rel = atRelations[relationName];
                     if (!rel)
                         throw new Error(`Unknown relation ${relationName}`);
                 }
@@ -133,7 +135,7 @@ async function load(connection, transaction) {
             }
         }
     });
-    return { atfields, atrelations };
+    return { atFields, atRelations };
 }
 exports.load = load;
-//# sourceMappingURL=atdata.js.map
+//# sourceMappingURL=atData.js.map

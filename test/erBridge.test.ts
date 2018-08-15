@@ -16,7 +16,6 @@ import {
   MIN_16BIT_INT,
   MIN_32BIT_INT,
   NumericAttribute,
-  ParentAttribute,
   SetAttribute,
   StringAttribute,
   TimeAttribute,
@@ -54,17 +53,28 @@ describe("ERBridge", () => {
 
   it("empty entity", async () => {
     const erModel = ERBridge.completeERModel(new ERModel());
-    const entity = ERBridge.addEntityToERModel(erModel, new Entity({
-      name: "TEST",
+    const entity1 = ERBridge.addEntityToERModel(erModel, new Entity({
+      name: "TEST1",
       lName: {ru: {name: "entity name", fullName: "full entity name"}}
+    }));
+
+    const entity2 = ERBridge.addEntityToERModel(erModel, new Entity({
+      name: "TEST2",
+      lName: {ru: {name: "entity name", fullName: "full entity name"}},
+      adapter: {
+        relation: [{relationName: "TEST_ADAPTER"}]
+      }
     }));
 
     await erBridge.importToDatabase(erModel);
 
     const loadedERModel = await loadERModel();
-    const loadEntity = loadedERModel.entity("TEST");
-    expect(loadEntity).toEqual(entity);
-    expect(loadEntity.serialize()).toEqual(entity.serialize());
+    const loadEntity1 = loadedERModel.entity("TEST1");
+    const loadEntity2 = loadedERModel.entity("TEST2");
+    expect(loadEntity1).toEqual(entity1);
+    expect(loadEntity1.serialize()).toEqual(entity1.serialize());
+    expect(loadEntity2).toEqual(entity2);
+    expect(loadEntity2.serialize()).toEqual(entity2.serialize());
   });
 
   it("integer", async () => {
@@ -198,6 +208,10 @@ describe("ERBridge", () => {
     entity.add(new StringAttribute({
       name: "FIELD3", lName: {ru: {name: "Поле 3"}},
       minLength: 1, maxLength: 160, autoTrim: true
+    }));
+    entity.add(new StringAttribute({
+      name: "FIELD4", lName: {ru: {name: "Поле 3"}},
+      minLength: 1, autoTrim: true
     }));
 
     await erBridge.importToDatabase(erModel);
@@ -417,30 +431,30 @@ describe("ERBridge", () => {
     expect(loadEntity2.serialize()).toEqual(entity2.serialize());
   });
 
-  it("parent link to entity", async () => {
-    const erModel = ERBridge.completeERModel(new ERModel());
-    const entity1 = ERBridge.addEntityToERModel(erModel, new Entity({
-      name: "TEST1",
-      lName: {ru: {name: "entity name", fullName: "full entity name"}}
-    }));
-    const entity2 = ERBridge.addEntityToERModel(erModel, new Entity({
-      name: "TEST2",
-      lName: {ru: {name: "entity name", fullName: "full entity name"}}
-    }));
-
-    entity1.add(new ParentAttribute({name: "PARENT", lName: {ru: {name: "Ссылка"}}, entities: [entity2]}));
-    entity1.add(new ParentAttribute({name: "LINK", lName: {ru: {name: "Ссылка"}}, entities: [entity2]}));
-
-    await erBridge.importToDatabase(erModel);
-
-    const loadedERModel = await loadERModel();
-    const loadEntity1 = loadedERModel.entity("TEST1");
-    const loadEntity2 = loadedERModel.entity("TEST2");
-    expect(loadEntity1).toEqual(entity1);
-    expect(loadEntity2).toEqual(entity2);
-    expect(loadEntity1.serialize()).toEqual(entity1.serialize());
-    expect(loadEntity2.serialize()).toEqual(entity2.serialize());
-  });
+  // it("parent link to entity", async () => {
+  //   const erModel = ERBridge.completeERModel(new ERModel());
+  //   const entity1 = ERBridge.addEntityToERModel(erModel, new Entity({
+  //     name: "TEST1",
+  //     lName: {ru: {name: "entity name", fullName: "full entity name"}}
+  //   }));
+  //   const entity2 = ERBridge.addEntityToERModel(erModel, new Entity({
+  //     name: "TEST2",
+  //     lName: {ru: {name: "entity name", fullName: "full entity name"}}
+  //   }));
+  //
+  //   entity1.add(new ParentAttribute({name: "PARENT", lName: {ru: {name: "Ссылка"}}, entities: [entity2]}));
+  //   entity1.add(new ParentAttribute({name: "LINK", lName: {ru: {name: "Ссылка"}}, entities: [entity2]}));
+  //
+  //   await erBridge.importToDatabase(erModel);
+  //
+  //   const loadedERModel = await loadERModel();
+  //   const loadEntity1 = loadedERModel.entity("TEST1");
+  //   const loadEntity2 = loadedERModel.entity("TEST2");
+  //   expect(loadEntity1).toEqual(entity1);
+  //   expect(loadEntity2).toEqual(entity2);
+  //   expect(loadEntity1.serialize()).toEqual(entity1.serialize());
+  //   expect(loadEntity2.serialize()).toEqual(entity2.serialize());
+  // });
 
   it("detail entity", async () => {
     const erModel = ERBridge.completeERModel(new ERModel());
@@ -654,6 +668,55 @@ describe("ERBridge", () => {
     const loadEntity = loadedERModel.entity("TEST");
     expect(loadEntity).toEqual(entity);
     expect(loadEntity.serialize()).toEqual(entity.serialize());
+  });
+
+  it("inheritance", async () => {
+    const erModel = ERBridge.completeERModel(new ERModel());
+    const entity1 = ERBridge.addEntityToERModel(erModel, new Entity({
+      name: "TEST1",
+      lName: {ru: {name: "entity name", fullName: "full entity name"}}
+    }));
+    entity1.add(new StringAttribute({
+      name: "TEST_FIELD1", lName: {ru: {name: "Поле 1"}},
+      adapter: {relation: "TEST1", field: "FIELD_ADAPTER1"}
+    }));
+
+    const entity2 = ERBridge.addEntityToERModel(erModel, new Entity({
+      parent: entity1,
+      name: "TEST2",
+      lName: {ru: {name: "entity name", fullName: "full entity name"}},
+      adapter: {relation: [...entity1.adapter.relation, {relationName: "TEST2"}]}
+    }));
+    entity2.add(new StringAttribute({
+      name: "TEST_FIELD2", lName: {ru: {name: "Поле 2"}},
+      adapter: {relation: "TEST2", field: "FIELD_ADAPTER2"}
+    }));
+
+    const entity3 = ERBridge.addEntityToERModel(erModel, new Entity({
+      parent: entity2,
+      name: "TEST3",
+      lName: {ru: {name: "entity name", fullName: "full entity name"}},
+      adapter: {relation: [...entity2.adapter.relation, {relationName: "TEST3"}]}
+    }));
+    entity3.add(new StringAttribute({name: "TEST_FIELD3", lName: {ru: {name: "Поле 3"}}}));
+    entity3.add(new StringAttribute({
+      name: "TEST_FIELD1",
+      lName: {ru: {name: "Переопределенное Поле 1"}},
+      required: true
+    }));
+
+    await erBridge.importToDatabase(erModel);
+
+    const loadedERModel = await loadERModel();
+    const loadEntity1 = loadedERModel.entity("TEST1");
+    const loadEntity2 = loadedERModel.entity("TEST2");
+    const loadEntity3 = loadedERModel.entity("TEST3");
+    expect(loadEntity1).toEqual(entity1);
+    expect(loadEntity1.serialize()).toEqual(entity1.serialize());
+    expect(loadEntity2).toEqual(entity2);
+    expect(loadEntity2.serialize()).toEqual(entity2.serialize());
+    expect(loadEntity3).toEqual(entity3);
+    expect(loadEntity3.serialize()).toEqual(entity3.serialize());
   });
 
   it("AUTH DATABASE", async () => {

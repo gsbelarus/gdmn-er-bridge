@@ -4,14 +4,13 @@ const gdmn_db_1 = require("gdmn-db");
 const gdmn_nlp_1 = require("gdmn-nlp");
 const gdmn_orm_1 = require("gdmn-orm");
 const Constants_1 = require("../Constants");
-const Update1_1 = require("../updates/Update1");
-const atdata_1 = require("./atdata");
+const atData_1 = require("./atData");
 const document_1 = require("./document");
 const gddomains_1 = require("./gddomains");
 const gdtables_1 = require("./gdtables");
 const util_1 = require("./util");
 async function erExport(dbs, connection, transaction, erModel) {
-    const { atfields, atrelations } = await atdata_1.load(connection, transaction);
+    const { atFields, atRelations } = await atData_1.load(connection, transaction);
     const crossRelationsAdapters = {
         "GD_CONTACTLIST": {
             owner: "GD_CONTACT",
@@ -27,7 +26,7 @@ async function erExport(dbs, connection, transaction, erModel) {
     /**
      * Если имя генератора совпадает с именем объекта в БД, то адаптер можем не указывать.
      */
-    const GDGUnique = erModel.addSequence(new gdmn_orm_1.Sequence({ name: Update1_1.GLOBAL_GENERATOR }));
+    const GDGUnique = erModel.addSequence(new gdmn_orm_1.Sequence({ name: Constants_1.Constants.GLOBAL_GENERATOR }));
     erModel.addSequence(new gdmn_orm_1.Sequence({ name: "Offset", sequence: "GD_G_OFFSET" }));
     function findEntities(relationName, selectors = []) {
         const found = Object.entries(erModel.entities).reduce((p, e) => {
@@ -57,17 +56,18 @@ async function erExport(dbs, connection, transaction, erModel) {
     }
     function createEntity(parent, adapter, abstract, entityName, lName, semCategories = [], attributes) {
         if (!abstract) {
-            const found = Object.entries(erModel.entities).find(e => !e[1].isAbstract && gdmn_orm_1.sameAdapter(adapter, e[1].adapter));
+            const found = Object.values(erModel.entities).find((entity) => !entity.isAbstract && gdmn_orm_1.sameAdapter(adapter, entity.adapter));
             if (found) {
-                return found[1];
+                return found;
             }
         }
         const relation = adapter.relation.filter(r => !r.weak).reverse()[0];
         if (!relation || !relation.relationName) {
             throw new Error("Invalid entity adapter");
         }
-        const name = gdmn_orm_1.adjustName(entityName ? entityName : relation.relationName);
-        const atRelation = atrelations[relation.relationName];
+        const atRelation = atRelations[relation.relationName];
+        // for custom entity names
+        const name = gdmn_orm_1.adjustName(entityName || atRelation.entityName || relation.relationName);
         const fake = gdmn_orm_1.relationName2Adapter(name);
         const entity = new gdmn_orm_1.Entity({
             parent,
@@ -84,12 +84,23 @@ async function erExport(dbs, connection, transaction, erModel) {
                 sequence: GDGUnique
             }));
         }
+        else {
+            entity.add(new gdmn_orm_1.SequenceAttribute({
+                name: Constants_1.Constants.DEFAULT_ID_NAME,
+                lName: { ru: { name: "Идентификатор" } },
+                sequence: GDGUnique,
+                adapter: {
+                    relation: entity.adapter.relation[entity.adapter.relation.length - 1].relationName,
+                    field: Constants_1.Constants.DEFAULT_INHERITED_KEY_NAME
+                }
+            }));
+        }
         if (attributes) {
             attributes.forEach(attr => entity.add(attr));
         }
         return erModel.add(entity);
     }
-    Object.keys(atrelations).forEach((item) => createEntity(undefined, gdmn_orm_1.relationName2Adapter(item)));
+    Object.keys(atRelations).forEach((item) => createEntity(undefined, gdmn_orm_1.relationName2Adapter(item)));
     /**
      * Простейший случай таблицы. Никаких ссылок.
      */
@@ -423,7 +434,7 @@ async function erExport(dbs, connection, transaction, erModel) {
                 const newParent = [...parentRelation, inherited];
                 const parentAdapter = parentEntity ? parentEntity.adapter
                     : gdmn_orm_1.relationNames2Adapter(parentRelation.map(p => p.name));
-                recursInherited(newParent, createEntity(parentEntity, gdmn_orm_1.appendAdapter(parentAdapter, inherited.name), false, inherited.name, atrelations[inherited.name] ? atrelations[inherited.name].lName : {}));
+                recursInherited(newParent, createEntity(parentEntity, gdmn_orm_1.appendAdapter(parentAdapter, inherited.name), false, inherited.name, atRelations[inherited.name] ? atRelations[inherited.name].lName : {}));
             }
         }, true);
     }
@@ -440,7 +451,7 @@ async function erExport(dbs, connection, transaction, erModel) {
     }, true);
     function createAttribute(r, rf, atRelationField, attrName, semCategories, adapter) {
         const name = gdmn_orm_1.adjustName(attrName);
-        const atField = atfields[rf.fieldSource];
+        const atField = atFields[rf.fieldSource];
         const fieldSource = dbs.fields[rf.fieldSource];
         const required = rf.notNull || fieldSource.notNull;
         const defaultValueSource = rf.defaultSource || fieldSource.defaultSource;
@@ -583,9 +594,10 @@ async function erExport(dbs, connection, transaction, erModel) {
             }
             case gdmn_db_1.FieldType.BLOB: {
                 if (fieldSource.fieldSubType === 1) {
+                    const minLength = util_1.check2StrMin(fieldSource.validationSource);
                     const defaultValue = util_1.default2String(defaultValueSource);
                     return new gdmn_orm_1.StringAttribute({
-                        name, lName, required, minLength: 0,
+                        name, lName, required, minLength: minLength,
                         defaultValue, autoTrim: false, semCategories, adapter
                     });
                 }
@@ -600,7 +612,7 @@ async function erExport(dbs, connection, transaction, erModel) {
         relations.forEach(r => {
             if (!r || !r.primaryKey)
                 return;
-            const atRelation = atrelations[r.name];
+            const atRelation = atRelations[r.name];
             Object.entries(r.relationFields).forEach(([fn, rf]) => {
                 if (r.primaryKey.fields.find(f => f === fn))
                     return;
@@ -629,7 +641,7 @@ async function erExport(dbs, connection, transaction, erModel) {
                 if (atRelationField && atRelationField.masterEntityName) {
                     const masterEntity = erModel.entity(atRelationField.masterEntityName); // TODO
                     const attributeName = gdmn_orm_1.adjustName(attrName);
-                    const atField = atfields[rf.fieldSource];
+                    const atField = atFields[rf.fieldSource];
                     const fieldSource = dbs.fields[rf.fieldSource];
                     const required = rf.notNull || fieldSource.notNull;
                     const lName = atRelationField ? atRelationField.lName : (atField ? atField.lName : {});
@@ -691,7 +703,7 @@ async function erExport(dbs, connection, transaction, erModel) {
             if (!fkReference)
                 return;
             const relOwner = dbs.relationByUqConstraint(fkOwner[1].constNameUq);
-            const atRelOwner = atrelations[relOwner.name];
+            const atRelOwner = atRelations[relOwner.name];
             if (!atRelOwner)
                 return;
             let entitiesOwner;
@@ -709,7 +721,7 @@ async function erExport(dbs, connection, transaction, erModel) {
             const relReference = dbs.relationByUqConstraint(fkReference[1].constNameUq);
             let cond;
             const atSetField = Object.entries(atRelOwner.relationFields).find(rf => rf[1].crossTable === crossName);
-            const atSetFieldSource = atSetField ? atfields[atSetField[1].fieldSource] : undefined;
+            const atSetFieldSource = atSetField ? atFields[atSetField[1].fieldSource] : undefined;
             if (atSetFieldSource && atSetFieldSource.setTable === relReference.name && atSetFieldSource.setCondition) {
                 cond = gdmn_orm_1.condition2Selectors(atSetFieldSource.setCondition);
             }
@@ -719,7 +731,7 @@ async function erExport(dbs, connection, transaction, erModel) {
             }
             const setField = atSetField ? relOwner.relationFields[atSetField[0]] : undefined;
             const setFieldSource = setField ? dbs.fields[setField.fieldSource] : undefined;
-            const atCrossRelation = atrelations[crossName];
+            const atCrossRelation = atRelations[crossName];
             entitiesOwner.forEach(e => {
                 if (!Object.values(e.attributes).find((attr) => (attr instanceof gdmn_orm_1.SetAttribute) && !!attr.adapter && attr.adapter.crossRelation === crossName)) {
                     // for custom set field

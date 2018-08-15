@@ -1,9 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const Constants_1 = require("../Constants");
 const DDLHelper_1 = require("../DDLHelper");
-const Prefix_1 = require("../Prefix");
 const BaseUpdate_1 = require("./BaseUpdate");
-exports.GLOBAL_DDL_GENERATOR = Prefix_1.Prefix.join("DDL", Prefix_1.Prefix.GDMN, Prefix_1.Prefix.GENERATOR);
 // Update for creating gdmn-back adapted database
 class Update2 extends BaseUpdate_1.BaseUpdate {
     constructor() {
@@ -13,7 +12,7 @@ class Update2 extends BaseUpdate_1.BaseUpdate {
     async run() {
         await this._executeTransaction(async (transaction) => {
             const ddlHelper = new DDLHelper_1.DDLHelper(this._connection, transaction);
-            await ddlHelper.addSequence(exports.GLOBAL_DDL_GENERATOR);
+            await ddlHelper.addSequence(Constants_1.Constants.GLOBAL_DDL_GENERATOR);
             await ddlHelper.prepare();
             try {
                 await ddlHelper.addTable("AT_DATABASE", [

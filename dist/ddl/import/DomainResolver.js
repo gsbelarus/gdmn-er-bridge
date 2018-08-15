@@ -52,7 +52,12 @@ class DomainResolver {
             expr = `SMALLINT`;
         }
         else if (gdmn_orm_1.StringAttribute.isType(attr)) {
-            expr = `VARCHAR(${attr.maxLength})`;
+            if (attr.maxLength === undefined) {
+                expr = `BLOB SUB_TYPE TEXT`;
+            }
+            else {
+                expr = `VARCHAR(${attr.maxLength})`;
+            }
         }
         else if (gdmn_orm_1.BlobAttribute.isType(attr)) {
             expr = `BLOB`;

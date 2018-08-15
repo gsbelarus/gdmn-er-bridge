@@ -21,6 +21,7 @@ export interface IInputATRelations {
   relationType: "T" | "V" | undefined;
   lName: string;
   description: string | undefined;
+  entityName: string | undefined;
   semCategory: string | undefined;
 }
 
@@ -52,25 +53,22 @@ export class ATHelper {
 
   public async prepare(): Promise<void> {
     this._createATField = await this._connection.prepare(this._transaction, `
-      UPDATE OR INSERT INTO AT_FIELDS (FIELDNAME, LNAME, DESCRIPTION, REFTABLE, REFCONDITION, SETTABLE, SETLISTFIELD, 
+      INSERT INTO AT_FIELDS (FIELDNAME, LNAME, DESCRIPTION, REFTABLE, REFCONDITION, SETTABLE, SETLISTFIELD, 
         SETCONDITION, NUMERATION)
       VALUES (:fieldName, :lName, :description, :refTable, :refCondition, :setTable, :setListField, 
         :setCondition, :numeration)
-      MATCHING (FIELDNAME)
       RETURNING ID
     `);
     this._createATRelation = await this._connection.prepare(this._transaction, `
-      UPDATE OR INSERT INTO AT_RELATIONS (RELATIONNAME, RELATIONTYPE, LNAME, DESCRIPTION, SEMCATEGORY)
-      VALUES (:relationName, :relationType, :lName, :description, :semCategory)
-      MATCHING (RELATIONNAME)
+      INSERT INTO AT_RELATIONS (RELATIONNAME, RELATIONTYPE, LNAME, DESCRIPTION, SEMCATEGORY, ENTITYNAME)
+      VALUES (:relationName, :relationType, :lName, :description, :semCategory, :entityName)
       RETURNING ID
     `);
     this._createATRelationField = await this._connection.prepare(this._transaction, `
-      UPDATE OR INSERT INTO AT_RELATION_FIELDS (FIELDNAME, RELATIONNAME, FIELDSOURCE, FIELDSOURCEKEY, LNAME, DESCRIPTION, 
+      INSERT INTO AT_RELATION_FIELDS (FIELDNAME, RELATIONNAME, FIELDSOURCE, FIELDSOURCEKEY, LNAME, DESCRIPTION, 
         SEMCATEGORY, CROSSTABLE, CROSSTABLEKEY, CROSSFIELD, ATTRNAME, MASTERENTITYNAME, ISPARENT)
       VALUES (:fieldName, :relationName, :fieldSource, :fieldSourceKey, :lName, :description, 
         :semCategory, :crossTable, :crossTableKey, :crossField, :attrName, :masterEntityName, :isParent)
-      MATCHING (FIELDNAME, RELATIONNAME)
       RETURNING ID
     `);
   }

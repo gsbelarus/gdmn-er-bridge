@@ -1,5 +1,5 @@
 import {AConnection, AStatement, ATransaction} from "gdmn-db";
-import {GLOBAL_DDL_GENERATOR} from "./updates/Update2";
+import {Constants} from "./Constants";
 
 export class DDLUniqueGenerator {
 
@@ -11,7 +11,7 @@ export class DDLUniqueGenerator {
 
   public async prepare(connection: AConnection, transaction: ATransaction): Promise<void> {
     this._nextUnique = await connection.prepare(transaction,
-      `SELECT NEXT VALUE FOR ${GLOBAL_DDL_GENERATOR} FROM RDB$DATABASE`);
+      `SELECT NEXT VALUE FOR ${Constants.GLOBAL_DDL_GENERATOR} FROM RDB$DATABASE`);
   }
 
   public async dispose(): Promise<void> {
