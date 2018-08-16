@@ -7,12 +7,12 @@
  */
 import { AConnection, ATransaction } from "gdmn-db";
 import { SemCategory } from "gdmn-nlp";
-import { LName } from "gdmn-orm";
+import { ILName } from "gdmn-orm";
 /**
  * Дополнительная информация по доменам.
  */
-export interface atField {
-    lName: LName;
+export interface IATField {
+    lName: ILName;
     refTable: string | undefined;
     refCondition: string | undefined;
     setTable: string | undefined;
@@ -20,17 +20,17 @@ export interface atField {
     setCondition: string | undefined;
     numeration: string | undefined;
 }
-export interface atFields {
-    [fieldName: string]: atField;
+export interface IATFields {
+    [fieldName: string]: IATField;
 }
 /**
  * Дополнительная информация по полям таблиц.
  */
-export interface atRelationField {
+export interface IATRelationField {
     attrName: string | undefined;
     masterEntityName: string | undefined;
     isParent: boolean;
-    lName: LName;
+    lName: ILName;
     fieldSource: string;
     fieldSourceKey: number;
     crossTable: string | undefined;
@@ -38,21 +38,23 @@ export interface atRelationField {
     crossField: string | undefined;
     semCategories: SemCategory[];
 }
-export interface atRelationFields {
-    [fieldName: string]: atRelationField;
+export interface IATRelationFields {
+    [fieldName: string]: IATRelationField;
 }
 /**
  * Дополнительная информация по таблицам.
  */
-export interface atRelation {
-    lName: LName;
+export interface IATRelation {
+    lName: ILName;
+    entityName: string | undefined;
     semCategories: SemCategory[];
-    relationFields: atRelationFields;
+    relationFields: IATRelationFields;
 }
-export interface atRelations {
-    [relationName: string]: atRelation;
+export interface IATRelations {
+    [relationName: string]: IATRelation;
 }
-export declare function load(connection: AConnection, transaction: ATransaction): Promise<{
-    atfields: atFields;
-    atrelations: atRelations;
-}>;
+export interface IATLoadResult {
+    atFields: IATFields;
+    atRelations: IATRelations;
+}
+export declare function load(connection: AConnection, transaction: ATransaction): Promise<IATLoadResult>;

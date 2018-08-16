@@ -1,12 +1,13 @@
 import { AConnection } from "gdmn-db";
-import { Attribute, ERModel } from "gdmn-orm";
+import { Entity, ERModel } from "gdmn-orm";
 export declare class ERImport {
     private readonly _connection;
     private readonly _erModel;
     private _atHelper;
     private _ddlHelper;
     constructor(connection: AConnection, erModel: ERModel);
-    static _getFieldName(attr: Attribute): string;
+    static _getTableName(entity: Entity): string;
+    private static _getFieldName;
     execute(): Promise<void>;
     private _getDDLHelper;
     private _getATHelper;

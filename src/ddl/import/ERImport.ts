@@ -15,7 +15,6 @@ import {ATHelper} from "../ATHelper";
 import {Constants} from "../Constants";
 import {DDLHelper, IFieldProps} from "../DDLHelper";
 import {Prefix} from "../Prefix";
-import {GLOBAL_GENERATOR} from "../updates/Update1";
 import {DomainResolver} from "./DomainResolver";
 
 interface IATEntityOptions {
@@ -45,11 +44,15 @@ export class ERImport {
     this._erModel = erModel;
   }
 
-  public static _getFieldName(attr: Attribute): string {
-    if (ScalarAttribute.isType(attr)) {
-      if (attr.adapter) return attr.adapter.field;
-    } else if (SetAttribute.isType(attr)) {
+  public static _getTableName(entity: Entity): string {
+    return entity.adapter ? entity.adapter.relation[entity.adapter.relation.length - 1].relationName : entity.name;
+  }
+
+  private static _getFieldName(attr: Attribute): string {
+    if (SetAttribute.isType(attr)) {
       if (attr.adapter && attr.adapter.presentationField) return attr.adapter.presentationField;
+    } else if (EntityAttribute.isType(attr) || ScalarAttribute.isType(attr)) {
+      if (attr.adapter) return attr.adapter.field;
     }
     return attr.name;
   }
@@ -92,7 +95,7 @@ export class ERImport {
   private async _createERSchema(): Promise<void> {
     for (const sequence of Object.values(this._erModel.sequencies)) {
       const sequenceName = sequence.adapter ? sequence.adapter.sequence : sequence.name;
-      if (sequenceName !== GLOBAL_GENERATOR) {
+      if (sequenceName !== Constants.GLOBAL_GENERATOR) {
         await this._getDDLHelper().addSequence(sequenceName);
       }
     }
@@ -103,23 +106,20 @@ export class ERImport {
 
     for (const entity of Object.values(this._erModel.entities)) {
       await this._addLinks(entity);
-    }
-
-    for (const entity of Object.values(this._erModel.entities)) {
       await this._addUnique(entity);
     }
   }
 
   private async _addUnique(entity: Entity): Promise<void> {
-    const tableName = entity.name;
+    const tableName = ERImport._getTableName(entity);
     for (const attrs of entity.unique) {
       await this._getDDLHelper().addUnique(tableName, attrs.map((attr) => ERImport._getFieldName(attr)));
     }
   }
 
   private async _addLinks(entity: Entity): Promise<void> {
-    const tableName = entity.name;
-    for (const attr of Object.values(entity.attributes).filter((attr) => EntityAttribute.isType(attr))) {
+    const tableName = ERImport._getTableName(entity);
+    for (const attr of Object.values(entity.ownAttributes).filter((attr) => EntityAttribute.isType(attr))) {
       if (DetailAttribute.isType(attr)) {
         const fieldName = ERImport._getFieldName(entity.pk[0]);
         const adapter = attr.adapter;
@@ -168,7 +168,7 @@ export class ERImport {
         }
 
         const pkFields: IFieldProps[] = [];
-        const refPKDomainName = await this._getDDLHelper().addDomain(DomainResolver.resolve(attr.entity[0].pk[0]));
+        const refPKDomainName = await this._getDDLHelper().addDomain(DomainResolver.resolve(attr.entities[0].pk[0]));
         const refPK = {
           name: Constants.DEFAULT_CROSS_PK_REF_NAME,
           domain: refPKDomainName
@@ -192,6 +192,7 @@ export class ERImport {
           relationType: "T",
           lName: crossTableName,
           description: crossTableName,
+          entityName: undefined,
           semCategory: undefined
         });
 
@@ -212,53 +213,72 @@ export class ERImport {
           tableName: crossTableName,
           fieldName: Constants.DEFAULT_CROSS_PK_OWN_NAME
         }, {
-          tableName: entity.name,
+          tableName: ERImport._getTableName(entity),
           fieldName: ERImport._getFieldName(entity.pk[0])
         });
         await this._getDDLHelper().addForeignKey({
           tableName: crossTableName,
           fieldName: Constants.DEFAULT_CROSS_PK_REF_NAME
         }, {
-          tableName: attr.entity[0].name,
-          fieldName: ERImport._getFieldName(attr.entity[0].pk[0])
+          tableName: ERImport._getTableName(attr.entities[0]),
+          fieldName: ERImport._getFieldName(attr.entities[0].pk[0])
         });
 
-      } else if (ParentAttribute.isType(attr) || EntityAttribute.isType(attr)) {
+      } else if (ParentAttribute.isType(attr)) {
+        // TODO
+      } else if (EntityAttribute.isType(attr)) {
         const fieldName = ERImport._getFieldName(attr);
-        const domainName = await this._getDDLHelper().addDomain(DomainResolver.resolve(attr));
-        await this._getDDLHelper().addColumns(tableName, [{name: fieldName, domain: domainName}]);
         await this._getDDLHelper().addForeignKey({
           tableName,
           fieldName
         }, {
-          tableName: attr.entity[0].name,
-          fieldName: ERImport._getFieldName(attr.entity[0].pk[0])
+          tableName: attr.entities[0].name,
+          fieldName: ERImport._getFieldName(attr.entities[0].pk[0])
         });
-        await this._bindATAttr(attr, {relationName: tableName, fieldName, domainName});
       }
     }
   }
 
   private async _addEntity(entity: Entity): Promise<void> {
-    const tableName = entity.name;
+    const tableName = ERImport._getTableName(entity);
 
     const fields: IFieldProps[] = [];
     const pkFields: IFieldProps[] = [];
     const seqAttrs: SequenceAttribute[] = [];
-    for (const attr of Object.values(entity.attributes).filter((attr) => ScalarAttribute.isType(attr))) {
-      const domainName = await this._getDDLHelper().addDomain(DomainResolver.resolve(attr));
-      const fieldName = ERImport._getFieldName(attr);
-      await this._bindATAttr(attr, {relationName: tableName, fieldName, domainName});
-      if (SequenceAttribute.isType(attr)) {
-        seqAttrs.push(attr);
-      }
-      const field = {
-        name: fieldName,
-        domain: domainName
-      };
-      fields.push(field);
-      if (entity.pk.includes(attr)) {
-        pkFields.push(field);
+    for (const attr of Object.values(entity.ownAttributes)) {
+      if (ScalarAttribute.isType(attr)) {
+        const domainName = await this._getDDLHelper().addDomain(DomainResolver.resolve(attr));
+        const fieldName = ERImport._getFieldName(attr);
+        await this._bindATAttr(attr, {relationName: tableName, fieldName, domainName});
+        if (SequenceAttribute.isType(attr)) {
+          seqAttrs.push(attr);
+        }
+        const field = {
+          name: fieldName,
+          domain: domainName
+        };
+        fields.push(field);
+        if (entity.pk.includes(attr)) {
+          pkFields.push(field);
+        }
+      } else if (DetailAttribute.isType(attr)) {
+        // ignore
+      } else if (SetAttribute.isType(attr)) {
+        // ignore
+      } else if (ParentAttribute.isType(attr)) {
+        // TODO
+      } else if (EntityAttribute.isType(attr)) {
+        const domainName = await this._getDDLHelper().addDomain(DomainResolver.resolve(attr));
+        const fieldName = ERImport._getFieldName(attr);
+        await this._bindATAttr(attr, {relationName: tableName, fieldName, domainName});
+        const field = {
+          name: fieldName,
+          domain: domainName
+        };
+        fields.push(field);
+        if (entity.pk.includes(attr)) {
+          pkFields.push(field);
+        }
       }
     }
     await this._getDDLHelper().addTable(tableName, fields);
@@ -279,6 +299,7 @@ export class ERImport {
       relationType: "T",
       lName: entity.lName.ru ? entity.lName.ru.name : entity.name,
       description: entity.lName.ru ? entity.lName.ru.fullName : entity.name,
+      entityName: options.relationName !== entity.name ? entity.name : undefined,
       semCategory: undefined
     });
   }

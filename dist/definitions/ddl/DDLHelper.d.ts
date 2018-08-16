@@ -37,7 +37,7 @@ export declare class DDLHelper {
     addForeignKey(from: IRelation, to: IRelation): Promise<string>;
     addForeignKey(constraintName: string, from: IRelation, to: IRelation): Promise<string>;
     addDomain(props: IDomainProps): Promise<string>;
-    addDomain(domainName: string, pros: IDomainProps): Promise<string>;
+    addDomain(domainName: string, props: IDomainProps): Promise<string>;
     addAutoIncrementTrigger(tableName: string, fieldName: string, sequenceName: string): Promise<void>;
     addAutoIncrementTrigger(triggerName: string, tableName: string, fieldName: string, sequenceName: string): Promise<void>;
 }

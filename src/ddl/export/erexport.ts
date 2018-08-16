@@ -4,24 +4,24 @@ import {
   adjustName,
   appendAdapter,
   Attribute,
-  AttributeAdapter,
+  IAttributeAdapter,
   BlobAttribute,
   BooleanAttribute,
   condition2Selectors,
-  CrossRelations,
+  ICrossRelations,
   DateAttribute,
   DetailAttribute,
   Entity,
-  EntityAdapter,
+  IEntityAdapter,
   EntityAttribute,
-  EntitySelector,
+  IEntitySelector,
   EnumAttribute,
   ERModel,
   FloatAttribute,
   hasField,
   IntegerAttribute,
   isUserDefined,
-  LName,
+  ILName,
   MAX_16BIT_INT,
   MAX_32BIT_INT,
   MAX_64BIT_INT,
@@ -37,21 +37,21 @@ import {
   Sequence,
   SequenceAttribute,
   SetAttribute,
-  SetAttributeAdapter,
+  ISetAttributeAdapter,
   StringAttribute,
   systemFields,
   TimeAttribute,
   TimeStampAttribute
 } from "gdmn-orm";
 import {Constants} from "../Constants";
-import {GLOBAL_GENERATOR} from "../updates/Update1";
-import {atRelationField, load} from "./atdata";
+import {IATRelationField, load} from "./atData";
 import {loadDocument} from "./document";
 import {gdDomains} from "./gddomains";
 import {gedeminTables} from "./gdtables";
 import {
   check2DateRange,
   check2Enum,
+  check2IntRange,
   check2NumberRange,
   check2StrMin,
   check2TimeRange,
@@ -69,9 +69,9 @@ import {
 
 export async function erExport(dbs: DBStructure, connection: AConnection, transaction: ATransaction, erModel: ERModel): Promise<ERModel> {
 
-  const {atfields, atrelations} = await load(connection, transaction);
+  const {atFields, atRelations} = await load(connection, transaction);
 
-  const crossRelationsAdapters: CrossRelations = {
+  const crossRelationsAdapters: ICrossRelations = {
     "GD_CONTACTLIST": {
       owner: "GD_CONTACT",
       selector: {
@@ -90,10 +90,10 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
    * Если имя генератора совпадает с именем объекта в БД, то адаптер можем не указывать.
    */
 
-  const GDGUnique = erModel.addSequence(new Sequence({name: GLOBAL_GENERATOR}));
+  const GDGUnique = erModel.addSequence(new Sequence({name: Constants.GLOBAL_GENERATOR}));
   erModel.addSequence(new Sequence({name: "Offset", sequence: "GD_G_OFFSET"}));
 
-  function findEntities(relationName: string, selectors: EntitySelector[] = []): Entity[] {
+  function findEntities(relationName: string, selectors: IEntitySelector[] = []): Entity[] {
     const found = Object.entries(erModel.entities).reduce((p, e) => {
       if (e[1].adapter) {
         e[1].adapter.relation.forEach(r => {
@@ -121,15 +121,15 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
     return found;
   }
 
-  function createEntity(parent: Entity | undefined, adapter: EntityAdapter,
-                        abstract?: boolean, entityName?: string, lName?: LName, semCategories: SemCategory[] = [], attributes?: Attribute[]): Entity {
+  function createEntity(parent: Entity | undefined, adapter: IEntityAdapter,
+                        abstract?: boolean, entityName?: string, lName?: ILName, semCategories: SemCategory[] = [], attributes?: Attribute[]): Entity {
     if (!abstract) {
-      const found = Object.entries(erModel.entities).find(
-        e => !e[1].isAbstract && sameAdapter(adapter, e[1].adapter)
+      const found = Object.values(erModel.entities).find(
+        (entity) => !entity.isAbstract && sameAdapter(adapter, entity.adapter)
       );
 
       if (found) {
-        return found[1];
+        return found;
       }
     }
 
@@ -139,8 +139,9 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
       throw new Error("Invalid entity adapter");
     }
 
-    const name = adjustName(entityName ? entityName : relation.relationName);
-    const atRelation = atrelations[relation.relationName];
+    const atRelation = atRelations[relation.relationName];
+    // for custom entity names
+    const name = adjustName(entityName || atRelation.entityName || relation.relationName);
     const fake = relationName2Adapter(name);
 
     const entity = new Entity({
@@ -160,6 +161,18 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
           sequence: GDGUnique
         })
       );
+    } else {
+      entity.add(
+        new SequenceAttribute({
+          name: Constants.DEFAULT_ID_NAME,
+          lName: {ru: {name: "Идентификатор"}},
+          sequence: GDGUnique,
+          adapter: {
+            relation: entity.adapter.relation[entity.adapter.relation.length - 1].relationName,
+            field: Constants.DEFAULT_INHERITED_KEY_NAME
+          }
+        })
+      );
     }
 
     if (attributes) {
@@ -169,7 +182,7 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
     return erModel.add(entity);
   }
 
-  Object.keys(atrelations).forEach((item) => createEntity(undefined, relationName2Adapter(item)));
+  Object.keys(atRelations).forEach((item) => createEntity(undefined, relationName2Adapter(item)));
 
   /**
    * Простейший случай таблицы. Никаких ссылок.
@@ -597,7 +610,7 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
           : relationNames2Adapter(parentRelation.map(p => p.name));
         recursInherited(newParent, createEntity(parentEntity,
           appendAdapter(parentAdapter, inherited.name), false,
-          inherited.name, atrelations[inherited.name] ? atrelations[inherited.name].lName : {}));
+          inherited.name, atRelations[inherited.name] ? atRelations[inherited.name].lName : {}));
       }
     }, true);
   }
@@ -615,12 +628,12 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
 
   function createAttribute(r: Relation,
                            rf: RelationField,
-                           atRelationField: atRelationField | undefined,
+                           atRelationField: IATRelationField | undefined,
                            attrName: string,
                            semCategories: SemCategory[],
-                           adapter: AttributeAdapter | undefined) {
+                           adapter: IAttributeAdapter | undefined) {
     const name = adjustName(attrName);
-    const atField = atfields[rf.fieldSource];
+    const atField = atFields[rf.fieldSource];
     const fieldSource = dbs.fields[rf.fieldSource];
     const required: boolean = rf.notNull || fieldSource.notNull;
     const defaultValueSource: string | null = rf.defaultSource || fieldSource.defaultSource;
@@ -635,22 +648,22 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
     // numeric and decimal
     if (fieldSource.fieldSubType === 1 || fieldSource.fieldSubType === 2) {
       const factor = Math.pow(10, Math.abs(fieldSource.fieldScale));
-      let range: IRange<number> | undefined;
+      let range: IRange<number | undefined> | undefined;
       switch (fieldSource.fieldType) {
         case FieldType.SMALL_INTEGER:
-          range = check2NumberRange(fieldSource.validationSource, {
+          range = check2IntRange(fieldSource.validationSource, {
             min: MIN_16BIT_INT * factor,
             max: MAX_16BIT_INT * factor
           });
           break;
         case FieldType.INTEGER:
-          range = check2NumberRange(fieldSource.validationSource, {
+          range = check2IntRange(fieldSource.validationSource, {
             min: MIN_32BIT_INT * factor,
             max: MAX_32BIT_INT * factor
           });
           break;
         case FieldType.BIG_INTEGER:
-          range = check2NumberRange(fieldSource.validationSource, {
+          range = check2IntRange(fieldSource.validationSource, {
             min: MIN_64BIT_INT * factor,
             max: MAX_64BIT_INT * factor
           });
@@ -668,6 +681,26 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
     }
 
     switch (fieldSource.fieldType) {
+      case FieldType.SMALL_INTEGER: {
+        if (isCheckForBoolean(fieldSource.validationSource)) {
+          const defaultValue = default2Boolean(defaultValueSource);
+          return new BooleanAttribute({name, lName, required, defaultValue, semCategories, adapter});
+        }
+        const {minValue, maxValue} = check2IntRange(fieldSource.validationSource, {
+          min: MIN_16BIT_INT,
+          max: MAX_16BIT_INT
+        });
+        const defaultValue = default2Int(defaultValueSource);
+        return new IntegerAttribute({name, lName, required, minValue, maxValue, defaultValue, semCategories, adapter});
+      }
+      case FieldType.BIG_INTEGER: {
+        const {minValue, maxValue} = check2IntRange(fieldSource.validationSource, {
+          min: MIN_64BIT_INT,
+          max: MAX_64BIT_INT
+        });
+        const defaultValue = default2Int(defaultValueSource);
+        return new IntegerAttribute({name, lName, required, minValue, maxValue, defaultValue, semCategories, adapter});
+      }
       case FieldType.INTEGER: {
         const fk = Object.entries(r.foreignKeys).find(
           ([, f]) => !!f.fields.find(fld => fld === name)
@@ -687,7 +720,7 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
           }
           return new EntityAttribute({name, lName, required, entities: refEntities, semCategories, adapter});
         } else {
-          const {minValue, maxValue} = check2NumberRange(fieldSource.validationSource, {
+          const {minValue, maxValue} = check2IntRange(fieldSource.validationSource, {
             min: MIN_32BIT_INT,
             max: MAX_32BIT_INT
           });
@@ -751,31 +784,12 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
         const defaultValue = default2Float(defaultValueSource);
         return new FloatAttribute({name, lName, required, minValue, maxValue, defaultValue, semCategories, adapter});
       }
-      case FieldType.SMALL_INTEGER: {
-        if (isCheckForBoolean(fieldSource.validationSource)) {
-          const defaultValue = default2Boolean(defaultValueSource);
-          return new BooleanAttribute({name, lName, required, defaultValue, semCategories, adapter});
-        }
-        const {minValue, maxValue} = check2NumberRange(fieldSource.validationSource, {
-          min: MIN_16BIT_INT,
-          max: MAX_16BIT_INT
-        });
-        const defaultValue = default2Int(defaultValueSource);
-        return new IntegerAttribute({name, lName, required, minValue, maxValue, defaultValue, semCategories, adapter});
-      }
-      case FieldType.BIG_INTEGER: {
-        const {minValue, maxValue} = check2NumberRange(fieldSource.validationSource, {
-          min: MIN_64BIT_INT,
-          max: MAX_64BIT_INT
-        });
-        const defaultValue = default2Int(defaultValueSource);
-        return new IntegerAttribute({name, lName, required, minValue, maxValue, defaultValue, semCategories, adapter});
-      }
       case FieldType.BLOB: {
         if (fieldSource.fieldSubType === 1) {
+          const minLength = check2StrMin(fieldSource.validationSource);
           const defaultValue = default2String(defaultValueSource);
           return new StringAttribute({
-            name, lName, required, minLength: 0,
+            name, lName, required, minLength: minLength,
             defaultValue, autoTrim: false, semCategories, adapter
           });
         }
@@ -792,7 +806,7 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
     relations.forEach(r => {
       if (!r || !r.primaryKey) return;
 
-      const atRelation = atrelations[r.name];
+      const atRelation = atRelations[r.name];
 
       Object.entries(r.relationFields).forEach(([fn, rf]) => {
         if (r.primaryKey!.fields.find(f => f === fn)) return;
@@ -828,7 +842,7 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
           const masterEntity = erModel.entity(atRelationField.masterEntityName);  // TODO
 
           const attributeName = adjustName(attrName);
-          const atField = atfields[rf.fieldSource];
+          const atField = atFields[rf.fieldSource];
           const fieldSource = dbs.fields[rf.fieldSource];
           const required: boolean = rf.notNull || fieldSource.notNull;
           const lName = atRelationField ? atRelationField.lName : (atField ? atField.lName : {});
@@ -907,7 +921,7 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
       if (!fkReference) return;
 
       const relOwner = dbs.relationByUqConstraint(fkOwner[1].constNameUq);
-      const atRelOwner = atrelations[relOwner.name];
+      const atRelOwner = atRelations[relOwner.name];
 
       if (!atRelOwner) return;
 
@@ -928,11 +942,11 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
 
       const relReference = dbs.relationByUqConstraint(fkReference[1].constNameUq);
 
-      let cond: EntitySelector[] | undefined;
+      let cond: IEntitySelector[] | undefined;
       const atSetField = Object.entries(atRelOwner.relationFields).find(
         rf => rf[1].crossTable === crossName
       );
-      const atSetFieldSource = atSetField ? atfields[atSetField[1].fieldSource] : undefined;
+      const atSetFieldSource = atSetField ? atFields[atSetField[1].fieldSource] : undefined;
       if (atSetFieldSource && atSetFieldSource.setTable === relReference.name && atSetFieldSource.setCondition) {
         cond = condition2Selectors(atSetFieldSource.setCondition);
       }
@@ -945,7 +959,7 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
 
       const setField = atSetField ? relOwner.relationFields[atSetField[0]] : undefined;
       const setFieldSource = setField ? dbs.fields[setField.fieldSource] : undefined;
-      const atCrossRelation = atrelations[crossName];
+      const atCrossRelation = atRelations[crossName];
 
       entitiesOwner.forEach(e => {
         if (!Object.values(e.attributes).find((attr) =>
@@ -953,7 +967,7 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
 
           // for custom set field
           let name = atSetField && atSetField[0] || crossName;
-          const setAdapter: SetAttributeAdapter = {crossRelation: crossName};
+          const setAdapter: ISetAttributeAdapter = {crossRelation: crossName};
           if (atSetField) {
             const [a, atSetRelField] = atSetField;
             name = atSetRelField && atSetRelField.attrName || name;

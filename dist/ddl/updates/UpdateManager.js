@@ -4,9 +4,11 @@ const gdmn_db_1 = require("gdmn-db");
 const Update1_1 = require("./Update1");
 const Update2_1 = require("./Update2");
 const Update3_1 = require("./Update3");
+const Update4_1 = require("./Update4");
 class UpdateManager {
     constructor() {
         this._updatesConstructors = [
+            Update4_1.Update4,
             Update3_1.Update3,
             Update2_1.Update2,
             Update1_1.Update1
@@ -72,6 +74,6 @@ class UpdateManager {
         return await result.getNumber("VERSION");
     }
 }
-UpdateManager.CURRENT_DATABASE_VERSION = 3;
+UpdateManager.CURRENT_DATABASE_VERSION = 4;
 exports.UpdateManager = UpdateManager;
 //# sourceMappingURL=UpdateManager.js.map

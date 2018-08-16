@@ -8,13 +8,13 @@
 
 import {AConnection, AResultSet, ATransaction} from "gdmn-db";
 import {SemCategory, str2SemCategories} from "gdmn-nlp";
-import {LName, TName} from "gdmn-orm";
+import {ILName, ITName} from "gdmn-orm";
 
 /**
  * Дополнительная информация по доменам.
  */
-export interface atField {
-  lName: LName;
+export interface IATField {
+  lName: ILName;
   refTable: string | undefined;
   refCondition: string | undefined;
   setTable: string | undefined;
@@ -23,18 +23,18 @@ export interface atField {
   numeration: string | undefined;
 }
 
-export interface atFields {
-  [fieldName: string]: atField;
+export interface IATFields {
+  [fieldName: string]: IATField;
 }
 
 /**
  * Дополнительная информация по полям таблиц.
  */
-export interface atRelationField {
+export interface IATRelationField {
   attrName: string | undefined;
   masterEntityName: string | undefined;
   isParent: boolean;
-  lName: LName;
+  lName: ILName;
   fieldSource: string;
   fieldSourceKey: number;
   crossTable: string | undefined;
@@ -43,28 +43,34 @@ export interface atRelationField {
   semCategories: SemCategory[];
 }
 
-export interface atRelationFields {
-  [fieldName: string]: atRelationField;
+export interface IATRelationFields {
+  [fieldName: string]: IATRelationField;
 }
 
 /**
  * Дополнительная информация по таблицам.
  */
-export interface atRelation {
-  lName: LName;
+export interface IATRelation {
+  lName: ILName;
+  entityName: string | undefined;
   semCategories: SemCategory[];
-  relationFields: atRelationFields;
+  relationFields: IATRelationFields;
 }
 
-export interface atRelations {
-  [relationName: string]: atRelation;
+export interface IATRelations {
+  [relationName: string]: IATRelation;
+}
+
+export interface IATLoadResult {
+  atFields: IATFields;
+  atRelations: IATRelations;
 }
 
 const getTrimmedStringFunc = (resultSet: AResultSet) =>
   (fieldName: string) => resultSet.isNull(fieldName) ? undefined : resultSet.getString(fieldName).trim();
 
-export async function load(connection: AConnection, transaction: ATransaction) {
-  const atfields = await AConnection.executeQueryResultSet({
+export async function load(connection: AConnection, transaction: ATransaction): Promise<IATLoadResult> {
+  const atFields = await AConnection.executeQueryResultSet({
     connection,
     transaction,
     sql: `
@@ -82,9 +88,9 @@ export async function load(connection: AConnection, transaction: ATransaction) {
         AT_FIELDS`,
     callback: async (resultSet) => {
       const getTrimmedString = getTrimmedStringFunc(resultSet);
-      const fields: atFields = {};
+      const fields: IATFields = {};
       while (await resultSet.next()) {
-        const ru: TName = {name: resultSet.getString("LNAME")};
+        const ru: ITName = {name: resultSet.getString("LNAME")};
         const fullName = getTrimmedString("DESCRIPTION");
         if (fullName) {
           ru.fullName = fullName;
@@ -103,7 +109,7 @@ export async function load(connection: AConnection, transaction: ATransaction) {
     }
   });
 
-  const atrelations = await AConnection.executeQueryResultSet({
+  const atRelations = await AConnection.executeQueryResultSet({
     connection,
     transaction,
     sql: `
@@ -112,20 +118,22 @@ export async function load(connection: AConnection, transaction: ATransaction) {
         RELATIONNAME,
         LNAME,
         DESCRIPTION,
+        ENTITYNAME,
         SEMCATEGORY
       FROM
         AT_RELATIONS`,
     callback: async (resultSet) => {
       const getTrimmedString = getTrimmedStringFunc(resultSet);
-      const relations: atRelations = {};
+      const relations: IATRelations = {};
       while (await resultSet.next()) {
-        const ru: TName = {name: resultSet.getString("LNAME")};
+        const ru: ITName = {name: resultSet.getString("LNAME")};
         const fullName = getTrimmedString("DESCRIPTION");
         if (fullName) {
           ru.fullName = fullName;
         }
         relations[resultSet.getString("RELATIONNAME")] = {
           lName: {ru},
+          entityName: getTrimmedString("ENTITYNAME"),
           semCategories: str2SemCategories(resultSet.getString("SEMCATEGORY")),
           relationFields: {}
         };
@@ -159,15 +167,15 @@ export async function load(connection: AConnection, transaction: ATransaction) {
     callback: async (resultSet) => {
       const getTrimmedString = getTrimmedStringFunc(resultSet);
       let relationName: string = "";
-      let rel: atRelation;
+      let rel: IATRelation;
       while (await resultSet.next()) {
         if (relationName !== resultSet.getString("RELATIONNAME")) {
           relationName = resultSet.getString("RELATIONNAME");
-          rel = atrelations[relationName];
+          rel = atRelations[relationName];
           if (!rel) throw new Error(`Unknown relation ${relationName}`);
         }
         const fieldName = resultSet.getString("FIELDNAME");
-        const ru: TName = {name: resultSet.getString("LNAME")};
+        const ru: ITName = {name: resultSet.getString("LNAME")};
         const fullName = getTrimmedString("DESCRIPTION");
         if (fullName) {
           ru.fullName = fullName;
@@ -188,5 +196,5 @@ export async function load(connection: AConnection, transaction: ATransaction) {
     }
   });
 
-  return {atfields, atrelations};
+  return {atFields, atRelations};
 }

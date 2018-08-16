@@ -1,5 +1,8 @@
 export declare class Constants {
+    static GLOBAL_GENERATOR: string;
+    static GLOBAL_DDL_GENERATOR: string;
     static DEFAULT_ID_NAME: string;
+    static DEFAULT_INHERITED_KEY_NAME: string;
     static DEFAULT_MASTER_KEY_NAME: string;
     static DEFAULT_PARENT_KEY_NAME: string;
     static DEFAULT_CROSS_PK_OWN_NAME: string;

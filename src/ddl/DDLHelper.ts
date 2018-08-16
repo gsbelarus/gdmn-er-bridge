@@ -136,7 +136,7 @@ export class DDLHelper {
   }
 
   public async addDomain(props: IDomainProps): Promise<string>;
-  public async addDomain(domainName: string, pros: IDomainProps): Promise<string>;
+  public async addDomain(domainName: string, props: IDomainProps): Promise<string>;
   public async addDomain(domainName: any, props?: any): Promise<string> {
     if (!props) {
       props = domainName;

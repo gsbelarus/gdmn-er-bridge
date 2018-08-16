@@ -20,6 +20,7 @@ export interface IInputATRelations {
     relationType: "T" | "V" | undefined;
     lName: string;
     description: string | undefined;
+    entityName: string | undefined;
     semCategory: string | undefined;
 }
 export interface IInputATFields {

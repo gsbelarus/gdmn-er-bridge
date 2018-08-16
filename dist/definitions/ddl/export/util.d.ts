@@ -1,17 +1,21 @@
 import { ContextVariables } from "gdmn-orm";
 export interface IRange<T> {
-    minValue: T | undefined;
-    maxValue: T | undefined;
+    minValue: T;
+    maxValue: T;
 }
 export declare function isCheckForBoolean(validationSource: string | null): boolean;
 export declare function check2Enum(validationSource: string | null): string[];
 export declare function check2StrMin(validationSource: string | null): number | undefined;
+export declare function check2IntRange(validationSource: string | null, rangeLimit?: {
+    min: number;
+    max: number;
+}): IRange<number | undefined>;
 export declare function check2NumberRange(validationSource: string | null, rangeLimit?: {
     min: number;
     max: number;
-}): IRange<number>;
+}): IRange<number | undefined>;
 export declare function check2TimestampRange(validationSource: string | null): IRange<Date>;
-export declare function check2TimeRange(validationSource: string | null): IRange<Date>;
+export declare function check2TimeRange(validationSource: string | null): IRange<Date | undefined>;
 export declare function check2DateRange(validationSource: string | null): IRange<Date>;
 export declare function checkRange(validationSource: string | null): {
     min: string | undefined;

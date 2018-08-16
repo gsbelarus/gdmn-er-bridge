@@ -64,7 +64,11 @@ export class DomainResolver {
     } else if (BooleanAttribute.isType(attr)) {
       expr = `SMALLINT`;
     } else if (StringAttribute.isType(attr)) {
-      expr = `VARCHAR(${attr.maxLength})`;
+      if (attr.maxLength === undefined) {
+        expr = `BLOB SUB_TYPE TEXT`;
+      } else {
+        expr = `VARCHAR(${attr.maxLength})`;
+      }
     } else if (BlobAttribute.isType(attr)) {
       expr = `BLOB`;
     } else {

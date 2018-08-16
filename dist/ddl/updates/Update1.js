@@ -1,9 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const Constants_1 = require("../Constants");
 const DDLHelper_1 = require("../DDLHelper");
-const Prefix_1 = require("../Prefix");
 const BaseUpdate_1 = require("./BaseUpdate");
-exports.GLOBAL_GENERATOR = Prefix_1.Prefix.join("UNIQUE", Prefix_1.Prefix.GDMN, Prefix_1.Prefix.GENERATOR);
 // Update for creating gedemin database
 class Update1 extends BaseUpdate_1.BaseUpdate {
     constructor() {
@@ -13,7 +12,7 @@ class Update1 extends BaseUpdate_1.BaseUpdate {
     async run() {
         await this._executeTransaction(async (transaction) => {
             const ddlHelper = new DDLHelper_1.DDLHelper(this._connection, transaction);
-            await ddlHelper.addSequence(exports.GLOBAL_GENERATOR);
+            await ddlHelper.addSequence(Constants_1.Constants.GLOBAL_GENERATOR);
             await ddlHelper.addDomain("DINTKEY", { type: "INTEGER", notNull: true, check: "CHECK (VALUE > 0)" });
             await ddlHelper.addDomain("DPARENT", { type: "INTEGER" });
             await ddlHelper.addDomain("DFOREIGNKEY", { type: "INTEGER" });
@@ -47,7 +46,7 @@ class Update1 extends BaseUpdate_1.BaseUpdate {
                 { name: "NUMERATION", domain: "DNUMERATIONBLOB" }
             ]);
             await ddlHelper.addPrimaryKey("AT_PK_FIELDS", "AT_FIELDS", ["ID"]);
-            await ddlHelper.addAutoIncrementTrigger("AT_BI_FIELDS", "AT_FIELDS", "ID", exports.GLOBAL_GENERATOR);
+            await ddlHelper.addAutoIncrementTrigger("AT_BI_FIELDS", "AT_FIELDS", "ID", Constants_1.Constants.GLOBAL_GENERATOR);
             await ddlHelper.addTable("AT_RELATIONS", [
                 { name: "ID", domain: "DINTKEY" },
                 { name: "RELATIONNAME", domain: "DTABLENAME", notNull: true },
@@ -57,7 +56,7 @@ class Update1 extends BaseUpdate_1.BaseUpdate {
                 { name: "SEMCATEGORY", domain: "DTEXT60" }
             ]);
             await ddlHelper.addPrimaryKey("AT_PK_RELATIONS", "AT_RELATIONS", ["ID"]);
-            await ddlHelper.addAutoIncrementTrigger("AT_BI_RELATIONS", "AT_RELATIONS", "ID", exports.GLOBAL_GENERATOR);
+            await ddlHelper.addAutoIncrementTrigger("AT_BI_RELATIONS", "AT_RELATIONS", "ID", Constants_1.Constants.GLOBAL_GENERATOR);
             await ddlHelper.addTable("AT_RELATION_FIELDS", [
                 { name: "ID", domain: "DINTKEY" },
                 { name: "FIELDNAME", domain: "DFIELDNAME", notNull: true },
@@ -72,7 +71,7 @@ class Update1 extends BaseUpdate_1.BaseUpdate {
                 { name: "CROSSFIELD", domain: "DFIELDNAME" }
             ]);
             await ddlHelper.addPrimaryKey("AT_PK_RELATION_FIELDS", "AT_RELATION_FIELDS", ["ID"]);
-            await ddlHelper.addAutoIncrementTrigger("AT_BI_RELATION_FIELDS", "AT_RELATION_FIELDS", "ID", exports.GLOBAL_GENERATOR);
+            await ddlHelper.addAutoIncrementTrigger("AT_BI_RELATION_FIELDS", "AT_RELATION_FIELDS", "ID", Constants_1.Constants.GLOBAL_GENERATOR);
             // await ddlHelper.addTable("GD_DOCUMENTTYPE", [
             //   {name: "ID", domain: "DINTKEY"},
             //   {name: "RUID", domain: "DRUID"},

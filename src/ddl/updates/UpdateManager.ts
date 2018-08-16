@@ -3,14 +3,16 @@ import {BaseUpdate} from "./BaseUpdate";
 import {Update1} from "./Update1";
 import {Update2} from "./Update2";
 import {Update3} from "./Update3";
+import {Update4} from "./Update4";
 
 export type UpdateConstructor = new (connection: AConnection) => BaseUpdate;
 
 export class UpdateManager {
 
-  public static readonly CURRENT_DATABASE_VERSION = 3;
+  public static readonly CURRENT_DATABASE_VERSION = 4;
 
   private readonly _updatesConstructors: UpdateConstructor[] = [
+    Update4,
     Update3,
     Update2,
     Update1

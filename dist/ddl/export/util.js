@@ -55,6 +55,15 @@ function check2StrMin(validationSource) {
     }
 }
 exports.check2StrMin = check2StrMin;
+function check2IntRange(validationSource, rangeLimit) {
+    switch (validationSource) {
+        case "CHECK (VALUE > 0)":
+            return { minValue: 1, maxValue: rangeLimit && rangeLimit.max !== undefined ? rangeLimit.max : undefined };
+        default:
+            return check2NumberRange(validationSource, rangeLimit);
+    }
+}
+exports.check2IntRange = check2IntRange;
 function check2NumberRange(validationSource, rangeLimit) {
     const { min, max } = rangeLimit || { min: undefined, max: undefined };
     const range = checkRange(validationSource);
