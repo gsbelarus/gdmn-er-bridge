@@ -516,16 +516,30 @@ async function erExport(dbs, connection, transaction, erModel) {
                 return new gdmn_orm_1.IntegerAttribute({ name, lName, required, minValue, maxValue, defaultValue, semCategories, adapter });
             }
             case gdmn_db_1.FieldType.INTEGER: {
-                const fk = Object.entries(r.foreignKeys).find(([, f]) => !!f.fields.find(fld => fld === name));
-                if (fk && fk[1].fields.length === 1) {
-                    const refRelationName = dbs.relationByUqConstraint(fk[1].constNameUq).name;
+                const fieldName = adapter ? adapter.field : name;
+                const fk = Object.values(r.foreignKeys).find((fk) => fk.fields.includes(fieldName));
+                if (fk && fk.fields.length === 1) {
+                    const refRelationName = dbs.relationByUqConstraint(fk.constNameUq).name;
                     const cond = atField && atField.refCondition ? gdmn_orm_1.condition2Selectors(atField.refCondition) : undefined;
                     const refEntities = findEntities(refRelationName, cond);
                     if (!refEntities.length) {
                         console.warn(`${r.name}.${rf.name}: no entities for table ${refRelationName}${cond ? ", condition: " + JSON.stringify(cond) : ""}`);
                     }
                     if (atRelationField && atRelationField.isParent) {
-                        return new gdmn_orm_1.ParentAttribute({ name, lName, entities: refEntities, semCategories, adapter });
+                        let parentAttrAdapter;
+                        const lbField = atRelationField.lbFieldName || Constants_1.Constants.DEFAULT_LB_NAME;
+                        const rbField = atRelationField.rbFieldName || Constants_1.Constants.DEFAULT_RB_NAME;
+                        if (adapter) {
+                            parentAttrAdapter = { ...adapter, lbField, rbField };
+                        }
+                        else if (atRelationField.lbFieldName || atRelationField.rbFieldName) {
+                            parentAttrAdapter = {
+                                relation: r.name,
+                                field: rf.name,
+                                lbField, rbField
+                            };
+                        }
+                        return new gdmn_orm_1.ParentAttribute({ name, lName, entities: refEntities, semCategories, adapter: parentAttrAdapter });
                     }
                     return new gdmn_orm_1.EntityAttribute({ name, lName, required, entities: refEntities, semCategories, adapter });
                 }
@@ -616,8 +630,11 @@ async function erExport(dbs, connection, transaction, erModel) {
             Object.entries(r.relationFields).forEach(([fn, rf]) => {
                 if (r.primaryKey.fields.find(f => f === fn))
                     return;
-                if (fn === "LB" || fn === "RB")
+                if (Object.values(atRelation.relationFields)
+                    .some((atRf) => (atRf.lbFieldName === rf.name || atRf.rbFieldName === rf.name))
+                    || rf.name === Constants_1.Constants.DEFAULT_LB_NAME || rf.name === Constants_1.Constants.DEFAULT_RB_NAME) {
                     return;
+                }
                 if (entity.hasAttribute(fn))
                     return;
                 if (!gdmn_orm_1.hasField(entity.adapter, r.name, fn)

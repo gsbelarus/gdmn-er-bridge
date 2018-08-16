@@ -1,4 +1,4 @@
-import { AConnection, ATransaction } from "gdmn-db";
+import { AConnection, ATransaction, DeleteRule, UpdateRule } from "gdmn-db";
 import { DDLUniqueGenerator } from "./DDLUniqueGenerator";
 export interface IColumnsProps {
     notNull?: boolean;
@@ -16,7 +16,13 @@ export interface IRelation {
     tableName: string;
     fieldName: string;
 }
+export interface IFKOptions {
+    onUpdate: UpdateRule;
+    onDelete: DeleteRule;
+}
+export declare type Sorting = "ASC" | "DESC";
 export declare class DDLHelper {
+    static DEFAULT_FK_OPTIONS: IFKOptions;
     private readonly _connection;
     private readonly _transaction;
     private _ddlUniqueGen;
@@ -28,16 +34,18 @@ export declare class DDLHelper {
     prepare(): Promise<void>;
     dispose(): Promise<void>;
     addSequence(sequenceName: string): Promise<void>;
-    addTable(tableName: string, scalarFields: IFieldProps[]): Promise<void>;
-    addColumns(tableName: string, scalarFields: IFieldProps[]): Promise<void>;
+    addTable(tableName: string, scalarFields: IFieldProps[], checks?: string[]): Promise<void>;
+    addColumns(tableName: string, fields: IFieldProps[]): Promise<void>;
+    createIndex(tableName: string, type: Sorting, fieldNames: string[]): Promise<string>;
+    createIndex(indexName: string, tableName: string, type: Sorting, fieldNames: string[]): Promise<string>;
     addUnique(tableName: string, fieldNames: string[]): Promise<string>;
     addUnique(constraintName: string, tableName: string, fieldNames: string[]): Promise<string>;
     addPrimaryKey(tableName: string, fieldNames: string[]): Promise<string>;
     addPrimaryKey(constraintName: string, tableName: string, fieldNames: string[]): Promise<string>;
-    addForeignKey(from: IRelation, to: IRelation): Promise<string>;
-    addForeignKey(constraintName: string, from: IRelation, to: IRelation): Promise<string>;
+    addForeignKey(options: IFKOptions, from: IRelation, to: IRelation): Promise<string>;
+    addForeignKey(constraintName: string, options: IFKOptions, from: IRelation, to: IRelation): Promise<string>;
     addDomain(props: IDomainProps): Promise<string>;
     addDomain(domainName: string, props: IDomainProps): Promise<string>;
-    addAutoIncrementTrigger(tableName: string, fieldName: string, sequenceName: string): Promise<void>;
-    addAutoIncrementTrigger(triggerName: string, tableName: string, fieldName: string, sequenceName: string): Promise<void>;
+    addAutoIncrementTrigger(tableName: string, fieldName: string, sequenceName: string): Promise<string>;
+    addAutoIncrementTrigger(triggerName: string, tableName: string, fieldName: string, sequenceName: string): Promise<string>;
 }

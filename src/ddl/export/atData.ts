@@ -34,6 +34,8 @@ export interface IATRelationField {
   attrName: string | undefined;
   masterEntityName: string | undefined;
   isParent: boolean;
+  lbFieldName: string | undefined;
+  rbFieldName: string | undefined;
   lName: ILName;
   fieldSource: string;
   fieldSourceKey: number;
@@ -154,6 +156,8 @@ export async function load(connection: AConnection, transaction: ATransaction): 
         ATTRNAME,
         MASTERENTITYNAME,
         ISPARENT,
+        LBFIELDNAME,
+        RBFIELDNAME,
         LNAME,
         DESCRIPTION,
         SEMCATEGORY,
@@ -184,6 +188,8 @@ export async function load(connection: AConnection, transaction: ATransaction): 
           attrName: getTrimmedString("ATTRNAME"),
           masterEntityName: getTrimmedString("MASTERENTITYNAME"),
           isParent: resultSet.getBoolean("ISPARENT"),
+          lbFieldName: getTrimmedString("LBFIELDNAME"),
+          rbFieldName: getTrimmedString("RBFIELDNAME"),
           lName: {ru},
           fieldSource: getTrimmedString("FIELDSOURCE")!,
           fieldSourceKey: resultSet.getNumber("FIELDSOURCEKEY"),

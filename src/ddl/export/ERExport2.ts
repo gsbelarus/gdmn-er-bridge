@@ -34,6 +34,7 @@ import {
   TimeAttribute,
   TimeStampAttribute
 } from "gdmn-orm";
+import {IParentAttributeAdapter} from "gdmn-orm/src/rdbadapter";
 import {Constants} from "../Constants";
 import {IATLoadResult, IATRelation, load} from "./atData";
 import {gdDomains} from "./gddomains";
@@ -155,7 +156,10 @@ export class ERExport2 {
     const atRelation = this._getATResult().atRelations[relation.name];
 
     Object.values(relation.relationFields).forEach((relationField) => {
-      if (relationField.name === "LB" || relationField.name === "RB") {
+      // ignore lb and rb fields
+      if (Object.values(atRelation.relationFields)
+          .some((atRf) => (atRf.lbFieldName === relationField.name || atRf.rbFieldName === relationField.name))
+        || relationField.name === Constants.DEFAULT_LB_NAME || relationField.name === Constants.DEFAULT_RB_NAME) {
         return;
       }
       if (entity.hasOwnAttribute(relationField.name)) {
@@ -413,12 +417,11 @@ export class ERExport2 {
         return new IntegerAttribute({name, lName, required, minValue, maxValue, defaultValue, semCategories, adapter});
       }
       case FieldType.INTEGER: {
-        const fk = Object.entries(relation.foreignKeys).find(
-          ([, f]) => !!f.fields.find(fld => fld === name)
-        );
+        const fieldName = adapter ? adapter.field : name;
+        const fk = Object.values(relation.foreignKeys).find((fk) => fk.fields.includes(fieldName));
 
-        if (fk && fk[1].fields.length === 1) {
-          const refRelationName = this._dbStructure.relationByUqConstraint(fk[1].constNameUq).name;
+        if (fk && fk.fields.length) {
+          const refRelationName = this._dbStructure.relationByUqConstraint(fk.constNameUq).name;
           const cond = atField && atField.refCondition ? condition2Selectors(atField.refCondition) : undefined;
           const refEntities = this._findEntities(refRelationName, cond);
 
@@ -427,7 +430,19 @@ export class ERExport2 {
           }
 
           if (atRelationField && atRelationField.isParent) {
-            return new ParentAttribute({name, lName, entities: refEntities, semCategories, adapter});
+            let parentAttrAdapter: IParentAttributeAdapter | undefined;
+            const lbField = atRelationField.lbFieldName || Constants.DEFAULT_LB_NAME;
+            const rbField = atRelationField.rbFieldName || Constants.DEFAULT_RB_NAME;
+            if (adapter) {
+              parentAttrAdapter = {...adapter, lbField, rbField};
+            } else if (atRelationField.lbFieldName || atRelationField.rbFieldName) {
+              parentAttrAdapter = {
+                relation: relation.name,
+                field: relationField.name,
+                lbField, rbField
+              };
+            }
+            return new ParentAttribute({name, lName, entities: refEntities, semCategories, adapter: parentAttrAdapter});
           }
           return new EntityAttribute({name, lName, required, entities: refEntities, semCategories, adapter});
         } else {

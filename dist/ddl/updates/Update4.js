@@ -15,6 +15,10 @@ class Update4 extends BaseUpdate_1.BaseUpdate {
                 await ddlHelper.addColumns("AT_RELATIONS", [
                     { name: "ENTITYNAME", domain: "DTABLENAME" }
                 ]);
+                await ddlHelper.addColumns("AT_RELATION_FIELDS", [
+                    { name: "LBFIELDNAME", domain: "DFIELDNAME" },
+                    { name: "RBFIELDNAME", domain: "DFIELDNAME" }
+                ]);
             }
             finally {
                 await ddlHelper.dispose();
