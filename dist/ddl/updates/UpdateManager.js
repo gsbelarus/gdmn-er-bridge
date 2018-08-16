@@ -5,9 +5,11 @@ const Update1_1 = require("./Update1");
 const Update2_1 = require("./Update2");
 const Update3_1 = require("./Update3");
 const Update4_1 = require("./Update4");
+const Update5_1 = require("./Update5");
 class UpdateManager {
     constructor() {
         this._updatesConstructors = [
+            Update5_1.Update5,
             Update4_1.Update4,
             Update3_1.Update3,
             Update2_1.Update2,
@@ -74,6 +76,6 @@ class UpdateManager {
         return await result.getNumber("VERSION");
     }
 }
-UpdateManager.CURRENT_DATABASE_VERSION = 4;
+UpdateManager.CURRENT_DATABASE_VERSION = 5;
 exports.UpdateManager = UpdateManager;
 //# sourceMappingURL=UpdateManager.js.map
