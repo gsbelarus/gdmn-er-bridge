@@ -4,6 +4,7 @@ export declare class Prefix {
     static DOMAIN: string;
     static CROSS: string;
     static UNIQUE: string;
+    static INDEX: string;
     static PRIMARY_KEY: string;
     static FOREIGN_KEY: string;
     static TRIGGER_BI: string;

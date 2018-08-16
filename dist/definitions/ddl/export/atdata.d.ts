@@ -30,6 +30,8 @@ export interface IATRelationField {
     attrName: string | undefined;
     masterEntityName: string | undefined;
     isParent: boolean;
+    lbFieldName: string | undefined;
+    rbFieldName: string | undefined;
     lName: ILName;
     fieldSource: string;
     fieldSourceKey: number;

@@ -12,6 +12,7 @@ Prefix.GENERATOR = "G";
 Prefix.DOMAIN = "DOMAIN";
 Prefix.CROSS = "CROSS";
 Prefix.UNIQUE = "UQ";
+Prefix.INDEX = "I";
 Prefix.PRIMARY_KEY = "PK";
 Prefix.FOREIGN_KEY = "FK";
 Prefix.TRIGGER_BI = "BI";

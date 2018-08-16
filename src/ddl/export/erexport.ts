@@ -4,24 +4,25 @@ import {
   adjustName,
   appendAdapter,
   Attribute,
-  IAttributeAdapter,
   BlobAttribute,
   BooleanAttribute,
   condition2Selectors,
-  ICrossRelations,
   DateAttribute,
   DetailAttribute,
   Entity,
-  IEntityAdapter,
   EntityAttribute,
-  IEntitySelector,
   EnumAttribute,
   ERModel,
   FloatAttribute,
   hasField,
-  IntegerAttribute,
-  isUserDefined,
+  IAttributeAdapter,
+  ICrossRelations,
+  IEntityAdapter,
+  IEntitySelector,
   ILName,
+  IntegerAttribute,
+  ISetAttributeAdapter,
+  isUserDefined,
   MAX_16BIT_INT,
   MAX_32BIT_INT,
   MAX_64BIT_INT,
@@ -37,12 +38,12 @@ import {
   Sequence,
   SequenceAttribute,
   SetAttribute,
-  ISetAttributeAdapter,
   StringAttribute,
   systemFields,
   TimeAttribute,
   TimeStampAttribute
 } from "gdmn-orm";
+import {IParentAttributeAdapter} from "gdmn-orm/src/rdbadapter";
 import {Constants} from "../Constants";
 import {IATRelationField, load} from "./atData";
 import {loadDocument} from "./document";
@@ -702,12 +703,11 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
         return new IntegerAttribute({name, lName, required, minValue, maxValue, defaultValue, semCategories, adapter});
       }
       case FieldType.INTEGER: {
-        const fk = Object.entries(r.foreignKeys).find(
-          ([, f]) => !!f.fields.find(fld => fld === name)
-        );
+        const fieldName = adapter ? adapter.field : name;
+        const fk = Object.values(r.foreignKeys).find((fk) => fk.fields.includes(fieldName));
 
-        if (fk && fk[1].fields.length === 1) {
-          const refRelationName = dbs.relationByUqConstraint(fk[1].constNameUq).name;
+        if (fk && fk.fields.length === 1) {
+          const refRelationName = dbs.relationByUqConstraint(fk.constNameUq).name;
           const cond = atField && atField.refCondition ? condition2Selectors(atField.refCondition) : undefined;
           const refEntities = findEntities(refRelationName, cond);
 
@@ -716,7 +716,19 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
           }
 
           if (atRelationField && atRelationField.isParent) {
-            return new ParentAttribute({name, lName, entities: refEntities, semCategories, adapter});
+            let parentAttrAdapter: IParentAttributeAdapter | undefined;
+            const lbField = atRelationField.lbFieldName || Constants.DEFAULT_LB_NAME;
+            const rbField = atRelationField.rbFieldName || Constants.DEFAULT_RB_NAME;
+            if (adapter) {
+              parentAttrAdapter = {...adapter, lbField, rbField};
+            } else if (atRelationField.lbFieldName || atRelationField.rbFieldName) {
+              parentAttrAdapter = {
+                relation: r.name,
+                field: rf.name,
+                lbField, rbField
+              };
+            }
+            return new ParentAttribute({name, lName, entities: refEntities, semCategories, adapter: parentAttrAdapter});
           }
           return new EntityAttribute({name, lName, required, entities: refEntities, semCategories, adapter});
         } else {
@@ -811,7 +823,11 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
       Object.entries(r.relationFields).forEach(([fn, rf]) => {
         if (r.primaryKey!.fields.find(f => f === fn)) return;
 
-        if (fn === "LB" || fn === "RB") return;
+        if (Object.values(atRelation.relationFields)
+            .some((atRf) => (atRf.lbFieldName === rf.name || atRf.rbFieldName === rf.name))
+          || rf.name === Constants.DEFAULT_LB_NAME || rf.name === Constants.DEFAULT_RB_NAME) {
+          return;
+        }
 
         if (entity.hasAttribute(fn)) return;
 

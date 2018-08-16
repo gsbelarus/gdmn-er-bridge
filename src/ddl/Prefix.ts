@@ -5,6 +5,7 @@ export class Prefix {
   public static DOMAIN = "DOMAIN";
   public static CROSS = "CROSS";
   public static UNIQUE = "UQ";
+  public static INDEX = "I";
   public static PRIMARY_KEY = "PK";
   public static FOREIGN_KEY = "FK";
   public static TRIGGER_BI = "BI";

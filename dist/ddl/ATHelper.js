@@ -20,9 +20,11 @@ class ATHelper {
     `);
         this._createATRelationField = await this._connection.prepare(this._transaction, `
       INSERT INTO AT_RELATION_FIELDS (FIELDNAME, RELATIONNAME, FIELDSOURCE, FIELDSOURCEKEY, LNAME, DESCRIPTION, 
-        SEMCATEGORY, CROSSTABLE, CROSSTABLEKEY, CROSSFIELD, ATTRNAME, MASTERENTITYNAME, ISPARENT)
+        SEMCATEGORY, CROSSTABLE, CROSSTABLEKEY, CROSSFIELD, ATTRNAME, MASTERENTITYNAME, ISPARENT,
+        LBFIELDNAME, RBFIELDNAME)
       VALUES (:fieldName, :relationName, :fieldSource, :fieldSourceKey, :lName, :description, 
-        :semCategory, :crossTable, :crossTableKey, :crossField, :attrName, :masterEntityName, :isParent)
+        :semCategory, :crossTable, :crossTableKey, :crossField, :attrName, :masterEntityName, :isParent,
+        :lbFieldName, :rbFieldName)
       RETURNING ID
     `);
     }
