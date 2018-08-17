@@ -1,6 +1,6 @@
 import {AConnection, ATransaction, DeleteRule, UpdateRule} from "gdmn-db";
-import {DDLUniqueGenerator} from "./DDLUniqueGenerator";
 import {Prefix} from "../Prefix";
+import {DDLUniqueGenerator} from "./DDLUniqueGenerator";
 
 export interface IColumnsProps {
   notNull?: boolean;

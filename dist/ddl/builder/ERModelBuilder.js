@@ -2,8 +2,8 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const gdmn_orm_1 = require("gdmn-orm");
 const Constants_1 = require("../Constants");
-const DDLHelper_1 = require("./DDLHelper");
 const Builder_1 = require("./Builder");
+const DDLHelper_1 = require("./DDLHelper");
 const DomainResolver_1 = require("./DomainResolver");
 const EntityBuilder_1 = require("./EntityBuilder");
 class ERModelBuilder extends Builder_1.Builder {

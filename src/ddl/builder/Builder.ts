@@ -1,4 +1,5 @@
 import {AConnection, ATransaction, TExecutor} from "gdmn-db";
+import {semCategories2Str} from "gdmn-nlp";
 import {
   Attribute,
   Entity,
@@ -109,7 +110,7 @@ export abstract class Builder {
       lName: entity.lName.ru ? entity.lName.ru.name : entity.name,
       description: entity.lName.ru ? entity.lName.ru.fullName : entity.name,
       entityName: options.relationName !== entity.name ? entity.name : undefined,
-      semCategory: undefined
+      semCategory: semCategories2Str(entity.semCategories)
     });
   }
 
@@ -142,7 +143,7 @@ export abstract class Builder {
       masterEntityName: options.masterEntity ? options.masterEntity.name : undefined,
       fieldSource: options.domainName,
       fieldSourceKey,
-      semCategory: undefined,
+      semCategory: semCategories2Str(attr.semCategories),
       crossTable: options.crossTable,
       crossTableKey: options.crossTableKey,
       crossField: options.crossField

@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const gdmn_nlp_1 = require("gdmn-nlp");
 const gdmn_orm_1 = require("gdmn-orm");
 const ATHelper_1 = require("./ATHelper");
 const DDLHelper_1 = require("./DDLHelper");
@@ -73,7 +74,7 @@ class Builder {
             lName: entity.lName.ru ? entity.lName.ru.name : entity.name,
             description: entity.lName.ru ? entity.lName.ru.fullName : entity.name,
             entityName: options.relationName !== entity.name ? entity.name : undefined,
-            semCategory: undefined
+            semCategory: gdmn_nlp_1.semCategories2Str(entity.semCategories)
         });
     }
     async _insertATAttr(attr, options) {
@@ -103,7 +104,7 @@ class Builder {
             masterEntityName: options.masterEntity ? options.masterEntity.name : undefined,
             fieldSource: options.domainName,
             fieldSourceKey,
-            semCategory: undefined,
+            semCategory: gdmn_nlp_1.semCategories2Str(attr.semCategories),
             crossTable: options.crossTable,
             crossTableKey: options.crossTableKey,
             crossField: options.crossField

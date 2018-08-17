@@ -1,4 +1,4 @@
-import { IConnectionOptions, ADriver } from "gdmn-db";
+import {ADriver, IConnectionOptions} from "gdmn-db";
 
 export interface IDBDetail<ConnectionOptions extends IConnectionOptions = IConnectionOptions> {
   alias: string;

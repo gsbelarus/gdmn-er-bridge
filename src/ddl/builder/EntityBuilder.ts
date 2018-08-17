@@ -9,9 +9,9 @@ import {
   SetAttribute
 } from "gdmn-orm";
 import {Constants} from "../Constants";
-import {DDLHelper, IFieldProps} from "./DDLHelper";
 import {Prefix} from "../Prefix";
 import {Builder} from "./Builder";
+import {DDLHelper, IFieldProps} from "./DDLHelper";
 import {DomainResolver} from "./DomainResolver";
 
 export class EntityBuilder extends Builder {

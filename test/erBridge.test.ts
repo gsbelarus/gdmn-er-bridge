@@ -66,14 +66,14 @@ describe("ERBridge", () => {
       const erModel = await builder.initERModel();
       await builder.addEntity(erModel, new Entity({
         name: "TEST1",
-        lName: {ru: {name: "entity name", fullName: "full entity name"}}
-      }));
-      await builder.addEntity(erModel, new Entity({
-        name: "TEST2",
         lName: {ru: {name: "entity name", fullName: "full entity name"}},
         adapter: {
           relation: [{relationName: "TEST_ADAPTER"}]
         }
+      }));
+      await builder.addEntity(erModel, new Entity({
+        name: "TEST2",
+        lName: {ru: {name: "entity name", fullName: "full entity name"}}
       }));
       return erModel;
     });
