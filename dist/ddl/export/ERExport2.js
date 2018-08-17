@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const gdmn_db_1 = require("gdmn-db");
 const gdmn_orm_1 = require("gdmn-orm");
+const Builder_1 = require("../builder/Builder");
 const Constants_1 = require("../Constants");
 const atData_1 = require("./atData");
 const gddomains_1 = require("./gddomains");
@@ -75,7 +76,7 @@ class ERExport2 {
                 lName: { ru: { name: "Идентификатор" } },
                 sequence: this._erModel.sequencies[Constants_1.Constants.GLOBAL_GENERATOR],
                 adapter: {
-                    relation: entity.adapter ? entity.adapter.relation[entity.adapter.relation.length - 1].relationName : entity.name,
+                    relation: entity.adapter ? entity.adapter.relation[0].relationName : entity.name,
                     field: Constants_1.Constants.DEFAULT_ID_NAME
                 }
             }));
@@ -83,8 +84,8 @@ class ERExport2 {
         return entity;
     }
     _createAttributes(entity, forceAdapter) {
-        const ownAdapterRelation = entity.adapter.relation[entity.adapter.relation.length - 1];
-        const relation = this._dbStructure.relations[ownAdapterRelation.relationName];
+        const ownRelationName = Builder_1.Builder._getOwnRelationName(entity);
+        const relation = this._dbStructure.relations[ownRelationName];
         const atRelation = this._getATResult().atRelations[relation.name];
         Object.values(relation.relationFields).forEach((relationField) => {
             // ignore lb and rb fields

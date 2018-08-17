@@ -19,14 +19,14 @@ export class EntityBuilder extends Builder {
   public async addUnique(entity: Entity, attrs: Attribute[]): Promise<void> {
     entity.addUnique(attrs);
 
-    const tableName = Builder._getTableName(entity);
+    const tableName = Builder._getOwnRelationName(entity);
     await this._getDDLHelper().addUnique(tableName, attrs.map((attr) => Builder._getFieldName(attr)));
   }
 
   public async addAttribute(entity: Entity, attr: Attribute): Promise<Attribute> {
     entity.add(attr);
 
-    const tableName = Builder._getTableName(entity);
+    const tableName = Builder._getOwnRelationName(entity);
 
     if (ScalarAttribute.isType(attr)) {
       const fieldName = Builder._getFieldName(attr);
@@ -129,14 +129,14 @@ export class EntityBuilder extends Builder {
         tableName: crossTableName,
         fieldName: Constants.DEFAULT_CROSS_PK_OWN_NAME
       }, {
-        tableName: Builder._getTableName(entity),
+        tableName: Builder._getOwnRelationName(entity),
         fieldName: Builder._getFieldName(entity.pk[0])
       });
       await this._getDDLHelper().addForeignKey(DDLHelper.DEFAULT_FK_OPTIONS, {
         tableName: crossTableName,
         fieldName: Constants.DEFAULT_CROSS_PK_REF_NAME
       }, {
-        tableName: Builder._getTableName(attr.entities[0]),
+        tableName: Builder._getOwnRelationName(attr.entities[0]),
         fieldName: Builder._getFieldName(attr.entities[0].pk[0])
       });
 
@@ -159,7 +159,7 @@ export class EntityBuilder extends Builder {
         tableName,
         fieldName
       }, {
-        tableName: Builder._getTableName(attr.entities[0]),
+        tableName: Builder._getOwnRelationName(attr.entities[0]),
         fieldName: Builder._getFieldName(attr.entities[0].pk[0])
       });
 
@@ -172,7 +172,7 @@ export class EntityBuilder extends Builder {
         tableName,
         fieldName
       }, {
-        tableName: Builder._getTableName(attr.entities[0]),
+        tableName: Builder._getOwnRelationName(attr.entities[0]),
         fieldName: Builder._getFieldName(attr.entities[0].pk[0])
       });
     }

@@ -24,8 +24,8 @@ import {
   TimeStampAttribute
 } from "gdmn-orm";
 import moment from "moment";
-import {Constants} from "../src/ddl/Constants";
 import {ERModelBuilder} from "../src/ddl/builder/ERModelBuilder";
+import {Constants} from "../src/ddl/Constants";
 import {ERBridge} from "../src/ERBridge";
 import {importTestDBDetail} from "./testDB";
 
@@ -46,7 +46,7 @@ describe("ERBridge", () => {
     return await AConnection.executeTransaction({
       connection,
       callback: (transaction) => (
-        ERModelBuilder.executeSelf(connection, transaction, () => new ERModelBuilder(), callback)
+        ERModelBuilder.executeSelf(connection, transaction, ERBridge.getERModelBuilder, callback)
       )
     });
   };
@@ -695,6 +695,9 @@ describe("ERBridge", () => {
       }));
       await builder.entityBuilder.addAttribute(userEntity, new BlobAttribute({
         name: "PASSWORD_HASH", lName: {ru: {name: "Хешированный пароль"}}, required: true
+      }));
+      await builder.entityBuilder.addAttribute(userEntity, new BlobAttribute({
+        name: "SALT", lName: {ru: {name: "Примесь"}}, required: true
       }));
       await builder.entityBuilder.addAttribute(userEntity, new BooleanAttribute({
         name: "IS_ADMIN", lName: {ru: {name: "Флаг администратора"}}

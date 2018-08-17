@@ -9,12 +9,12 @@ const DomainResolver_1 = require("./DomainResolver");
 class EntityBuilder extends Builder_1.Builder {
     async addUnique(entity, attrs) {
         entity.addUnique(attrs);
-        const tableName = Builder_1.Builder._getTableName(entity);
+        const tableName = Builder_1.Builder._getOwnRelationName(entity);
         await this._getDDLHelper().addUnique(tableName, attrs.map((attr) => Builder_1.Builder._getFieldName(attr)));
     }
     async addAttribute(entity, attr) {
         entity.add(attr);
-        const tableName = Builder_1.Builder._getTableName(entity);
+        const tableName = Builder_1.Builder._getOwnRelationName(entity);
         if (gdmn_orm_1.ScalarAttribute.isType(attr)) {
             const fieldName = Builder_1.Builder._getFieldName(attr);
             const domainName = await this._getDDLHelper().addDomain(DomainResolver_1.DomainResolver.resolve(attr));
@@ -110,14 +110,14 @@ class EntityBuilder extends Builder_1.Builder {
                 tableName: crossTableName,
                 fieldName: Constants_1.Constants.DEFAULT_CROSS_PK_OWN_NAME
             }, {
-                tableName: Builder_1.Builder._getTableName(entity),
+                tableName: Builder_1.Builder._getOwnRelationName(entity),
                 fieldName: Builder_1.Builder._getFieldName(entity.pk[0])
             });
             await this._getDDLHelper().addForeignKey(DDLHelper_1.DDLHelper.DEFAULT_FK_OPTIONS, {
                 tableName: crossTableName,
                 fieldName: Constants_1.Constants.DEFAULT_CROSS_PK_REF_NAME
             }, {
-                tableName: Builder_1.Builder._getTableName(attr.entities[0]),
+                tableName: Builder_1.Builder._getOwnRelationName(attr.entities[0]),
                 fieldName: Builder_1.Builder._getFieldName(attr.entities[0].pk[0])
             });
         }
@@ -140,7 +140,7 @@ class EntityBuilder extends Builder_1.Builder {
                 tableName,
                 fieldName
             }, {
-                tableName: Builder_1.Builder._getTableName(attr.entities[0]),
+                tableName: Builder_1.Builder._getOwnRelationName(attr.entities[0]),
                 fieldName: Builder_1.Builder._getFieldName(attr.entities[0].pk[0])
             });
         }
@@ -153,7 +153,7 @@ class EntityBuilder extends Builder_1.Builder {
                 tableName,
                 fieldName
             }, {
-                tableName: Builder_1.Builder._getTableName(attr.entities[0]),
+                tableName: Builder_1.Builder._getOwnRelationName(attr.entities[0]),
                 fieldName: Builder_1.Builder._getFieldName(attr.entities[0].pk[0])
             });
         }

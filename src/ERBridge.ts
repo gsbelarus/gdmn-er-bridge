@@ -24,11 +24,11 @@ export class ERBridge {
     this._connection = connection;
   }
 
-  public static async getERModelBuilder(): Promise<ERModelBuilder> {
+  public static getERModelBuilder(): ERModelBuilder {
     return new ERModelBuilder();
   }
 
-  public static async getEntityBuilder(): Promise<EntityBuilder> {
+  public static getEntityBuilder(): EntityBuilder {
     return new EntityBuilder();
   }
 

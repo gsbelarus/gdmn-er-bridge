@@ -11,10 +11,10 @@ class ERBridge {
     constructor(connection) {
         this._connection = connection;
     }
-    static async getERModelBuilder() {
+    static getERModelBuilder() {
         return new ERModelBuilder_1.ERModelBuilder();
     }
-    static async getEntityBuilder() {
+    static getEntityBuilder() {
         return new EntityBuilder_1.EntityBuilder();
     }
     async exportFromDatabase(dbStructure, transaction, erModel = new gdmn_orm_1.ERModel()) {

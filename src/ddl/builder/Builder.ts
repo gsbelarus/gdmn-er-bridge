@@ -60,7 +60,7 @@ export abstract class Builder {
     }
   }
 
-  public static _getTableName(entity: Entity): string {
+  public static _getOwnRelationName(entity: Entity): string { // TODO ?
     return entity.adapter ? entity.adapter.relation[entity.adapter.relation.length - 1].relationName : entity.name;
   }
 

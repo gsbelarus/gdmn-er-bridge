@@ -27,7 +27,7 @@ class Builder {
             }
         }
     }
-    static _getTableName(entity) {
+    static _getOwnRelationName(entity) {
         return entity.adapter ? entity.adapter.relation[entity.adapter.relation.length - 1].relationName : entity.name;
     }
     static _getFieldName(attr) {

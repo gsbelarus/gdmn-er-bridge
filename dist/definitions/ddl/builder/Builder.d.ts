@@ -21,7 +21,7 @@ export declare abstract class Builder {
     constructor(ddlHelper: DDLHelper, atHelper: ATHelper);
     readonly prepared: boolean;
     static executeSelf<T extends Builder, R>(connection: AConnection, transaction: ATransaction, selfReceiver: TExecutor<null, T>, callback: TExecutor<T, R>): Promise<R>;
-    static _getTableName(entity: Entity): string;
+    static _getOwnRelationName(entity: Entity): string;
     static _getFieldName(attr: Attribute): string;
     prepare(connection: AConnection, transaction: ATransaction): Promise<void>;
     dispose(): Promise<void>;

@@ -59,14 +59,14 @@ export class ERModelBuilder extends Builder {
         lName: {ru: {name: "Идентификатор"}},
         sequence: erModel.sequencies[Constants.GLOBAL_GENERATOR],
         adapter: {
-          relation: entity.adapter ? entity.adapter.relation[entity.adapter.relation.length - 1].relationName : entity.name,
+          relation: Builder._getOwnRelationName(entity),
           field: Constants.DEFAULT_ID_NAME
         }
       }));
     }
     erModel.add(entity);
 
-    const tableName = Builder._getTableName(entity);
+    const tableName = Builder._getOwnRelationName(entity);
     const fields: IFieldProps[] = [];
     for (const pkAttr of entity.pk) {
       const fieldName = Builder._getFieldName(pkAttr);
@@ -100,7 +100,7 @@ export class ERModelBuilder extends Builder {
           tableName,
           fieldName
         }, {
-          tableName: Builder._getTableName(pkAttr.entities[0]),
+          tableName: Builder._getOwnRelationName(pkAttr.entities[0]),
           fieldName: Builder._getFieldName(pkAttr.entities[0].pk[0])
         });
       }
