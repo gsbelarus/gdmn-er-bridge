@@ -24,6 +24,14 @@ export class ERBridge {
     this._connection = connection;
   }
 
+  public static async getERModelBuilder(): Promise<ERModelBuilder> {
+    return new ERModelBuilder();
+  }
+
+  public static async getEntityBuilder(): Promise<EntityBuilder> {
+    return new EntityBuilder();
+  }
+
   public async exportFromDatabase(dbStructure: DBStructure,
                                   transaction: ATransaction,
                                   erModel: ERModel = new ERModel()): Promise<ERModel> {
@@ -33,14 +41,6 @@ export class ERBridge {
 
   public async importToDatabase(erModel: ERModel): Promise<void> {
     return await new ERImport(this._connection, erModel).execute();
-  }
-
-  public async getERModelBuilder(): Promise<ERModelBuilder> {
-    return new ERModelBuilder();
-  }
-
-  public async getEntityBuilder(): Promise<EntityBuilder> {
-    return new EntityBuilder();
   }
 
   public async initDatabase(): Promise<void> {

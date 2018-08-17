@@ -19,10 +19,10 @@ export interface IQueryResponse {
 export declare class ERBridge {
     private readonly _connection;
     constructor(connection: AConnection);
+    static getERModelBuilder(): Promise<ERModelBuilder>;
+    static getEntityBuilder(): Promise<EntityBuilder>;
     exportFromDatabase(dbStructure: DBStructure, transaction: ATransaction, erModel?: ERModel): Promise<ERModel>;
     importToDatabase(erModel: ERModel): Promise<void>;
-    getERModelBuilder(): Promise<ERModelBuilder>;
-    getEntityBuilder(): Promise<EntityBuilder>;
     initDatabase(): Promise<void>;
     query(erModel: ERModel, dbStructure: DBStructure, query: IEntityQueryInspector): Promise<IQueryResponse>;
 }

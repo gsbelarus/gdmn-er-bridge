@@ -11,18 +11,18 @@ class ERBridge {
     constructor(connection) {
         this._connection = connection;
     }
+    static async getERModelBuilder() {
+        return new ERModelBuilder_1.ERModelBuilder();
+    }
+    static async getEntityBuilder() {
+        return new EntityBuilder_1.EntityBuilder();
+    }
     async exportFromDatabase(dbStructure, transaction, erModel = new gdmn_orm_1.ERModel()) {
         return await new ERExport2_1.ERExport2(this._connection, transaction, dbStructure, erModel).execute();
         // return await erExport(dbStructure, this._connection, transaction, erModel);
     }
     async importToDatabase(erModel) {
         return await new ERImport_1.ERImport(this._connection, erModel).execute();
-    }
-    async getERModelBuilder() {
-        return new ERModelBuilder_1.ERModelBuilder();
-    }
-    async getEntityBuilder() {
-        return new EntityBuilder_1.EntityBuilder();
     }
     async initDatabase() {
         await new UpdateManager_1.UpdateManager().updateDatabase(this._connection);
