@@ -9,11 +9,23 @@ class DDLHelper {
         this._connection = connection;
         this._transaction = transaction;
     }
+    get connection() {
+        return this._connection;
+    }
+    get transaction() {
+        return this._transaction;
+    }
     get logs() {
         return this._logs;
     }
     get ddlUniqueGen() {
         return this._ddlUniqueGen;
+    }
+    get prepared() {
+        return this._ddlUniqueGen.prepared;
+    }
+    static _getConstraint(constraintName) {
+        return constraintName ? `CONSTRAINT ${constraintName}` : "";
     }
     static _getColumnProps(props) {
         return ((props.default ? `DEFAULT ${props.default}` : " ").padEnd(40) +
@@ -30,14 +42,23 @@ class DDLHelper {
         await this._connection.execute(this._transaction, `CREATE SEQUENCE ${sequenceName}`);
         await this._connection.execute(this._transaction, `ALTER SEQUENCE ${sequenceName} RESTART WITH 0`);
     }
-    async addTable(tableName, scalarFields, checks) {
+    async addTable(tableName, scalarFields) {
         const fields = scalarFields.map((item) => (`${item.name.padEnd(31)} ${item.domain.padEnd(31)} ${DDLHelper._getColumnProps(item)}`.trim()));
-        const sql = `CREATE TABLE ${tableName} (\n  ` +
-            fields.join(",\n  ") +
-            (checks && checks.length ? "\n" + checks.map((check) => `\n  CHECK (${check})`) : "") + // TODO tmp
-            `\n)`;
+        const sql = `CREATE TABLE ${tableName} (\n  ` + fields.join(",\n  ") + `\n)`;
         this._logs.push(sql);
         await this._connection.execute(this._transaction, sql);
+    }
+    async addTableCheck(constraintName, tableName, checks) {
+        if (!checks) {
+            checks = tableName;
+            tableName = constraintName;
+            constraintName = undefined;
+        }
+        for (const check of checks) {
+            const sql = `ALTER TABLE ${tableName} ADD ${DDLHelper._getConstraint(constraintName)} CHECK (${check})`;
+            this._logs.push(sql);
+            await this._connection.execute(this._transaction, sql);
+        }
     }
     async addColumns(tableName, fields) {
         for (const field of fields) {
@@ -71,7 +92,8 @@ class DDLHelper {
         if (!constraintName) {
             constraintName = Prefix_1.Prefix.join(`${await this._ddlUniqueGen.next()}`, Prefix_1.Prefix.UNIQUE);
         }
-        const sql = `ALTER TABLE ${tableName} ADD CONSTRAINT ${constraintName} UNIQUE (${fieldNames.join(", ")})`;
+        const f = fieldNames.join(", ");
+        const sql = `ALTER TABLE ${tableName} ADD ${DDLHelper._getConstraint(constraintName)} UNIQUE (${f})`;
         this._logs.push(sql);
         await this._connection.execute(this._transaction, sql);
         return constraintName;
@@ -82,10 +104,8 @@ class DDLHelper {
             tableName = constraintName;
             constraintName = undefined;
         }
-        if (!constraintName) {
-            constraintName = Prefix_1.Prefix.join(`${await this._ddlUniqueGen.next()}`, Prefix_1.Prefix.PRIMARY_KEY);
-        }
-        const sql = `ALTER TABLE ${tableName} ADD CONSTRAINT ${constraintName} PRIMARY KEY (${fieldNames.join(", ")})`;
+        const pk = fieldNames.join(", ");
+        const sql = `ALTER TABLE ${tableName} ADD ${DDLHelper._getConstraint(constraintName)} PRIMARY KEY (${pk})`;
         this._logs.push(sql);
         await this._connection.execute(this._transaction, sql);
         return constraintName;
@@ -97,10 +117,8 @@ class DDLHelper {
             options = constraintName;
             constraintName = undefined;
         }
-        if (!constraintName) {
-            constraintName = Prefix_1.Prefix.join(`${await this._ddlUniqueGen.next()}`, Prefix_1.Prefix.FOREIGN_KEY);
-        }
-        const sql = `ALTER TABLE ${from.tableName} ADD CONSTRAINT ${constraintName} FOREIGN KEY (${from.fieldName}) ` +
+        const { tableName, fieldName } = from;
+        const sql = `ALTER TABLE ${tableName} ADD ${DDLHelper._getConstraint(constraintName)} FOREIGN KEY (${fieldName}) ` +
             `REFERENCES ${to.tableName} (${to.fieldName}) ` +
             (options.onUpdate ? `ON UPDATE ${options.onUpdate} ` : "") +
             (options.onDelete ? `ON DELETE ${options.onDelete} ` : "");

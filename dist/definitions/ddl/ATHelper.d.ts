@@ -43,6 +43,7 @@ export declare class ATHelper {
     private _createATRelation;
     private _createATRelationField;
     constructor(connection: AConnection, transaction: ATransaction);
+    readonly prepared: boolean;
     prepare(): Promise<void>;
     dispose(): Promise<void>;
     insertATRelations(input: IInputATRelations): Promise<number>;

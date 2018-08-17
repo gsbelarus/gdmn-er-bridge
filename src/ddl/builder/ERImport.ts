@@ -44,7 +44,7 @@ export class ERImport {
     this._erModel = erModel;
   }
 
-  public static _getTableName(entity: Entity): string {
+  private static _getTableName(entity: Entity): string {
     return entity.adapter ? entity.adapter.relation[entity.adapter.relation.length - 1].relationName : entity.name;
   }
 
@@ -312,7 +312,8 @@ export class ERImport {
         }
       }
     }
-    await this._getDDLHelper().addTable(tableName, fields, checks);
+    await this._getDDLHelper().addTable(tableName, fields);
+    await this._getDDLHelper().addTableCheck(tableName, checks);
     await this._getDDLHelper().addPrimaryKey(tableName, pkFields.map((i) => i.name));
     for (const index of indexes) {
       await this._getDDLHelper().createIndex(tableName, index.type, [index.field]);

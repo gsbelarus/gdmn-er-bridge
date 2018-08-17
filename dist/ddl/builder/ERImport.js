@@ -269,7 +269,8 @@ class ERImport {
                 }
             }
         }
-        await this._getDDLHelper().addTable(tableName, fields, checks);
+        await this._getDDLHelper().addTable(tableName, fields);
+        await this._getDDLHelper().addTableCheck(tableName, checks);
         await this._getDDLHelper().addPrimaryKey(tableName, pkFields.map((i) => i.name));
         for (const index of indexes) {
             await this._getDDLHelper().createIndex(tableName, index.type, [index.field]);

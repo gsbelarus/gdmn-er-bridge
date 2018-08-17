@@ -6,7 +6,7 @@ export class DDLUniqueGenerator {
   private _nextUnique: AStatement | undefined;
 
   public get prepared(): boolean {
-    return !!this._nextUnique;
+    return !!this._nextUnique && !this._nextUnique.disposed;
   }
 
   public async prepare(connection: AConnection, transaction: ATransaction): Promise<void> {

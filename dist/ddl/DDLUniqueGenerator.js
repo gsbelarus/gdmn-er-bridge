@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const Constants_1 = require("./Constants");
 class DDLUniqueGenerator {
     get prepared() {
-        return !!this._nextUnique;
+        return !!this._nextUnique && !this._nextUnique.disposed;
     }
     async prepare(connection, transaction) {
         this._nextUnique = await connection.prepare(transaction, `SELECT NEXT VALUE FOR ${Constants_1.Constants.GLOBAL_DDL_GENERATOR} FROM RDB$DATABASE`);
