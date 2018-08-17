@@ -1,4 +1,4 @@
-import { AConnection, ATransaction, DBStructure } from "gdmn-db";
+import { AConnection, ATransaction, DBStructure, TExecutor } from "gdmn-db";
 import { ERModel, IEntityQueryInspector } from "gdmn-orm";
 import { EntityBuilder } from "./ddl/builder/EntityBuilder";
 import { ERModelBuilder } from "./ddl/builder/ERModelBuilder";
@@ -21,8 +21,9 @@ export declare class ERBridge {
     constructor(connection: AConnection);
     static getERModelBuilder(): ERModelBuilder;
     static getEntityBuilder(): EntityBuilder;
+    executeEntityBuilder<R>(transaction: ATransaction, callback: TExecutor<EntityBuilder, R>): Promise<R>;
+    executeERModelBuilder<R>(transaction: ATransaction, callback: TExecutor<ERModelBuilder, R>): Promise<R>;
     exportFromDatabase(dbStructure: DBStructure, transaction: ATransaction, erModel?: ERModel): Promise<ERModel>;
-    importToDatabase(erModel: ERModel): Promise<void>;
     initDatabase(): Promise<void>;
     query(erModel: ERModel, dbStructure: DBStructure, query: IEntityQueryInspector): Promise<IQueryResponse>;
 }

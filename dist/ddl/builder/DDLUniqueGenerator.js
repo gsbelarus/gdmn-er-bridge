@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const Constants_1 = require("./Constants");
+const Constants_1 = require("../Constants");
 class DDLUniqueGenerator {
     get prepared() {
         return !!this._nextUnique && !this._nextUnique.disposed;

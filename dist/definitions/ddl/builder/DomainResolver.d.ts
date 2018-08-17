@@ -1,5 +1,5 @@
 import { Attribute } from "gdmn-orm";
-import { IDomainProps } from "../DDLHelper";
+import { IDomainProps } from "./DDLHelper";
 export declare class DomainResolver {
     static resolve(attr: Attribute): IDomainProps;
     private static _getType;

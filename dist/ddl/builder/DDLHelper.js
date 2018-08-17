@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const DDLUniqueGenerator_1 = require("./DDLUniqueGenerator");
-const Prefix_1 = require("./Prefix");
+const Prefix_1 = require("../Prefix");
 class DDLHelper {
     constructor(connection, transaction) {
         this._ddlUniqueGen = new DDLUniqueGenerator_1.DDLUniqueGenerator();

@@ -8,8 +8,8 @@ import {
   ScalarAttribute,
   SetAttribute
 } from "gdmn-orm";
-import {ATHelper} from "../ATHelper";
-import {DDLHelper} from "../DDLHelper";
+import {ATHelper} from "./ATHelper";
+import {DDLHelper} from "./DDLHelper";
 
 interface IATEntityOptions {
   relationName: string;
@@ -60,7 +60,7 @@ export abstract class Builder {
     }
   }
 
-  public static _getOwnRelationName(entity: Entity): string { // TODO ?
+  public static _getOwnRelationName(entity: Entity): string { // TODO own relation position ?
     return entity.adapter ? entity.adapter.relation[entity.adapter.relation.length - 1].relationName : entity.name;
   }
 

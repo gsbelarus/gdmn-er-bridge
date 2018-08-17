@@ -45,9 +45,7 @@ describe("ERBridge", () => {
   const initERModelBuilder = async <R>(callback: TExecutor<ERModelBuilder, R>): Promise<R> => {
     return await AConnection.executeTransaction({
       connection,
-      callback: (transaction) => (
-        ERModelBuilder.executeSelf(connection, transaction, ERBridge.getERModelBuilder, callback)
-      )
+      callback: (transaction) => new ERBridge(connection).executeERModelBuilder(transaction, callback)
     });
   };
 

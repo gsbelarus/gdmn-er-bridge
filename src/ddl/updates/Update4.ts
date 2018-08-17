@@ -1,4 +1,4 @@
-import {DDLHelper} from "../DDLHelper";
+import {DDLHelper} from "../builder/DDLHelper";
 import {BaseUpdate} from "./BaseUpdate";
 
 export class Update4 extends BaseUpdate {

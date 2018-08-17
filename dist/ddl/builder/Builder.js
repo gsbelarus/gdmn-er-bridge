@@ -1,8 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const gdmn_orm_1 = require("gdmn-orm");
-const ATHelper_1 = require("../ATHelper");
-const DDLHelper_1 = require("../DDLHelper");
+const ATHelper_1 = require("./ATHelper");
+const DDLHelper_1 = require("./DDLHelper");
 class Builder {
     constructor(ddlHelper, atHelper) {
         this._ddlHelper = ddlHelper;

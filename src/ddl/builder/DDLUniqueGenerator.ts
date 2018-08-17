@@ -1,5 +1,5 @@
 import {AConnection, AStatement, ATransaction} from "gdmn-db";
-import {Constants} from "./Constants";
+import {Constants} from "../Constants";
 
 export class DDLUniqueGenerator {
 

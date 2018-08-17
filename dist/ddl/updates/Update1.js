@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const Constants_1 = require("../Constants");
-const DDLHelper_1 = require("../DDLHelper");
+const DDLHelper_1 = require("../builder/DDLHelper");
 const BaseUpdate_1 = require("./BaseUpdate");
 // Update for creating gedemin database
 class Update1 extends BaseUpdate_1.BaseUpdate {

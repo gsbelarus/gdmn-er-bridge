@@ -1,5 +1,5 @@
 import {Constants} from "../Constants";
-import {DDLHelper} from "../DDLHelper";
+import {DDLHelper} from "../builder/DDLHelper";
 import {BaseUpdate} from "./BaseUpdate";
 
 // Update for creating gedemin database

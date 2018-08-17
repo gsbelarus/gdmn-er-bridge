@@ -44,6 +44,7 @@ import {
   TimeStampAttribute
 } from "gdmn-orm";
 import {IParentAttributeAdapter} from "gdmn-orm/src/rdbadapter";
+import {Builder} from "../builder/Builder";
 import {Constants} from "../Constants";
 import {IATRelationField, load} from "./atData";
 import {loadDocument} from "./document";
@@ -169,7 +170,7 @@ export async function erExport(dbs: DBStructure, connection: AConnection, transa
           lName: {ru: {name: "Идентификатор"}},
           sequence: GDGUnique,
           adapter: {
-            relation: entity.adapter.relation[entity.adapter.relation.length - 1].relationName,
+            relation: Builder._getOwnRelationName(entity),
             field: Constants.DEFAULT_INHERITED_KEY_NAME
           }
         })

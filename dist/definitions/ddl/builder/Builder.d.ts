@@ -1,7 +1,7 @@
 import { AConnection, ATransaction, TExecutor } from "gdmn-db";
 import { Attribute, Entity } from "gdmn-orm";
-import { ATHelper } from "../ATHelper";
-import { DDLHelper } from "../DDLHelper";
+import { ATHelper } from "./ATHelper";
+import { DDLHelper } from "./DDLHelper";
 interface IATEntityOptions {
     relationName: string;
 }

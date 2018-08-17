@@ -10,7 +10,7 @@ import {
   SetAttribute
 } from "gdmn-orm";
 import {Constants} from "../Constants";
-import {DDLHelper, IFieldProps} from "../DDLHelper";
+import {DDLHelper, IFieldProps} from "./DDLHelper";
 import {Builder} from "./Builder";
 import {DomainResolver} from "./DomainResolver";
 import {EntityBuilder} from "./EntityBuilder";
