@@ -53,6 +53,12 @@ export class ATHelper {
     this._transaction = transaction;
   }
 
+  get prepared(): boolean {
+    return !!this._createATField && !this._createATField.disposed &&
+      !!this._createATRelation && !this._createATRelation.disposed &&
+      !!this._createATRelationField && !this._createATRelationField.disposed;
+  }
+
   public async prepare(): Promise<void> {
     this._createATField = await this._connection.prepare(this._transaction, `
       INSERT INTO AT_FIELDS (FIELDNAME, LNAME, DESCRIPTION, REFTABLE, REFCONDITION, SETTABLE, SETLISTFIELD, 

@@ -1,12 +1,12 @@
 import {AConnection, AStatement, ATransaction} from "gdmn-db";
-import {Constants} from "./Constants";
+import {Constants} from "../Constants";
 
 export class DDLUniqueGenerator {
 
   private _nextUnique: AStatement | undefined;
 
   public get prepared(): boolean {
-    return !!this._nextUnique;
+    return !!this._nextUnique && !this._nextUnique.disposed;
   }
 
   public async prepare(connection: AConnection, transaction: ATransaction): Promise<void> {

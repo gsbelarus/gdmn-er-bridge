@@ -1,4 +1,4 @@
-import {Attribute, IAttributeAdapter, EnumAttribute, ILName, StringAttribute} from "gdmn-orm";
+import {Attribute, EnumAttribute, IAttributeAdapter, ILName, StringAttribute} from "gdmn-orm";
 
 export type createDomainFunc =
   (attributeName: string, lName: ILName, adapter?: IAttributeAdapter) => Attribute;

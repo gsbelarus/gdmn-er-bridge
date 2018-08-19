@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const DDLHelper_1 = require("../builder/DDLHelper");
 const Constants_1 = require("../Constants");
-const DDLHelper_1 = require("../DDLHelper");
 const BaseUpdate_1 = require("./BaseUpdate");
 // Update for creating gdmn-back adapted database
 class Update2 extends BaseUpdate_1.BaseUpdate {

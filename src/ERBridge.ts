@@ -1,9 +1,10 @@
-import {AConnection, ATransaction, DBStructure} from "gdmn-db";
-import {Entity, EntityAttribute, ERModel, IEntityQueryInspector, Sequence, SequenceAttribute} from "gdmn-orm";
+import {AConnection, ATransaction, DBStructure, TExecutor} from "gdmn-db";
+import {ERModel, IEntityQueryInspector} from "gdmn-orm";
 import {Query} from "./crud/query/Query";
-import {Constants} from "./ddl/Constants";
+import {Builder} from "./ddl/builder/Builder";
+import {EntityBuilder} from "./ddl/builder/EntityBuilder";
+import {ERModelBuilder} from "./ddl/builder/ERModelBuilder";
 import {ERExport2} from "./ddl/export/ERExport2";
-import {ERImport} from "./ddl/import/ERImport";
 import {UpdateManager} from "./ddl/updates/UpdateManager";
 
 export interface IQueryResponse {
@@ -23,42 +24,20 @@ export class ERBridge {
     this._connection = connection;
   }
 
-  public static completeERModel(erModel: ERModel): ERModel {
-    if (!Object.values(erModel.sequencies).some((seq) => seq.name == Constants.GLOBAL_GENERATOR)) {
-      erModel.addSequence(new Sequence({name: Constants.GLOBAL_GENERATOR}));
-    }
-
-    return erModel;
+  public static getERModelBuilder(): ERModelBuilder {
+    return new ERModelBuilder();
   }
 
-  public static addEntityToERModel(erModel: ERModel, entity: Entity): Entity {
-    const idAttr = Object.values(entity.ownAttributes).find((attr) => attr.name === Constants.DEFAULT_ID_NAME);
-    if (idAttr) {
-      if (!SequenceAttribute.isType(idAttr)) {
-        throw new Error("Attribute named 'ID' must be SequenceAttribute");
-      }
-    } else if (entity.parent) {
-      const entityAttr = entity.add(new EntityAttribute({
-        name: Constants.DEFAULT_INHERITED_KEY_NAME,
-        required: true,
-        lName: {ru: {name: "Родитель"}},
-        entities: [entity.parent]
-      }));
-      entity.pk.push(entityAttr);
-    } else {
-      entity.add(new SequenceAttribute({
-        name: Constants.DEFAULT_ID_NAME,
-        lName: {ru: {name: "Идентификатор"}},
-        sequence: erModel.sequencies[Constants.GLOBAL_GENERATOR],
-        adapter: {
-          relation: entity.adapter ? entity.adapter.relation[entity.adapter.relation.length - 1].relationName : entity.name,
-          field: Constants.DEFAULT_ID_NAME
-        }
-      }));
-    }
-    erModel.add(entity);
+  public static getEntityBuilder(): EntityBuilder {
+    return new EntityBuilder();
+  }
 
-    return entity;
+  public async executeEntityBuilder<R>(transaction: ATransaction, callback: TExecutor<EntityBuilder, R>): Promise<R> {
+    return await Builder.executeSelf(this._connection, transaction, ERBridge.getEntityBuilder, callback);
+  }
+
+  public async executeERModelBuilder<R>(transaction: ATransaction, callback: TExecutor<ERModelBuilder, R>): Promise<R> {
+    return await Builder.executeSelf(this._connection, transaction, ERBridge.getERModelBuilder, callback);
   }
 
   public async exportFromDatabase(dbStructure: DBStructure,
@@ -66,10 +45,6 @@ export class ERBridge {
                                   erModel: ERModel = new ERModel()): Promise<ERModel> {
     return await new ERExport2(this._connection, transaction, dbStructure, erModel).execute();
     // return await erExport(dbStructure, this._connection, transaction, erModel);
-  }
-
-  public async importToDatabase(erModel: ERModel): Promise<void> {
-    return await new ERImport(this._connection, erModel).execute();
   }
 
   public async initDatabase(): Promise<void> {

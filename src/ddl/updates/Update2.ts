@@ -1,5 +1,5 @@
+import {DDLHelper} from "../builder/DDLHelper";
 import {Constants} from "../Constants";
-import {DDLHelper} from "../DDLHelper";
 import {BaseUpdate} from "./BaseUpdate";
 
 // Update for creating gdmn-back adapted database

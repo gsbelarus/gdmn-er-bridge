@@ -35,6 +35,7 @@ import {
   TimeStampAttribute
 } from "gdmn-orm";
 import {IParentAttributeAdapter} from "gdmn-orm/src/rdbadapter";
+import {Builder} from "../builder/Builder";
 import {Constants} from "../Constants";
 import {IATLoadResult, IATRelation, load} from "./atData";
 import {gdDomains} from "./gddomains";
@@ -105,10 +106,10 @@ export class ERExport2 {
         const refRelation = this._dbStructure.relationByUqConstraint(inheritedFk.constNameUq);
         const refEntities = this._findEntities(refRelation.name);
         if (refEntities.length) {
-          this._erModel.add(this._createEntity(refEntities[0], this._dbStructure.relations[atRelationName], atRelation));
+          this._erModel.add(this._createEntity(refEntities[0], relation, atRelation));
         }
       } else {
-        this._erModel.add(this._createEntity(undefined, this._dbStructure.relations[atRelationName], atRelation));
+        this._erModel.add(this._createEntity(undefined, relation, atRelation));
       }
     });
   }
@@ -141,7 +142,7 @@ export class ERExport2 {
           lName: {ru: {name: "Идентификатор"}},
           sequence: this._erModel.sequencies[Constants.GLOBAL_GENERATOR],
           adapter: {
-            relation: entity.adapter ? entity.adapter.relation[entity.adapter.relation.length - 1].relationName : entity.name,
+            relation: Builder._getOwnRelationName(entity),
             field: Constants.DEFAULT_ID_NAME
           }
         })
@@ -151,8 +152,8 @@ export class ERExport2 {
   }
 
   private _createAttributes(entity: Entity, forceAdapter: boolean): void {
-    const ownAdapterRelation = entity.adapter.relation[entity.adapter.relation.length - 1];
-    const relation = this._dbStructure.relations[ownAdapterRelation.relationName];
+    const ownRelationName = Builder._getOwnRelationName(entity);
+    const relation = this._dbStructure.relations[ownRelationName];
     const atRelation = this._getATResult().atRelations[relation.name];
 
     Object.values(relation.relationFields).forEach((relationField) => {

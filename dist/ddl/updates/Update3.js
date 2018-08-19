@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const DDLHelper_1 = require("../DDLHelper");
+const DDLHelper_1 = require("../builder/DDLHelper");
 const BaseUpdate_1 = require("./BaseUpdate");
 class Update3 extends BaseUpdate_1.BaseUpdate {
     constructor() {

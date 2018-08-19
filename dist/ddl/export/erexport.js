@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const gdmn_db_1 = require("gdmn-db");
 const gdmn_nlp_1 = require("gdmn-nlp");
 const gdmn_orm_1 = require("gdmn-orm");
+const Builder_1 = require("../builder/Builder");
 const Constants_1 = require("../Constants");
 const atData_1 = require("./atData");
 const document_1 = require("./document");
@@ -90,7 +91,7 @@ async function erExport(dbs, connection, transaction, erModel) {
                 lName: { ru: { name: "Идентификатор" } },
                 sequence: GDGUnique,
                 adapter: {
-                    relation: entity.adapter.relation[entity.adapter.relation.length - 1].relationName,
+                    relation: Builder_1.Builder._getOwnRelationName(entity),
                     field: Constants_1.Constants.DEFAULT_INHERITED_KEY_NAME
                 }
             }));
