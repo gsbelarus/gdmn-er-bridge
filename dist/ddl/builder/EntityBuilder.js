@@ -2,7 +2,6 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const gdmn_orm_1 = require("gdmn-orm");
 const Constants_1 = require("../Constants");
-const Prefix_1 = require("../Prefix");
 const Builder_1 = require("./Builder");
 const DDLHelper_1 = require("./DDLHelper");
 const DomainResolver_1 = require("./DomainResolver");
@@ -54,38 +53,52 @@ class EntityBuilder extends Builder_1.Builder {
             });
         }
         else if (gdmn_orm_1.SetAttribute.isType(attr)) {
-            const crossTableName = attr.adapter
-                ? attr.adapter.crossRelation
-                : Prefix_1.Prefix.join(`${await this._getDDLHelper().ddlUniqueGen.next()}`, Prefix_1.Prefix.CROSS);
             // create cross table
             const fields = [];
-            for (const crossAttr of Object.values(attr.attributes).filter((attr) => gdmn_orm_1.ScalarAttribute.isType(attr))) {
-                const fieldName = Builder_1.Builder._getFieldName(crossAttr);
-                const domainName = await this._getDDLHelper().addDomain(DomainResolver_1.DomainResolver.resolve(crossAttr));
-                await this._insertATAttr(crossAttr, { relationName: crossTableName, fieldName, domainName });
-                const field = {
-                    name: fieldName,
-                    domain: domainName
-                };
-                fields.push(field);
-            }
             const pkFields = [];
-            const refPKDomainName = await this._getDDLHelper().addDomain(DomainResolver_1.DomainResolver.resolve(attr.entities[0].pk[0]));
-            const refPK = {
-                name: Constants_1.Constants.DEFAULT_CROSS_PK_REF_NAME,
-                domain: refPKDomainName
-            };
-            fields.unshift(refPK);
-            pkFields.unshift(refPK);
             const ownPKDomainName = await this._getDDLHelper().addDomain(DomainResolver_1.DomainResolver.resolve(entity.pk[0]));
             const ownPK = {
                 name: Constants_1.Constants.DEFAULT_CROSS_PK_OWN_NAME,
                 domain: ownPKDomainName
             };
-            fields.unshift(ownPK);
-            pkFields.unshift(ownPK);
-            await this._getDDLHelper().addTable(crossTableName, fields);
+            fields.push(ownPK);
+            pkFields.push(ownPK);
+            const refPKDomainName = await this._getDDLHelper().addDomain(DomainResolver_1.DomainResolver.resolve(attr.entities[0].pk[0]));
+            const refPK = {
+                name: Constants_1.Constants.DEFAULT_CROSS_PK_REF_NAME,
+                domain: refPKDomainName
+            };
+            fields.push(refPK);
+            pkFields.push(refPK);
+            for (const crossAttr of Object.values(attr.attributes).filter((attr) => gdmn_orm_1.ScalarAttribute.isType(attr))) {
+                const fieldName = Builder_1.Builder._getFieldName(crossAttr);
+                const domainName = await this._getDDLHelper().addDomain(DomainResolver_1.DomainResolver.resolve(crossAttr));
+                fields.push({
+                    attr: crossAttr,
+                    name: fieldName,
+                    domain: domainName
+                });
+            }
+            let crossTableName;
+            if (attr.adapter) {
+                crossTableName = await this._getDDLHelper().addTable(attr.adapter.crossRelation, fields);
+            }
+            else {
+                crossTableName = await this._getDDLHelper().addTable(fields);
+            }
             await this._getDDLHelper().addPrimaryKey(crossTableName, pkFields.map((i) => i.name));
+            for (const field of fields) {
+                if (field.attr) {
+                    await this._insertATAttr(field.attr, {
+                        relationName: crossTableName,
+                        fieldName: field.name,
+                        domainName: field.domain
+                    });
+                }
+                else {
+                    // await this._getATHelper().insertATRelationFields();
+                }
+            }
             const crossTableKey = await this._getATHelper().insertATRelations({
                 relationName: crossTableName,
                 relationType: "T",

@@ -555,10 +555,6 @@ describe("ERBridge", () => {
 
       // TODO correct ordering
       await builder.entityBuilder.addAttribute(entity1, new SetAttribute({
-        name: "SET3", lName: {ru: {name: "Ссылка3"}}, required: true, entities: [entity2],
-        adapter: {crossRelation: "CROSS_5"} // generated
-      }));
-      await builder.entityBuilder.addAttribute(entity1, new SetAttribute({
         name: "SET1", lName: {ru: {name: "Ссылка1"}}, required: true, entities: [entity2], presLen: 120,
         adapter: {crossRelation: "CROSS_TABLE_ADAPTER1", presentationField: "SET_FIELD_ADAPTER"}
       }));
@@ -576,6 +572,11 @@ describe("ERBridge", () => {
         minValue: MIN_32BIT_INT, maxValue: MAX_32BIT_INT, defaultValue: -1000
       }));
       await builder.entityBuilder.addAttribute(entity1, setAttr);
+      await builder.entityBuilder.addAttribute(entity1, new SetAttribute({
+        name: "SET3", lName: {ru: {name: "Ссылка3"}}, required: true, entities: [entity2],
+        adapter: {crossRelation: "TABLE_7"} // generated
+      }));
+
       return erModel;
     });
 

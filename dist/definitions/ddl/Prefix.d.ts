@@ -2,7 +2,7 @@ export declare class Prefix {
     static GDMN: string;
     static GENERATOR: string;
     static DOMAIN: string;
-    static CROSS: string;
+    static TABLE: string;
     static UNIQUE: string;
     static INDEX: string;
     static PRIMARY_KEY: string;
