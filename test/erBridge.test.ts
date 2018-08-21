@@ -67,6 +67,7 @@ describe("ERBridge", () => {
       await builder.addEntity(erModel, new Entity({
         name: "TEST1",
         lName: {ru: {name: "entity name", fullName: "full entity name"}},
+        semCategories: [],
         adapter: {
           relation: [{relationName: "TEST_ADAPTER"}]
         }
