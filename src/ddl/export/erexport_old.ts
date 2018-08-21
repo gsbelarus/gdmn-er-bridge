@@ -49,7 +49,7 @@ import {Constants} from "../Constants";
 import {IATRelationField, load} from "./atData";
 import {loadDocument} from "./document";
 import {gdDomains} from "./gddomains";
-import {gedeminTables} from "./gdtables";
+import {gedeminTables} from "./gdTables";
 import {
   check2DateRange,
   check2Enum,
@@ -69,7 +69,7 @@ import {
   isCheckForBoolean
 } from "./util";
 
-export async function erExport(dbs: DBStructure, connection: AConnection, transaction: ATransaction, erModel: ERModel): Promise<ERModel> {
+export async function erexport_old(dbs: DBStructure, connection: AConnection, transaction: ATransaction, erModel: ERModel): Promise<ERModel> {
 
   const {atFields, atRelations} = await load(connection, transaction);
 

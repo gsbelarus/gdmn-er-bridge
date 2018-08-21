@@ -10,12 +10,13 @@ export declare class GDEntities {
     private readonly _transaction;
     private readonly _erModel;
     private readonly _dbStructure;
-    private readonly _atResult;
+    private _atResult;
     private _documentClasses;
     private _documentABC;
-    constructor(connection: AConnection, transaction: ATransaction, erModel: ERModel, dbStructure: DBStructure, atResult: IATLoadResult);
-    add(): Promise<void>;
+    constructor(connection: AConnection, transaction: ATransaction, erModel: ERModel, dbStructure: DBStructure);
+    create(atResult: IATLoadResult): Promise<void>;
     private _createDocument;
     private _recursInherited;
     private _createEntity;
+    private _getATResult;
 }

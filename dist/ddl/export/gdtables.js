@@ -45,4 +45,4 @@ exports.gedeminTables = [
     "WG_TBLCAL",
     "WG_TBLCALDAY" // График рабочего времени (день)
 ];
-//# sourceMappingURL=gdtables.js.map
+//# sourceMappingURL=gdTables.js.map

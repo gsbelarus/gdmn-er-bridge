@@ -59,12 +59,13 @@ import {
   isCheckForBoolean
 } from "./util";
 
-export class ERExport2 {
+export class ERExport {
 
   private readonly _connection: AConnection;
   private readonly _transaction: ATransaction;
   private readonly _dbStructure: DBStructure;
   private readonly _erModel: ERModel;
+  private readonly _gdEntities: GDEntities;
   private _atResult: IATLoadResult | undefined;
 
   constructor(connection: AConnection, transaction: ATransaction, dbStructure: DBStructure, erModel: ERModel) {
@@ -72,19 +73,26 @@ export class ERExport2 {
     this._transaction = transaction;
     this._dbStructure = dbStructure;
     this._erModel = erModel;
+    this._gdEntities = new GDEntities(this._connection, transaction, erModel, dbStructure);
   }
 
   public async execute(): Promise<ERModel> {
     this._atResult = await load(this._connection, this._transaction);
 
     this._erModel.addSequence(new Sequence({name: Constants.GLOBAL_GENERATOR}));
+    await this._gdEntities.create(this._getATResult());
 
     this._createEntities();
-    await new GDEntities(this._connection, this._transaction, this._erModel, this._dbStructure, this._getATResult()).add();
-    Object.values(this._erModel.entities).forEach((entity) => {
-      const forceAdapter = Object.values(this._erModel.entities).some((e) => e.parent === entity);
-      this._createAttributes(entity, forceAdapter);
-    });
+    Object.values(this._erModel.entities)
+      .sort((a, b) => {
+        if (a.adapter.relation.length < b.adapter.relation.length) return -1;
+        else if (a.adapter.relation.length > b.adapter.relation.length) return 1;
+        return 0;
+      })
+      .forEach((entity) => {
+        const forceAdapter = Object.values(this._erModel.entities).some((e) => e.parent === entity);
+        this._createAttributes(entity, forceAdapter);
+      });
     this._createDetailAttributes();
     this._createSetAttributes();
 
@@ -101,15 +109,17 @@ export class ERExport2 {
   private _createEntities(): void {
     Object.entries(this._getATResult().atRelations).forEach(([atRelationName, atRelation]) => {
       const relation = this._dbStructure.relations[atRelationName];
-      const inheritedFk = Object.values(relation.foreignKeys).find((fk) => fk.fields.includes(Constants.DEFAULT_INHERITED_KEY_NAME));
+      const inheritedFk = Object.values(relation.foreignKeys)
+        .find((fk) => fk.fields.includes(Constants.DEFAULT_INHERITED_KEY_NAME));
+      let parent: Entity | undefined;
       if (inheritedFk) {
         const refRelation = this._dbStructure.relationByUqConstraint(inheritedFk.constNameUq);
         const refEntities = this._findEntities(refRelation.name);
-        if (refEntities.length) {
-          this._erModel.add(this._createEntity(refEntities[0], relation, atRelation));
-        }
-      } else {
-        this._erModel.add(this._createEntity(undefined, relation, atRelation));
+        parent = refEntities[0];
+      }
+      const entity = this._createEntity(parent, relation, atRelation);
+      if (!this._erModel.entities[entity.name]) {
+        this._erModel.add(entity);
       }
     });
   }
@@ -153,51 +163,57 @@ export class ERExport2 {
 
   private _createAttributes(entity: Entity, forceAdapter: boolean): void {
     const ownRelationName = Builder._getOwnRelationName(entity);
-    const relation = this._dbStructure.relations[ownRelationName];
-    const atRelation = this._getATResult().atRelations[relation.name];
+    entity.adapter.relation.forEach((rel) => {
+      const relation = this._dbStructure.relations[rel.relationName];
+      const atRelation = this._getATResult().atRelations[relation.name];
 
-    Object.values(relation.relationFields).forEach((relationField) => {
-      // ignore lb and rb fields
-      if (Object.values(atRelation.relationFields)
-          .some((atRf) => (atRf.lbFieldName === relationField.name || atRf.rbFieldName === relationField.name))
-        || relationField.name === Constants.DEFAULT_LB_NAME || relationField.name === Constants.DEFAULT_RB_NAME) {
-        return;
-      }
-      if (entity.hasOwnAttribute(relationField.name)) {
-        return;
-      }
-      if (!hasField(entity.adapter, relation.name, relationField.name)
-        && !systemFields.find(sf => sf === relationField.name)
-        && !isUserDefined(relationField.name)) {
-        return;
-      }
-      if (entity.adapter.relation[0].selector && entity.adapter.relation[0].selector!.field === relationField.name) {
-        return;
-      }
-
-      const atRelationField = atRelation ? atRelation.relationFields[relationField.name] : undefined;
-      if (atRelationField && atRelationField.crossTable) {
-        return;
-      }
-      if (atRelationField && atRelationField.masterEntityName) {
-        return;
-      }
-
-      entity.add(this._createAttribute(relation, relationField, forceAdapter));
-    });
-
-    Object.values(relation.unique).forEach((uq) => {
-      const attrs = uq.fields.map((field) => {
-        let uqAttr = Object.values(entity.attributes).find((attr) => {
-          const attrFieldName = attr.adapter ? attr.adapter.field : attr.name;
-          return attrFieldName === field;
-        });
-        if (!uqAttr) {
-          uqAttr = entity.attribute(field);
+      Object.values(relation.relationFields).forEach((relationField) => {
+        if (relation.primaryKey && relation.primaryKey.fields.includes(relationField.name)) {
+          return;
         }
-        return uqAttr;
+        // ignore lb and rb fields
+        if (Object.values(atRelation.relationFields)
+            .some((atRf) => (atRf.lbFieldName === relationField.name || atRf.rbFieldName === relationField.name))
+          || relationField.name === Constants.DEFAULT_LB_NAME || relationField.name === Constants.DEFAULT_RB_NAME) {
+          return;
+        }
+        if (!hasField(entity.adapter, relation.name, relationField.name)
+          && !systemFields.find((sf) => sf === relationField.name)
+          && !isUserDefined(relationField.name)) {
+          return;
+        }
+        if (entity.adapter.relation[0].selector && entity.adapter.relation[0].selector!.field === relationField.name) {
+          return;
+        }
+
+        const atRelationField = atRelation ? atRelation.relationFields[relationField.name] : undefined;
+        if (atRelationField) {
+          if (atRelationField.crossTable || atRelationField.masterEntityName) {
+            return;
+          }
+        }
+
+        const attribute = this._createAttribute(relation, relationField, forceAdapter);
+        // ignore duplicates and override parent attributes
+        if ((ownRelationName === rel.relationName && !entity.hasOwnAttribute(attribute.name))
+          || !entity.hasAttribute(attribute.name)) {
+          entity.add(attribute);
+        }
       });
-      entity.addUnique(attrs);
+
+      Object.values(relation.unique).forEach((uq) => {
+        const attrs = uq.fields.map((field) => {
+          let uqAttr = Object.values(entity.attributes).find((attr) => {
+            const attrFieldName = attr.adapter ? attr.adapter.field : attr.name;
+            return attrFieldName === field;
+          });
+          if (!uqAttr) {
+            uqAttr = entity.attribute(field);
+          }
+          return uqAttr;
+        });
+        entity.addUnique(attrs);
+      });
     });
   }
 

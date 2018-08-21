@@ -4,7 +4,7 @@ import {Query} from "./crud/query/Query";
 import {Builder} from "./ddl/builder/Builder";
 import {EntityBuilder} from "./ddl/builder/EntityBuilder";
 import {ERModelBuilder} from "./ddl/builder/ERModelBuilder";
-import {ERExport2} from "./ddl/export/ERExport2";
+import {ERExport} from "./ddl/export/ERExport";
 import {UpdateManager} from "./ddl/updates/UpdateManager";
 
 export interface IQueryResponse {
@@ -43,8 +43,8 @@ export class ERBridge {
   public async exportFromDatabase(dbStructure: DBStructure,
                                   transaction: ATransaction,
                                   erModel: ERModel = new ERModel()): Promise<ERModel> {
-    return await new ERExport2(this._connection, transaction, dbStructure, erModel).execute();
-    // return await erExport(dbStructure, this._connection, transaction, erModel);
+    return await new ERExport(this._connection, transaction, dbStructure, erModel).execute();
+    // return await erexport_old(dbStructure, this._connection, transaction, erModel);
   }
 
   public async initDatabase(): Promise<void> {
