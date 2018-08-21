@@ -168,6 +168,10 @@ export class ERExport {
       const atRelation = this._getATResult().atRelations[relation.name];
 
       Object.values(relation.relationFields).forEach((relationField) => {
+        // ignore non including in adapter.relation.fields
+        if (rel.fields && !rel.fields.includes(relationField.name)) {
+          return;
+        }
         if (relation.primaryKey && relation.primaryKey.fields.includes(relationField.name)) {
           return;
         }
