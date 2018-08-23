@@ -90,7 +90,7 @@ export class DDLHelper {
     await this._connection.execute(this._transaction, sql);
     sql = `ALTER SEQUENCE ${sequenceName} RESTART WITH 0`;
     this._logs.push(sql);
-    await this._connection.execute(this._transaction, `ALTER SEQUENCE ${sequenceName} RESTART WITH 0`);
+    await this._connection.execute(this._transaction, sql);
   }
 
   public async addTable(scalarFields: IFieldProps[]): Promise<string>
@@ -155,9 +155,7 @@ export class DDLHelper {
   }
 
   public async addUnique(tableName: string, fieldNames: string[]): Promise<string>;
-
   public async addUnique(constraintName: string, tableName: string, fieldNames: string[]): Promise<string>;
-
   public async addUnique(constraintName: any, tableName: any, fieldNames?: string[]): Promise<string> {
     if (!fieldNames) {
       fieldNames = tableName as string[];
@@ -175,9 +173,7 @@ export class DDLHelper {
   }
 
   public async addPrimaryKey(tableName: string, fieldNames: string[]): Promise<string>;
-
   public async addPrimaryKey(constraintName: string, tableName: string, fieldNames: string[]): Promise<string>;
-
   public async addPrimaryKey(constraintName: any, tableName: any, fieldNames?: string[]): Promise<string> {
     if (!fieldNames) {
       fieldNames = tableName as string[];
