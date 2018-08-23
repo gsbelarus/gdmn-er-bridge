@@ -9,16 +9,15 @@ class EntitySource {
         this._globalSequence = globalSequence;
     }
     async init(obj) {
-        if (obj.parent) {
-            const entityAttr = obj.add(new gdmn_orm_1.EntityAttribute({
+        if (obj.parent && !obj.hasOwnAttribute(Constants_1.Constants.DEFAULT_INHERITED_KEY_NAME)) {
+            obj.add(new gdmn_orm_1.EntityAttribute({
                 name: Constants_1.Constants.DEFAULT_INHERITED_KEY_NAME,
                 required: true,
                 lName: { ru: { name: "Родитель" } },
                 entities: [obj.parent]
             }));
-            obj.pk.push(entityAttr);
         }
-        else {
+        else if (!obj.hasOwnAttribute(Constants_1.Constants.DEFAULT_ID_NAME)) {
             obj.add(new gdmn_orm_1.SequenceAttribute({
                 name: Constants_1.Constants.DEFAULT_ID_NAME,
                 lName: { ru: { name: "Идентификатор" } },
@@ -31,13 +30,13 @@ class EntitySource {
         }
         return obj;
     }
-    async create(transaction, parent, obj) {
+    async create(transaction, _, obj) {
         const builder = await transaction.getBuilder();
-        return (await builder.addEntity(parent, obj));
+        return (await builder.addEntity(obj));
     }
-    async delete(transaction, parent, obj) {
+    async delete(transaction, _, obj) {
         const builder = await transaction.getBuilder();
-        await builder.removeEntity(parent, obj);
+        await builder.removeEntity(obj);
     }
     async addUnique(transaction, entity, attrs) {
         const builder = await transaction.getBuilder();

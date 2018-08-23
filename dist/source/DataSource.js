@@ -22,12 +22,6 @@ class DataSource {
         const dbTransaction = await this._connection.startTransaction();
         return new Transaction_1.Transaction(this._connection, dbTransaction);
     }
-    async commitTransaction(transaction) {
-        return await transaction.commit();
-    }
-    async rollbackTransaction(transaction) {
-        return await transaction.rollback();
-    }
     getEntitySource() {
         if (!this._globalSequence) {
             throw new Error("globalSequence is undefined");

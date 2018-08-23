@@ -8,8 +8,6 @@ export declare class DataSource implements IDataSource {
     constructor(connection: AConnection);
     init(obj: ERModel): Promise<ERModel>;
     startTransaction(): Promise<Transaction>;
-    commitTransaction(transaction: Transaction): Promise<void>;
-    rollbackTransaction(transaction: Transaction): Promise<void>;
     getEntitySource(): EntitySource;
     getSequenceSource(): ISequenceSource;
 }

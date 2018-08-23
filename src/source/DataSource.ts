@@ -30,14 +30,6 @@ export class DataSource implements IDataSource {
     return new Transaction(this._connection, dbTransaction);
   }
 
-  public async commitTransaction(transaction: Transaction): Promise<void> {
-    return await transaction.commit();
-  }
-
-  public async rollbackTransaction(transaction: Transaction): Promise<void> {
-    return await transaction.rollback();
-  }
-
   getEntitySource(): EntitySource {
     if (!this._globalSequence) {
       throw new Error("globalSequence is undefined");

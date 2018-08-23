@@ -72,13 +72,12 @@ class ERExport {
         }
         const entity = new gdmn_orm_1.Entity({ parent, name, lName, semCategories, adapter });
         if (parent) {
-            const entityAttr = entity.add(new gdmn_orm_1.EntityAttribute({
+            entity.add(new gdmn_orm_1.EntityAttribute({
                 name: Constants_1.Constants.DEFAULT_INHERITED_KEY_NAME,
                 required: true,
                 lName: { ru: { name: "Родитель" } },
                 entities: [parent]
             }));
-            entity.pk.push(entityAttr);
         }
         else {
             entity.add(new gdmn_orm_1.SequenceAttribute({

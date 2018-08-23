@@ -4,13 +4,13 @@ class SequenceSource {
     async init(obj) {
         return obj;
     }
-    async create(transaction, parent, obj) {
+    async create(transaction, _, obj) {
         const builder = await transaction.getBuilder();
-        return (await builder.addSequence(parent, obj));
+        return (await builder.addSequence(obj));
     }
-    async delete(transaction, parent, obj) {
+    async delete(transaction, _, obj) {
         const builder = await transaction.getBuilder();
-        await builder.removeSequence(parent, obj);
+        await builder.removeSequence(obj);
     }
 }
 exports.SequenceSource = SequenceSource;

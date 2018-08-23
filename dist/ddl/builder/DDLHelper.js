@@ -41,7 +41,7 @@ class DDLHelper {
         await this._connection.execute(this._transaction, sql);
         sql = `ALTER SEQUENCE ${sequenceName} RESTART WITH 0`;
         this._logs.push(sql);
-        await this._connection.execute(this._transaction, `ALTER SEQUENCE ${sequenceName} RESTART WITH 0`);
+        await this._connection.execute(this._transaction, sql);
     }
     async addTable(tableName, scalarFields) {
         if (!scalarFields) {

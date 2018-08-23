@@ -7,13 +7,13 @@ export class SequenceSource implements ISequenceSource {
     return obj;
   }
 
-  public async create<T extends Sequence>(transaction: Transaction, parent: ERModel, obj: T): Promise<T> {
+  public async create<T extends Sequence>(transaction: Transaction, _: ERModel, obj: T): Promise<T> {
     const builder = await transaction.getBuilder();
-    return (await builder.addSequence(parent, obj)) as T;
+    return (await builder.addSequence(obj)) as T;
   }
 
-  public async delete(transaction: Transaction, parent: ERModel, obj: Sequence): Promise<void> {
+  public async delete(transaction: Transaction, _: ERModel, obj: Sequence): Promise<void> {
     const builder = await transaction.getBuilder();
-    await builder.removeSequence(parent, obj);
+    await builder.removeSequence(obj);
   }
 }
