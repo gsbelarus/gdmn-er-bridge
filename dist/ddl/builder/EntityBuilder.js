@@ -7,12 +7,12 @@ const DDLHelper_1 = require("./DDLHelper");
 const DomainResolver_1 = require("./DomainResolver");
 class EntityBuilder extends Builder_1.Builder {
     async addUnique(entity, attrs) {
-        entity.addUnique(attrs);
+        // entity.addUnique(attrs);
         const tableName = Builder_1.Builder._getOwnRelationName(entity);
         await this._getDDLHelper().addUnique(tableName, attrs.map((attr) => Builder_1.Builder._getFieldName(attr)));
     }
     async addAttribute(entity, attr) {
-        entity.add(attr);
+        // entity.add(attr);
         const tableName = Builder_1.Builder._getOwnRelationName(entity);
         if (gdmn_orm_1.ScalarAttribute.isType(attr)) {
             const fieldName = Builder_1.Builder._getFieldName(attr);
@@ -171,6 +171,10 @@ class EntityBuilder extends Builder_1.Builder {
             });
         }
         return attr;
+    }
+    async removeAttribute(_entity, _attribute) {
+        // TODO
+        throw new Error("Unsupported yet");
     }
 }
 exports.EntityBuilder = EntityBuilder;

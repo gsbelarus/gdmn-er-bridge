@@ -36,7 +36,11 @@ class DDLHelper {
         await this._ddlUniqueGen.dispose();
     }
     async addSequence(sequenceName) {
-        await this._connection.execute(this._transaction, `CREATE SEQUENCE ${sequenceName}`);
+        let sql = `CREATE SEQUENCE ${sequenceName}`;
+        this._logs.push(sql);
+        await this._connection.execute(this._transaction, sql);
+        sql = `ALTER SEQUENCE ${sequenceName} RESTART WITH 0`;
+        this._logs.push(sql);
         await this._connection.execute(this._transaction, `ALTER SEQUENCE ${sequenceName} RESTART WITH 0`);
     }
     async addTable(tableName, scalarFields) {

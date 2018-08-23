@@ -16,15 +16,11 @@ import {DomainResolver} from "./DomainResolver";
 export class EntityBuilder extends Builder {
 
   public async addUnique(entity: Entity, attrs: Attribute[]): Promise<void> {
-    entity.addUnique(attrs);
-
     const tableName = Builder._getOwnRelationName(entity);
     await this._getDDLHelper().addUnique(tableName, attrs.map((attr) => Builder._getFieldName(attr)));
   }
 
   public async addAttribute(entity: Entity, attr: Attribute): Promise<Attribute> {
-    entity.add(attr);
-
     const tableName = Builder._getOwnRelationName(entity);
 
     if (ScalarAttribute.isType(attr)) {
@@ -191,7 +187,8 @@ export class EntityBuilder extends Builder {
     return attr;
   }
 
-  // public async removeAttribute(attribute: Attribute): Promise<void> {
-  //   // TODO
-  // }
+  public async removeAttribute(_entity: Entity, _attribute: Attribute): Promise<void> {
+    // TODO
+    throw new Error("Unsupported yet");
+  }
 }

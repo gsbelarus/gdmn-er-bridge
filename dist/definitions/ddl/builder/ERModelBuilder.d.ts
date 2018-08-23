@@ -8,5 +8,7 @@ export declare class ERModelBuilder extends Builder {
     prepare(connection: AConnection, transaction: ATransaction): Promise<void>;
     initERModel(erModel?: ERModel): Promise<ERModel>;
     addSequence(erModel: ERModel, sequence: Sequence): Promise<Sequence>;
+    removeSequence(_erModel: ERModel, _sequence: Sequence): Promise<void>;
     addEntity(erModel: ERModel, entity: Entity): Promise<Entity>;
+    removeEntity(_erModel: ERModel, _entity: Entity): Promise<void>;
 }

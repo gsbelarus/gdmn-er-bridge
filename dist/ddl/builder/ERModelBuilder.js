@@ -24,31 +24,37 @@ class ERModelBuilder extends Builder_1.Builder {
         return erModel;
     }
     async addSequence(erModel, sequence) {
-        return erModel.addSequence(sequence);
+        // return erModel.addSequence(sequence);
+        // TODO custom adapter name
+        await this._getDDLHelper().addSequence(sequence.name);
+        return sequence;
+    }
+    async removeSequence(_erModel, _sequence) {
+        // TODO
+        throw new Error("Unsupported yet");
     }
     async addEntity(erModel, entity) {
         // TODO pk only EntityAttribute and ScalarAttribute
-        if (entity.parent) {
-            const entityAttr = entity.add(new gdmn_orm_1.EntityAttribute({
-                name: Constants_1.Constants.DEFAULT_INHERITED_KEY_NAME,
-                required: true,
-                lName: { ru: { name: "Родитель" } },
-                entities: [entity.parent]
-            }));
-            entity.pk.push(entityAttr);
-        }
-        else {
-            entity.add(new gdmn_orm_1.SequenceAttribute({
-                name: Constants_1.Constants.DEFAULT_ID_NAME,
-                lName: { ru: { name: "Идентификатор" } },
-                sequence: erModel.sequencies[Constants_1.Constants.GLOBAL_GENERATOR],
-                adapter: {
-                    relation: Builder_1.Builder._getOwnRelationName(entity),
-                    field: Constants_1.Constants.DEFAULT_ID_NAME
-                }
-            }));
-        }
-        erModel.add(entity);
+        // if (entity.parent) {
+        //   const entityAttr = entity.add(new EntityAttribute({
+        //     name: Constants.DEFAULT_INHERITED_KEY_NAME,
+        //     required: true,
+        //     lName: {ru: {name: "Родитель"}},
+        //     entities: [entity.parent]
+        //   }));
+        //   entity.pk.push(entityAttr);
+        // } else {
+        //   entity.add(new SequenceAttribute({
+        //     name: Constants.DEFAULT_ID_NAME,
+        //     lName: {ru: {name: "Идентификатор"}},
+        //     sequence: erModel.sequencies[Constants.GLOBAL_GENERATOR],
+        //     adapter: {
+        //       relation: Builder._getOwnRelationName(entity),
+        //       field: Constants.DEFAULT_ID_NAME
+        //     }
+        //   }));
+        // }
+        // erModel.add(entity);
         const tableName = Builder_1.Builder._getOwnRelationName(entity);
         const fields = [];
         for (const pkAttr of entity.pk) {
@@ -98,6 +104,10 @@ class ERModelBuilder extends Builder_1.Builder {
             await this.entityBuilder.addUnique(entity, unique);
         }
         return entity;
+    }
+    removeEntity(_erModel, _entity) {
+        // TODO
+        throw new Error("Unsupported yet");
     }
 }
 exports.ERModelBuilder = ERModelBuilder;

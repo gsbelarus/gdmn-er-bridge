@@ -138,13 +138,12 @@ export class ERExport {
 
     const entity = new Entity({parent, name, lName, semCategories, adapter});
     if (parent) {
-      const entityAttr = entity.add(new EntityAttribute({
+      entity.add(new EntityAttribute({
         name: Constants.DEFAULT_INHERITED_KEY_NAME,
         required: true,
         lName: {ru: {name: "Родитель"}},
         entities: [parent]
       }));
-      entity.pk.push(entityAttr);
     } else {
       entity.add(
         new SequenceAttribute({
