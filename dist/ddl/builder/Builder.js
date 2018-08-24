@@ -29,7 +29,13 @@ class Builder {
         }
     }
     static _getOwnRelationName(entity) {
-        return entity.adapter ? entity.adapter.relation[entity.adapter.relation.length - 1].relationName : entity.name;
+        if (entity.adapter) {
+            const relations = entity.adapter.relation.filter((rel) => !rel.weak);
+            if (relations.length) {
+                return relations[relations.length - 1].relationName;
+            }
+        }
+        return entity.name;
     }
     static _getFieldName(attr) {
         if (gdmn_orm_1.SetAttribute.isType(attr)) {

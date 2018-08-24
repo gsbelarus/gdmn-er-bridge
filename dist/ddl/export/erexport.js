@@ -1,463 +1,281 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const gdmn_db_1 = require("gdmn-db");
-const gdmn_nlp_1 = require("gdmn-nlp");
 const gdmn_orm_1 = require("gdmn-orm");
 const Builder_1 = require("../builder/Builder");
 const Constants_1 = require("../Constants");
 const atData_1 = require("./atData");
-const document_1 = require("./document");
 const gddomains_1 = require("./gddomains");
-const gdtables_1 = require("./gdtables");
+const GDEntities_1 = require("./GDEntities");
 const util_1 = require("./util");
-async function erExport(dbs, connection, transaction, erModel) {
-    const { atFields, atRelations } = await atData_1.load(connection, transaction);
-    const crossRelationsAdapters = {
-        "GD_CONTACTLIST": {
-            owner: "GD_CONTACT",
-            selector: {
-                field: "CONTACTTYPE",
-                value: 1
-            }
-        }
-    };
-    const abstractBaseRelations = {
-        "GD_CONTACT": true
-    };
-    /**
-     * Если имя генератора совпадает с именем объекта в БД, то адаптер можем не указывать.
-     */
-    const GDGUnique = erModel.addSequence(new gdmn_orm_1.Sequence({ name: Constants_1.Constants.GLOBAL_GENERATOR }));
-    erModel.addSequence(new gdmn_orm_1.Sequence({ name: "Offset", sequence: "GD_G_OFFSET" }));
-    function findEntities(relationName, selectors = []) {
-        const found = Object.entries(erModel.entities).reduce((p, e) => {
-            if (e[1].adapter) {
-                e[1].adapter.relation.forEach(r => {
-                    if (r.relationName === relationName && !r.weak) {
-                        if (r.selector && selectors.length) {
-                            if (selectors.find(s => s.field === r.selector.field && s.value === r.selector.value)) {
-                                p.push(e[1]);
-                            }
-                        }
-                        else {
-                            p.push(e[1]);
-                        }
-                    }
-                });
-            }
-            return p;
-        }, []);
-        while (found.length) {
-            const descendant = found.findIndex(d => !!found.find(a => a !== d && d.hasAncestor(a)));
-            if (descendant === -1)
-                break;
-            found.splice(descendant, 1);
-        }
-        return found;
+class ERExport {
+    constructor(connection, transaction, dbStructure, erModel) {
+        this._connection = connection;
+        this._transaction = transaction;
+        this._dbStructure = dbStructure;
+        this._erModel = erModel;
+        this._gdEntities = new GDEntities_1.GDEntities(this._connection, transaction, erModel, dbStructure);
     }
-    function createEntity(parent, adapter, abstract, entityName, lName, semCategories = [], attributes) {
-        if (!abstract) {
-            const found = Object.values(erModel.entities).find((entity) => !entity.isAbstract && gdmn_orm_1.sameAdapter(adapter, entity.adapter));
-            if (found) {
-                return found;
-            }
-        }
-        const relation = adapter.relation.filter(r => !r.weak).reverse()[0];
-        if (!relation || !relation.relationName) {
-            throw new Error("Invalid entity adapter");
-        }
-        const atRelation = atRelations[relation.relationName];
-        // for custom entity names
-        const name = gdmn_orm_1.adjustName(entityName || atRelation.entityName || relation.relationName);
-        const fake = gdmn_orm_1.relationName2Adapter(name);
-        const entity = new gdmn_orm_1.Entity({
-            parent,
-            name,
-            lName: lName ? lName : (atRelation ? atRelation.lName : {}),
-            isAbstract: !!abstract,
-            semCategories,
-            adapter: JSON.stringify(adapter) !== JSON.stringify(fake) ? adapter : undefined
+    async execute() {
+        this._atResult = await atData_1.load(this._connection, this._transaction);
+        this._erModel.addSequence(new gdmn_orm_1.Sequence({ name: Constants_1.Constants.GLOBAL_GENERATOR }));
+        await this._gdEntities.create(this._getATResult());
+        this._createEntities();
+        Object.values(this._erModel.entities)
+            .sort((a, b) => {
+            if (a.adapter.relation.length < b.adapter.relation.length)
+                return -1;
+            else if (a.adapter.relation.length > b.adapter.relation.length)
+                return 1;
+            return 0;
+        })
+            .forEach((entity) => {
+            const forceAdapter = Object.values(this._erModel.entities).some((e) => e.parent === entity);
+            this._createAttributes(entity, forceAdapter);
         });
-        if (!parent) {
-            entity.add(new gdmn_orm_1.SequenceAttribute({
-                name: Constants_1.Constants.DEFAULT_ID_NAME,
-                lName: { ru: { name: "Идентификатор" } },
-                sequence: GDGUnique
+        this._createDetailAttributes();
+        this._createSetAttributes();
+        return this._erModel;
+    }
+    _getATResult() {
+        if (!this._atResult) {
+            throw new Error("atResult is undefined");
+        }
+        return this._atResult;
+    }
+    _createEntities() {
+        Object.entries(this._getATResult().atRelations).forEach(([atRelationName, atRelation]) => {
+            const relation = this._dbStructure.relations[atRelationName];
+            const inheritedFk = Object.values(relation.foreignKeys)
+                .find((fk) => fk.fields.includes(Constants_1.Constants.DEFAULT_INHERITED_KEY_NAME));
+            let parent;
+            if (inheritedFk) {
+                const refRelation = this._dbStructure.relationByUqConstraint(inheritedFk.constNameUq);
+                const refEntities = this._findEntities(refRelation.name);
+                parent = refEntities[0];
+            }
+            const entity = this._createEntity(parent, relation, atRelation);
+            if (!this._erModel.entities[entity.name]) {
+                this._erModel.add(entity);
+            }
+        });
+    }
+    _createEntity(parent, relation, atRelation) {
+        const name = atRelation && atRelation.entityName ? atRelation.entityName : relation.name;
+        let adapter = atRelation && atRelation.entityName && atRelation.entityName !== relation.name
+            ? gdmn_orm_1.relationName2Adapter(relation.name) : undefined;
+        const lName = atRelation ? atRelation.lName : {};
+        const semCategories = atRelation ? atRelation.semCategories : undefined;
+        if (parent) {
+            const relName = adapter ? adapter.relation[0].relationName : relation.name;
+            adapter = gdmn_orm_1.appendAdapter(parent.adapter, relName);
+        }
+        const entity = new gdmn_orm_1.Entity({ parent, name, lName, semCategories, adapter });
+        if (parent) {
+            const entityAttr = entity.add(new gdmn_orm_1.EntityAttribute({
+                name: Constants_1.Constants.DEFAULT_INHERITED_KEY_NAME,
+                required: true,
+                lName: { ru: { name: "Родитель" } },
+                entities: [parent]
             }));
+            entity.pk.push(entityAttr);
         }
         else {
             entity.add(new gdmn_orm_1.SequenceAttribute({
                 name: Constants_1.Constants.DEFAULT_ID_NAME,
                 lName: { ru: { name: "Идентификатор" } },
-                sequence: GDGUnique,
+                sequence: this._erModel.sequencies[Constants_1.Constants.GLOBAL_GENERATOR],
                 adapter: {
                     relation: Builder_1.Builder._getOwnRelationName(entity),
-                    field: Constants_1.Constants.DEFAULT_INHERITED_KEY_NAME
+                    field: Constants_1.Constants.DEFAULT_ID_NAME
                 }
             }));
         }
-        if (attributes) {
-            attributes.forEach(attr => entity.add(attr));
-        }
-        return erModel.add(entity);
+        return entity;
     }
-    Object.keys(atRelations).forEach((item) => createEntity(undefined, gdmn_orm_1.relationName2Adapter(item)));
-    /**
-     * Простейший случай таблицы. Никаких ссылок.
-     */
-    if (dbs.findRelation((rel) => rel.name === "WG_HOLIDAY")) {
-        createEntity(undefined, gdmn_orm_1.relationName2Adapter("WG_HOLIDAY"));
+    _createAttributes(entity, forceAdapter) {
+        const ownRelationName = Builder_1.Builder._getOwnRelationName(entity);
+        entity.adapter.relation.forEach((rel) => {
+            const relation = this._dbStructure.relations[rel.relationName];
+            const atRelation = this._getATResult().atRelations[relation.name];
+            Object.values(relation.relationFields).forEach((relationField) => {
+                // ignore non including in adapter.relation.fields
+                if (rel.fields && !rel.fields.includes(relationField.name)) {
+                    return;
+                }
+                if (relation.primaryKey && relation.primaryKey.fields.includes(relationField.name)) {
+                    return;
+                }
+                // ignore lb and rb fields
+                if (Object.values(atRelation.relationFields)
+                    .some((atRf) => (atRf.lbFieldName === relationField.name || atRf.rbFieldName === relationField.name))
+                    || relationField.name === Constants_1.Constants.DEFAULT_LB_NAME || relationField.name === Constants_1.Constants.DEFAULT_RB_NAME) {
+                    return;
+                }
+                if (!gdmn_orm_1.hasField(entity.adapter, relation.name, relationField.name)
+                    && !gdmn_orm_1.systemFields.find((sf) => sf === relationField.name)
+                    && !gdmn_orm_1.isUserDefined(relationField.name)) {
+                    return;
+                }
+                if (entity.adapter.relation[0].selector && entity.adapter.relation[0].selector.field === relationField.name) {
+                    return;
+                }
+                const atRelationField = atRelation ? atRelation.relationFields[relationField.name] : undefined;
+                if (atRelationField) {
+                    if (atRelationField.crossTable || atRelationField.masterEntityName) {
+                        return;
+                    }
+                }
+                const attribute = this._createAttribute(relation, relationField, forceAdapter);
+                // ignore duplicates and override parent attributes
+                if ((ownRelationName === rel.relationName && !entity.hasOwnAttribute(attribute.name))
+                    || !entity.hasAttribute(attribute.name)) {
+                    entity.add(attribute);
+                }
+            });
+            Object.values(relation.unique).forEach((uq) => {
+                const attrs = uq.fields.map((field) => {
+                    let uqAttr = Object.values(entity.attributes).find((attr) => {
+                        const attrFieldName = attr.adapter ? attr.adapter.field : attr.name;
+                        return attrFieldName === field;
+                    });
+                    if (!uqAttr) {
+                        uqAttr = entity.attribute(field);
+                    }
+                    return uqAttr;
+                });
+                entity.addUnique(attrs);
+            });
+        });
+    }
+    _createDetailAttributes() {
+        Object.entries(this._getATResult().atRelations).forEach(([atRelationName, atRelation]) => {
+            Object.entries(atRelation.relationFields).forEach(([atRelationFieldName, atRelationField]) => {
+                if (atRelationField.masterEntityName) {
+                    const relation = this._dbStructure.relations[atRelationName];
+                    const relationField = relation.relationFields[atRelationFieldName];
+                    const detailEntityName = atRelation && atRelation.entityName ? atRelation.entityName : relation.name;
+                    const detailEntity = this._erModel.entity(detailEntityName);
+                    const masterEntity = this._erModel.entity(atRelationField.masterEntityName);
+                    const name = atRelationField && atRelationField.attrName !== undefined ? atRelationField.attrName : relationField.name;
+                    const atField = this._getATResult().atFields[relationField.fieldSource];
+                    const fieldSource = this._dbStructure.fields[relationField.fieldSource];
+                    const required = relationField.notNull || fieldSource.notNull;
+                    const lName = atRelationField ? atRelationField.lName : (atField ? atField.lName : {});
+                    const detailAdapter = detailEntity.name !== name ? {
+                        masterLinks: [{
+                                detailRelation: detailEntity.name,
+                                link2masterField: relationField.name
+                            }]
+                    } : undefined;
+                    masterEntity.add(new gdmn_orm_1.DetailAttribute({
+                        name, lName, required, entities: [detailEntity],
+                        semCategories: atRelationField ? atRelationField.semCategories : [],
+                        adapter: detailAdapter
+                    }));
+                }
+            });
+        });
     }
     /**
-     * Административно-территориальная единица.
-     * Тут исключительно для иллюстрации типа данных Перечисление.
+     * Looking for cross-tables and construct set attributes.
+     *
+     * 1. Cross tables are those whose PK consists of minimum 2 fields.
+     * 2. First field of cross table PK must be a FK referencing owner table.
+     * 3. Second field of cross table PK must be a FK referencing reference table.
+     * 4. Owner in this context is an Entity(s) a Set attribute belongs to.
+     * 5. Reference in this context is an Entity(s) a Set attribute contains objects of which type.
      */
-    if (dbs.findRelation((rel) => rel.name === "GD_PLACE")) {
-        createEntity(undefined, gdmn_orm_1.relationName2Adapter("GD_PLACE"), false, undefined, undefined, [gdmn_nlp_1.SemCategory.Place], [
-            new gdmn_orm_1.EnumAttribute({
-                name: "PLACETYPE",
-                lName: { ru: { name: "Тип" } },
-                required: true,
-                values: [{ value: "Область" }, { value: "Район" }],
-                defaultValue: "Область"
-            })
-        ]);
-    }
-    /**
-     * Папка из справочника контактов.
-     * Основывается на таблице GD_CONTACT, но использует только несколько полей из нее.
-     * Записи имеют признак CONTACTTYPE = 0.
-     * Имеет древовидную структуру.
-     */
-    if (dbs.findRelation((rel) => rel.name === "GD_CONTACT")) {
-        const Folder = createEntity(undefined, {
-            relation: [{
-                    relationName: "GD_CONTACT",
-                    selector: {
-                        field: "CONTACTTYPE",
-                        value: 0
-                    },
-                    fields: [
-                        Constants_1.Constants.DEFAULT_PARENT_KEY_NAME,
-                        "NAME"
-                    ]
-                }]
-        }, false, "Folder", { ru: { name: "Папка" } });
-        Folder.add(new gdmn_orm_1.ParentAttribute({
-            name: Constants_1.Constants.DEFAULT_PARENT_KEY_NAME,
-            lName: { ru: { name: "Входит в папку" } },
-            entities: [Folder]
-        }));
-        /**
-         * Компания хранится в трех таблицах.
-         * Две обязательные GD_CONTACT - GD_COMPANY. В адаптере они указываются
-         * в массиве relation и соединяются в запросе оператором JOIN.
-         * Первой указывается главная таблица. Остальные таблицы называются
-         * дополнительными. Первичный ключ дополнительной таблицы
-         * должен одновременно являться внешним ключем на главную.
-         * Третья -- GD_COMPANYCODE -- необязательная. Подключается через LEFT JOIN.
-         * Для атрибутов из главной таблицы можно не указывать адаптер, если их имя
-         * совпадает с именем поля.
-         * Флаг refresh означает, что после вставки/изменения записи ее надо перечитать.
-         */
-        const Company = createEntity(undefined, {
-            relation: [
-                {
-                    relationName: "GD_CONTACT",
-                    selector: {
-                        field: "CONTACTTYPE",
-                        value: 3
-                    }
-                },
-                {
-                    relationName: "GD_COMPANY"
-                },
-                {
-                    relationName: "GD_COMPANYCODE",
-                    weak: true
+    _createSetAttributes() {
+        Object.entries(this._dbStructure.relations).forEach(([crossName, crossRelation]) => {
+            if (crossRelation.primaryKey && crossRelation.primaryKey.fields.length >= 2) {
+                const fkOwner = Object
+                    .values(crossRelation.foreignKeys)
+                    .find((fk) => fk.fields.length === 1 && fk.fields[0] === crossRelation.primaryKey.fields[0]);
+                if (!fkOwner)
+                    return;
+                const fkReference = Object
+                    .values(crossRelation.foreignKeys)
+                    .find((fk) => fk.fields.length === 1 && fk.fields[0] === crossRelation.primaryKey.fields[1]);
+                if (!fkReference)
+                    return;
+                const relOwner = this._dbStructure.relationByUqConstraint(fkOwner.constNameUq);
+                const atRelOwner = this._getATResult().atRelations[relOwner.name];
+                if (!atRelOwner)
+                    return;
+                let entitiesOwner;
+                const crossRelationAdapter = GDEntities_1.GDEntities.CROSS_RELATIONS_ADAPTERS[crossName];
+                if (crossRelationAdapter) {
+                    entitiesOwner = this._findEntities(crossRelationAdapter.owner, crossRelationAdapter.selector ?
+                        [crossRelationAdapter.selector] : undefined);
                 }
-            ],
-            refresh: true
-        }, false, "Company", { ru: { name: "Организация" } }, [gdmn_nlp_1.SemCategory.Company], [
-            new gdmn_orm_1.ParentAttribute({
-                name: Constants_1.Constants.DEFAULT_PARENT_KEY_NAME,
-                lName: { ru: { name: "Входит в папку" } },
-                entities: [Folder]
-            }),
-            new gdmn_orm_1.StringAttribute({
-                name: "NAME",
-                lName: { ru: { name: "Краткое наименование" } },
-                required: true,
-                maxLength: 60,
-                autoTrim: true
-            })
-        ]);
-        createEntity(Company, {
-            relation: [
-                {
-                    relationName: "GD_CONTACT",
-                    selector: {
-                        field: "CONTACTTYPE",
-                        value: 3
-                    }
-                },
-                {
-                    relationName: "GD_COMPANY"
-                },
-                {
-                    relationName: "GD_COMPANYCODE",
-                    weak: true
-                },
-                {
-                    relationName: "GD_OURCOMPANY"
+                else {
+                    entitiesOwner = this._findEntities(relOwner.name);
                 }
-            ],
-            refresh: true
-        }, false, "OurCompany", { ru: { name: "Рабочая организация" } });
-        /**
-         * Банк является частным случаем компании (наследуется от компании).
-         * Все атрибуты компании являются и атрибутами банка и не нуждаются
-         * в повторном определении, за тем исключением, если мы хотим что-то
-         * поменять в параметрах атрибута.
-         */
-        createEntity(Company, {
-            relation: [
-                {
-                    relationName: "GD_CONTACT",
-                    selector: {
-                        field: "CONTACTTYPE",
-                        value: 5
-                    }
-                },
-                {
-                    relationName: "GD_COMPANY"
-                },
-                {
-                    relationName: "GD_COMPANYCODE",
-                    weak: true
-                },
-                {
-                    relationName: "GD_BANK"
+                if (!entitiesOwner.length) {
+                    return;
                 }
-            ],
-            refresh: true
-        }, false, "Bank", { ru: { name: "Банк" } });
-        /**
-         * Подразделение организации может входить (через поле Parent) в
-         * организацию (компания, банк) или в другое подразделение.
-         */
-        const Department = createEntity(undefined, {
-            relation: [{
-                    relationName: "GD_CONTACT",
-                    selector: {
-                        field: "CONTACTTYPE",
-                        value: 4
-                    }
-                }]
-        }, false, "Department", { ru: { name: "Подразделение" } });
-        Department.add(new gdmn_orm_1.ParentAttribute({
-            name: Constants_1.Constants.DEFAULT_PARENT_KEY_NAME,
-            lName: { ru: { name: "Входит в организацию (подразделение)" } },
-            entities: [Company, Department]
-        }));
-        Department.add(new gdmn_orm_1.StringAttribute({
-            name: "NAME", lName: { ru: { name: "Наименование" } }, required: true,
-            maxLength: 60, autoTrim: true
-        }));
-        /**
-         * Физическое лицо хранится в двух таблицах GD_CONTACT - GD_PEOPLE.
-         */
-        const Person = createEntity(undefined, {
-            relation: [
-                {
-                    relationName: "GD_CONTACT",
-                    selector: {
-                        field: "CONTACTTYPE",
-                        value: 2
-                    }
-                },
-                {
-                    relationName: "GD_PEOPLE"
+                const relReference = this._dbStructure.relationByUqConstraint(fkReference.constNameUq);
+                let cond;
+                const atSetField = Object.entries(atRelOwner.relationFields).find((rf) => rf[1].crossTable === crossName);
+                const atSetFieldSource = atSetField ? this._getATResult().atFields[atSetField[1].fieldSource] : undefined;
+                if (atSetFieldSource && atSetFieldSource.setTable === relReference.name && atSetFieldSource.setCondition) {
+                    cond = gdmn_orm_1.condition2Selectors(atSetFieldSource.setCondition);
                 }
-            ],
-            refresh: true
-        }, false, "Person", { ru: { name: "Физическое лицо" } });
-        Person.add(new gdmn_orm_1.ParentAttribute({
-            name: Constants_1.Constants.DEFAULT_PARENT_KEY_NAME,
-            lName: { ru: { name: "Входит в папку" } },
-            entities: [Folder]
-        }));
-        Person.add(new gdmn_orm_1.StringAttribute({
-            name: "NAME", lName: { ru: { name: "ФИО" } }, required: true,
-            maxLength: 60, autoTrim: true
-        }));
-        /**
-         * Сотрудник, частный случай физического лица.
-         * Добавляется таблица GD_EMPLOYEE.
-         */
-        const Employee = createEntity(Person, {
-            relation: [
-                {
-                    relationName: "GD_CONTACT",
-                    selector: {
-                        field: "CONTACTTYPE",
-                        value: 2
-                    }
-                },
-                {
-                    relationName: "GD_PEOPLE"
-                },
-                {
-                    relationName: "GD_EMPLOYEE"
+                const referenceEntities = this._findEntities(relReference.name, cond);
+                if (!referenceEntities.length) {
+                    return;
                 }
-            ]
-        }, false, "Employee", { ru: { name: "Сотрудник предприятия" } });
-        Employee.add(new gdmn_orm_1.ParentAttribute({
-            name: Constants_1.Constants.DEFAULT_PARENT_KEY_NAME,
-            lName: { ru: { name: "Организация или подразделение" } },
-            entities: [Company, Department]
-        }));
-        /**
-         * Группа контактов.
-         * CONTACTLIST -- множество, которое хранится в кросс-таблице.
-         */
-        const Group = createEntity(undefined, {
-            relation: [{
-                    relationName: "GD_CONTACT",
-                    selector: {
-                        field: "CONTACTTYPE",
-                        value: 1
-                    },
-                    fields: [
-                        Constants_1.Constants.DEFAULT_PARENT_KEY_NAME,
-                        "NAME"
-                    ]
-                }]
-        }, false, "Group", { ru: { name: "Группа" } });
-        Group.add(new gdmn_orm_1.ParentAttribute({
-            name: Constants_1.Constants.DEFAULT_PARENT_KEY_NAME,
-            lName: { ru: { name: "Входит в папку" } },
-            entities: [Folder]
-        }));
-        Group.add(new gdmn_orm_1.SetAttribute({
-            name: "CONTACTLIST", lName: { ru: { name: "Контакты" } }, entities: [Company, Person],
-            adapter: {
-                crossRelation: "GD_CONTACTLIST"
-            }
-        }));
-        const companyAccount = createEntity(undefined, gdmn_orm_1.relationName2Adapter("GD_COMPANYACCOUNT"));
-        Company.add(new gdmn_orm_1.DetailAttribute({
-            name: "GD_COMPANYACCOUNT", lName: { ru: { name: "Банковские счета" } }, entities: [companyAccount],
-            adapter: {
-                masterLinks: [
-                    {
-                        detailRelation: "GD_COMPANYACCOUNT",
-                        link2masterField: "COMPANYKEY"
+                const setField = atSetField ? relOwner.relationFields[atSetField[0]] : undefined;
+                const setFieldSource = setField ? this._dbStructure.fields[setField.fieldSource] : undefined;
+                const atCrossRelation = this._getATResult().atRelations[crossName];
+                entitiesOwner.forEach((entity) => {
+                    if (!Object.values(entity.attributes).find((attr) => (attr instanceof gdmn_orm_1.SetAttribute) && !!attr.adapter && attr.adapter.crossRelation === crossName)) {
+                        // for custom set field
+                        let name = atSetField && atSetField[0] || crossName;
+                        const setAdapter = { crossRelation: crossName };
+                        if (atSetField) {
+                            const [a, atSetRelField] = atSetField;
+                            name = atSetRelField && atSetRelField.attrName || name;
+                            if (a !== name) {
+                                setAdapter.presentationField = a;
+                            }
+                        }
+                        const setAttr = new gdmn_orm_1.SetAttribute({
+                            name,
+                            lName: atSetField ? atSetField[1].lName : (atCrossRelation ? atCrossRelation.lName : { en: { name: crossName } }),
+                            required: (!!setField && setField.notNull) || (!!setFieldSource && setFieldSource.notNull),
+                            entities: referenceEntities,
+                            presLen: (setFieldSource && setFieldSource.fieldType === gdmn_db_1.FieldType.VARCHAR) ? setFieldSource.fieldLength : 0,
+                            semCategories: atCrossRelation.semCategories,
+                            adapter: setAdapter
+                        });
+                        Object.entries(crossRelation.relationFields).forEach(([addName, addField]) => {
+                            if (!crossRelation.primaryKey.fields.find(f => f === addName)) {
+                                setAttr.add(this._createAttribute(crossRelation, addField, false));
+                            }
+                        });
+                        entity.add(setAttr);
                     }
-                ]
-            }
-        }));
-        gdtables_1.gedeminTables.forEach((t) => {
-            if (dbs.findRelation((rel) => rel.name === t)) {
-                createEntity(undefined, gdmn_orm_1.relationName2Adapter(t));
+                });
             }
         });
     }
-    if (dbs.findRelation((rel) => rel.name === "INV_CARD")) {
-        createEntity(undefined, gdmn_orm_1.relationName2Adapter("INV_CARD"));
-    }
-    if (dbs.findRelation((rel) => rel.name === "GD_DOCUMENT")) {
-        const TgdcDocument = createEntity(undefined, gdmn_orm_1.relationName2Adapter("GD_DOCUMENT"), true, "TgdcDocument");
-        const TgdcDocumentAdapter = gdmn_orm_1.relationName2Adapter("GD_DOCUMENT");
-        const documentABC = {
-            "TgdcDocumentType": TgdcDocument,
-            "TgdcUserDocumentType": createEntity(TgdcDocument, TgdcDocumentAdapter, true, "TgdcUserDocument", { ru: { name: "Пользовательские документы" } }),
-            "TgdcInvDocumentType": createEntity(TgdcDocument, TgdcDocumentAdapter, true, "TgdcInvDocument", { ru: { name: "Складские документы" } }),
-            "TgdcInvPriceListType": createEntity(TgdcDocument, TgdcDocumentAdapter, true, "TgdcInvPriceList", { ru: { name: "Прайс-листы" } })
-        };
-        const documentClasses = {};
-        function createDocument(id, ruid, parent_ruid, name, className, hr, lr) {
-            const setHR = hr ? hr
-                : id === 800300 ? "BN_BANKSTATEMENT"
-                    : id === 800350 ? "BN_BANKCATALOGUE"
-                        : "";
-            const setLR = lr ? lr
-                : id === 800300 ? "BN_BANKSTATEMENTLINE"
-                    : id === 800350 ? "BN_BANKCATALOGUELINE"
-                        : "";
-            const parent = documentClasses[parent_ruid] && documentClasses[parent_ruid].header ? documentClasses[parent_ruid].header
-                : documentABC[className] ? documentABC[className]
-                    : TgdcDocument;
-            if (!parent) {
-                throw new Error(`Unknown doc type ${parent_ruid} of ${className}`);
-            }
-            const headerAdapter = gdmn_orm_1.appendAdapter(parent.adapter, setHR);
-            headerAdapter.relation[0].selector = { field: "DOCUMENTTYPEKEY", value: id };
-            const header = createEntity(parent, headerAdapter, false, `DOC_${ruid}_${setHR}`, { ru: { name } });
-            documentClasses[ruid] = { header };
-            if (setLR) {
-                const lineParent = documentClasses[parent_ruid] && documentClasses[parent_ruid].line ? documentClasses[parent_ruid].line
-                    : documentABC[className] ? documentABC[className]
-                        : TgdcDocument;
-                if (!lineParent) {
-                    throw new Error(`Unknown doc type ${parent_ruid} of ${className}`);
-                }
-                const lineAdapter = gdmn_orm_1.appendAdapter(lineParent.adapter, setLR);
-                lineAdapter.relation[0].selector = { field: "DOCUMENTTYPEKEY", value: id };
-                const line = createEntity(lineParent, lineAdapter, false, `LINE_${ruid}_${setLR}`, { ru: { name: `Позиция: ${name}` } });
-                line.add(new gdmn_orm_1.ParentAttribute({
-                    name: Constants_1.Constants.DEFAULT_PARENT_KEY_NAME,
-                    lName: { ru: { name: "Шапка документа" } },
-                    entities: [header]
-                }));
-                documentClasses[ruid] = { ...documentClasses[ruid], line };
-                const masterLinks = [
-                    {
-                        detailRelation: "GD_DOCUMENT",
-                        link2masterField: Constants_1.Constants.DEFAULT_PARENT_KEY_NAME
-                    }
-                ];
-                if (dbs.relations[setLR] && dbs.relations[setLR].relationFields[Constants_1.Constants.DEFAULT_MASTER_KEY_NAME]) {
-                    masterLinks.push({
-                        detailRelation: setLR,
-                        link2masterField: Constants_1.Constants.DEFAULT_MASTER_KEY_NAME
-                    });
-                }
-                header.add(new gdmn_orm_1.DetailAttribute({ name: line.name, lName: line.lName, entities: [line], adapter: { masterLinks } }));
-            }
-        }
-        await document_1.loadDocument(connection, transaction, createDocument);
-    }
-    function recursInherited(parentRelation, parentEntity) {
-        dbs.forEachRelation(inherited => {
-            if (Object.entries(inherited.foreignKeys).find(([, f]) => f.fields.join() === inherited.primaryKey.fields.join()
-                && dbs.relationByUqConstraint(f.constNameUq) === parentRelation[parentRelation.length - 1])) {
-                const newParent = [...parentRelation, inherited];
-                const parentAdapter = parentEntity ? parentEntity.adapter
-                    : gdmn_orm_1.relationNames2Adapter(parentRelation.map(p => p.name));
-                recursInherited(newParent, createEntity(parentEntity, gdmn_orm_1.appendAdapter(parentAdapter, inherited.name), false, inherited.name, atRelations[inherited.name] ? atRelations[inherited.name].lName : {}));
-            }
-        }, true);
-    }
-    dbs.forEachRelation(r => {
-        if (r.primaryKey.fields.join() === Constants_1.Constants.DEFAULT_ID_NAME && /^USR\$.+$/.test(r.name)
-            && !Object.entries(r.foreignKeys).find(fk => fk[1].fields.join() === Constants_1.Constants.DEFAULT_ID_NAME)) {
-            if (abstractBaseRelations[r.name]) {
-                recursInherited([r]);
-            }
-            else {
-                recursInherited([r], createEntity(undefined, gdmn_orm_1.relationName2Adapter(r.name)));
-            }
-        }
-    }, true);
-    function createAttribute(r, rf, atRelationField, attrName, semCategories, adapter) {
-        const name = gdmn_orm_1.adjustName(attrName);
-        const atField = atFields[rf.fieldSource];
-        const fieldSource = dbs.fields[rf.fieldSource];
-        const required = rf.notNull || fieldSource.notNull;
-        const defaultValueSource = rf.defaultSource || fieldSource.defaultSource;
+    _createAttribute(relation, relationField, forceAdapter) {
+        const atRelation = this._getATResult().atRelations[relation.name];
+        const atRelationField = atRelation ? atRelation.relationFields[relationField.name] : undefined;
+        const atField = this._getATResult().atFields[relationField.fieldSource];
+        const fieldSource = this._dbStructure.fields[relationField.fieldSource];
+        const name = atRelationField && atRelationField.attrName !== undefined ? atRelationField.attrName : relationField.name;
+        const adapter = (atRelationField && atRelationField.attrName !== undefined) || forceAdapter ? {
+            relation: relation.name,
+            field: relationField.name
+        } : undefined;
+        const required = relationField.notNull || fieldSource.notNull;
+        const defaultValueSource = relationField.defaultSource || fieldSource.defaultSource;
         const lName = atRelationField ? atRelationField.lName : (atField ? atField.lName : {});
-        const createDomainFunc = gddomains_1.gdDomains[rf.fieldSource];
+        const semCategories = atRelationField ? atRelationField.semCategories : [];
+        const createDomainFunc = gddomains_1.gdDomains[relationField.fieldSource];
         if (createDomainFunc) {
             return createDomainFunc(name, lName, adapter);
         }
@@ -518,13 +336,13 @@ async function erExport(dbs, connection, transaction, erModel) {
             }
             case gdmn_db_1.FieldType.INTEGER: {
                 const fieldName = adapter ? adapter.field : name;
-                const fk = Object.values(r.foreignKeys).find((fk) => fk.fields.includes(fieldName));
-                if (fk && fk.fields.length === 1) {
-                    const refRelationName = dbs.relationByUqConstraint(fk.constNameUq).name;
+                const fk = Object.values(relation.foreignKeys).find((fk) => fk.fields.includes(fieldName));
+                if (fk && fk.fields.length) {
+                    const refRelationName = this._dbStructure.relationByUqConstraint(fk.constNameUq).name;
                     const cond = atField && atField.refCondition ? gdmn_orm_1.condition2Selectors(atField.refCondition) : undefined;
-                    const refEntities = findEntities(refRelationName, cond);
+                    const refEntities = this._findEntities(refRelationName, cond);
                     if (!refEntities.length) {
-                        console.warn(`${r.name}.${rf.name}: no entities for table ${refRelationName}${cond ? ", condition: " + JSON.stringify(cond) : ""}`);
+                        console.warn(`${relation.name}.${relationField.name}: no entities for table ${refRelationName}${cond ? ", condition: " + JSON.stringify(cond) : ""}`);
                     }
                     if (atRelationField && atRelationField.isParent) {
                         let parentAttrAdapter;
@@ -535,8 +353,8 @@ async function erExport(dbs, connection, transaction, erModel) {
                         }
                         else if (atRelationField.lbFieldName || atRelationField.rbFieldName) {
                             parentAttrAdapter = {
-                                relation: r.name,
-                                field: rf.name,
+                                relation: relation.name,
+                                field: relationField.name,
                                 lbField, rbField
                             };
                         }
@@ -619,177 +437,35 @@ async function erExport(dbs, connection, transaction, erModel) {
                 return new gdmn_orm_1.BlobAttribute({ name, lName, required, semCategories, adapter });
             }
             default:
-                throw new Error(`Unknown data type ${fieldSource}=${fieldSource.fieldType} for field ${r.name}.${name}`);
+                throw new Error(`Unknown data type ${fieldSource}=${fieldSource.fieldType} for field ${relation.name}.${name}`);
         }
     }
-    function createAttributes(entity) {
-        const relations = entity.adapter.relation.map(rn => dbs.relations[rn.relationName]);
-        relations.forEach(r => {
-            if (!r || !r.primaryKey)
-                return;
-            const atRelation = atRelations[r.name];
-            Object.entries(r.relationFields).forEach(([fn, rf]) => {
-                if (r.primaryKey.fields.find(f => f === fn))
-                    return;
-                if (Object.values(atRelation.relationFields)
-                    .some((atRf) => (atRf.lbFieldName === rf.name || atRf.rbFieldName === rf.name))
-                    || rf.name === Constants_1.Constants.DEFAULT_LB_NAME || rf.name === Constants_1.Constants.DEFAULT_RB_NAME) {
-                    return;
-                }
-                if (entity.hasAttribute(fn))
-                    return;
-                if (!gdmn_orm_1.hasField(entity.adapter, r.name, fn)
-                    && !gdmn_orm_1.systemFields.find(sf => sf === fn)
-                    && !gdmn_orm_1.isUserDefined(fn)) {
-                    return;
-                }
-                if (entity.adapter.relation[0].selector && entity.adapter.relation[0].selector.field === fn) {
-                    return;
-                }
-                const atRelationField = atRelation ? atRelation.relationFields[fn] : undefined;
-                if (atRelationField && atRelationField.crossTable)
-                    return;
-                let attrName = entity.hasAttribute(fn) ? `${r.name}.${fn}` : fn;
-                let adapter = relations.length > 1 ? { relation: r.name, field: fn } : undefined;
-                // for custom field adapters
-                if (atRelationField && atRelationField.attrName !== undefined) {
-                    attrName = atRelationField.attrName;
-                    adapter = { relation: r.name, field: fn };
-                }
-                if (atRelationField && atRelationField.masterEntityName) {
-                    const masterEntity = erModel.entity(atRelationField.masterEntityName); // TODO
-                    const attributeName = gdmn_orm_1.adjustName(attrName);
-                    const atField = atFields[rf.fieldSource];
-                    const fieldSource = dbs.fields[rf.fieldSource];
-                    const required = rf.notNull || fieldSource.notNull;
-                    const lName = atRelationField ? atRelationField.lName : (atField ? atField.lName : {});
-                    const detailAdapter = entity.name !== attributeName ? {
-                        masterLinks: [{
-                                detailRelation: entity.name,
-                                link2masterField: adapter ? adapter.field : attrName
-                            }]
-                    } : undefined;
-                    masterEntity.add(new gdmn_orm_1.DetailAttribute({
-                        name: attributeName, lName, required, entities: [entity],
-                        semCategories: atRelationField ? atRelationField.semCategories : [],
-                        adapter: detailAdapter
-                    }));
-                    return;
-                }
-                const attr = createAttribute(r, rf, atRelationField, attrName, atRelationField ? atRelationField.semCategories : [], adapter);
-                if (attr) {
-                    entity.add(attr);
-                }
-            });
-            Object.values(r.unique).forEach((uq) => {
-                const attrs = uq.fields.map((field) => {
-                    let uqAttr = Object.values(entity.attributes).find((attr) => {
-                        if (gdmn_orm_1.ScalarAttribute.isType(attr)) {
-                            const attrField = attr.adapter ? attr.adapter.field : attr.name;
-                            if (attrField === field) {
-                                return true;
+    _findEntities(relationName, selectors = []) {
+        const found = Object.values(this._erModel.entities).reduce((p, entity) => {
+            if (entity.adapter) {
+                entity.adapter.relation.forEach((rel) => {
+                    if (rel.relationName === relationName && !rel.weak) {
+                        if (rel.selector && selectors.length) {
+                            if (selectors.find((s) => s.field === rel.selector.field && s.value === rel.selector.value)) {
+                                p.push(entity);
                             }
                         }
-                        return false; // TODO for EntityAttributes
-                    });
-                    if (!uqAttr) {
-                        uqAttr = entity.attribute(field);
-                        // throw new Error("Unique attribute not found");
+                        else {
+                            p.push(entity);
+                        }
                     }
-                    return uqAttr;
                 });
-                entity.addUnique(attrs);
-            });
-        });
-    }
-    Object.values(erModel.entities).forEach((entity) => createAttributes(entity));
-    /**
-     * Looking for cross-tables and construct set attributes.
-     *
-     * 1. Cross tables are those whose PK consists of minimum 2 fields.
-     * 2. First field of cross table PK must be a FK referencing owner table.
-     * 3. Second field of cross table PK must be a FK referencing reference table.
-     * 4. Owner in this context is an Entity(s) a Set attribute belongs to.
-     * 5. Reference in this context is an Entity(s) a Set attribute contains objects of which type.
-     */
-    Object.entries(dbs.relations).forEach(([crossName, crossRelation]) => {
-        if (crossRelation.primaryKey && crossRelation.primaryKey.fields.length >= 2) {
-            const fkOwner = Object.entries(crossRelation.foreignKeys).find(([, f]) => f.fields.length === 1 && f.fields[0] === crossRelation.primaryKey.fields[0]);
-            if (!fkOwner)
-                return;
-            const fkReference = Object.entries(crossRelation.foreignKeys).find(([, f]) => f.fields.length === 1 && f.fields[0] === crossRelation.primaryKey.fields[1]);
-            if (!fkReference)
-                return;
-            const relOwner = dbs.relationByUqConstraint(fkOwner[1].constNameUq);
-            const atRelOwner = atRelations[relOwner.name];
-            if (!atRelOwner)
-                return;
-            let entitiesOwner;
-            const crossRelationAdapter = crossRelationsAdapters[crossName];
-            if (crossRelationAdapter) {
-                entitiesOwner = findEntities(crossRelationAdapter.owner, crossRelationAdapter.selector ?
-                    [crossRelationAdapter.selector] : undefined);
             }
-            else {
-                entitiesOwner = findEntities(relOwner.name);
-            }
-            if (!entitiesOwner.length) {
-                return;
-            }
-            const relReference = dbs.relationByUqConstraint(fkReference[1].constNameUq);
-            let cond;
-            const atSetField = Object.entries(atRelOwner.relationFields).find(rf => rf[1].crossTable === crossName);
-            const atSetFieldSource = atSetField ? atFields[atSetField[1].fieldSource] : undefined;
-            if (atSetFieldSource && atSetFieldSource.setTable === relReference.name && atSetFieldSource.setCondition) {
-                cond = gdmn_orm_1.condition2Selectors(atSetFieldSource.setCondition);
-            }
-            const referenceEntities = findEntities(relReference.name, cond);
-            if (!referenceEntities.length) {
-                return;
-            }
-            const setField = atSetField ? relOwner.relationFields[atSetField[0]] : undefined;
-            const setFieldSource = setField ? dbs.fields[setField.fieldSource] : undefined;
-            const atCrossRelation = atRelations[crossName];
-            entitiesOwner.forEach(e => {
-                if (!Object.values(e.attributes).find((attr) => (attr instanceof gdmn_orm_1.SetAttribute) && !!attr.adapter && attr.adapter.crossRelation === crossName)) {
-                    // for custom set field
-                    let name = atSetField && atSetField[0] || crossName;
-                    const setAdapter = { crossRelation: crossName };
-                    if (atSetField) {
-                        const [a, atSetRelField] = atSetField;
-                        name = atSetRelField && atSetRelField.attrName || name;
-                        if (a !== name) {
-                            setAdapter.presentationField = a;
-                        }
-                    }
-                    const setAttr = new gdmn_orm_1.SetAttribute({
-                        name,
-                        lName: atSetField ? atSetField[1].lName : (atCrossRelation ? atCrossRelation.lName : { en: { name: crossName } }),
-                        required: (!!setField && setField.notNull) || (!!setFieldSource && setFieldSource.notNull),
-                        entities: referenceEntities,
-                        presLen: (setFieldSource && setFieldSource.fieldType === gdmn_db_1.FieldType.VARCHAR) ? setFieldSource.fieldLength : 0,
-                        semCategories: atCrossRelation.semCategories,
-                        adapter: setAdapter
-                    });
-                    Object.entries(crossRelation.relationFields).forEach(([addName, addField]) => {
-                        if (!crossRelation.primaryKey.fields.find(f => f === addName)) {
-                            const atCrossRelationsFields = atCrossRelation ? atCrossRelation.relationFields[addName] : undefined;
-                            let attrName = addName;
-                            let adapter = undefined;
-                            // for custom field adapters
-                            if (atCrossRelationsFields && atCrossRelationsFields.attrName !== undefined) {
-                                attrName = atCrossRelationsFields.attrName;
-                                adapter = { relation: crossRelation.name, field: addName };
-                            }
-                            setAttr.add(createAttribute(crossRelation, addField, atCrossRelation ? atCrossRelation.relationFields[addName] : undefined, attrName, atCrossRelation.relationFields[addName].semCategories, adapter));
-                        }
-                    });
-                    e.add(setAttr);
-                }
-            });
+            return p;
+        }, []);
+        while (found.length) {
+            const descendant = found.findIndex((d) => !!found.find((a) => a !== d && d.hasAncestor(a)));
+            if (descendant === -1)
+                break;
+            found.splice(descendant, 1);
         }
-    });
-    return erModel;
+        return found;
+    }
 }
-exports.erExport = erExport;
-//# sourceMappingURL=erexport.js.map
+exports.ERExport = ERExport;
+//# sourceMappingURL=ERExport.js.map

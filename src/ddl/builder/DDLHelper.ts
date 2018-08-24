@@ -60,10 +60,6 @@ export class DDLHelper {
     return this._logs;
   }
 
-  get ddlUniqueGen(): DDLUniqueGenerator {
-    return this._ddlUniqueGen;
-  }
-
   get prepared(): boolean {
     return this._ddlUniqueGen.prepared;
   }
@@ -93,20 +89,30 @@ export class DDLHelper {
     await this._connection.execute(this._transaction, `ALTER SEQUENCE ${sequenceName} RESTART WITH 0`);
   }
 
-  public async addTable(tableName: string, scalarFields: IFieldProps[]): Promise<void> {
+  public async addTable(scalarFields: IFieldProps[]): Promise<string>
+  public async addTable(tableName: string, scalarFields: IFieldProps[]): Promise<string>
+  public async addTable(tableName: any, scalarFields?: IFieldProps[]): Promise<string> {
+    if (!scalarFields) {
+      scalarFields = tableName as IFieldProps[];
+      tableName = undefined;
+    }
+    if (!tableName) {
+      tableName = Prefix.join(`${await this._ddlUniqueGen.next()}`, Prefix.TABLE);
+    }
     const fields = scalarFields.map((item) => (
       `${item.name.padEnd(31)} ${item.domain.padEnd(31)} ${DDLHelper._getColumnProps(item)}`.trim()
     ));
     const sql = `CREATE TABLE ${tableName} (\n  ` + fields.join(",\n  ") + `\n)`;
     this._logs.push(sql);
     await this._connection.execute(this._transaction, sql);
+    return tableName;
   }
 
   public async addTableCheck(tableName: string, checks: string[]): Promise<void>
   public async addTableCheck(constraintName: string, tableName: string, checks: string[]): Promise<void>
-  public async addTableCheck(constraintName: any, tableName: any, checks?: any): Promise<void> {
+  public async addTableCheck(constraintName: any, tableName: any, checks?: string[]): Promise<void> {
     if (!checks) {
-      checks = tableName;
+      checks = tableName as string[];
       tableName = constraintName;
       constraintName = undefined;
     }
@@ -128,9 +134,9 @@ export class DDLHelper {
 
   public async createIndex(tableName: string, type: Sorting, fieldNames: string[]): Promise<string>
   public async createIndex(indexName: string, tableName: string, type: Sorting, fieldNames: string[]): Promise<string>
-  public async createIndex(indexName: any, tableName: any, type: any, fieldNames?: any): Promise<string> {
+  public async createIndex(indexName: any, tableName: any, type: any, fieldNames?: string[]): Promise<string> {
     if (!fieldNames) {
-      fieldNames = type;
+      fieldNames = type as string[];
       type = tableName;
       tableName = indexName;
       indexName = undefined;
@@ -145,10 +151,12 @@ export class DDLHelper {
   }
 
   public async addUnique(tableName: string, fieldNames: string[]): Promise<string>;
+
   public async addUnique(constraintName: string, tableName: string, fieldNames: string[]): Promise<string>;
-  public async addUnique(constraintName: any, tableName: any, fieldNames?: any): Promise<string> {
+
+  public async addUnique(constraintName: any, tableName: any, fieldNames?: string[]): Promise<string> {
     if (!fieldNames) {
-      fieldNames = tableName;
+      fieldNames = tableName as string[];
       tableName = constraintName;
       constraintName = undefined;
     }
@@ -163,10 +171,12 @@ export class DDLHelper {
   }
 
   public async addPrimaryKey(tableName: string, fieldNames: string[]): Promise<string>;
+
   public async addPrimaryKey(constraintName: string, tableName: string, fieldNames: string[]): Promise<string>;
-  public async addPrimaryKey(constraintName: any, tableName: any, fieldNames?: any): Promise<string> {
+
+  public async addPrimaryKey(constraintName: any, tableName: any, fieldNames?: string[]): Promise<string> {
     if (!fieldNames) {
-      fieldNames = tableName;
+      fieldNames = tableName as string[];
       tableName = constraintName;
       constraintName = undefined;
     }
@@ -179,9 +189,9 @@ export class DDLHelper {
 
   public async addForeignKey(options: IFKOptions, from: IRelation, to: IRelation): Promise<string>;
   public async addForeignKey(constraintName: string, options: IFKOptions, from: IRelation, to: IRelation): Promise<string>;
-  public async addForeignKey(constraintName: any, options: any, from: any, to?: any): Promise<string> {
+  public async addForeignKey(constraintName: any, options: any, from: any, to?: IRelation): Promise<string> {
     if (!to) {
-      to = from;
+      to = from as IRelation;
       from = options;
       options = constraintName;
       constraintName = undefined;
@@ -198,9 +208,9 @@ export class DDLHelper {
 
   public async addDomain(props: IDomainProps): Promise<string>;
   public async addDomain(domainName: string, props: IDomainProps): Promise<string>;
-  public async addDomain(domainName: any, props?: any): Promise<string> {
+  public async addDomain(domainName: any, props?: IDomainProps): Promise<string> {
     if (!props) {
-      props = domainName;
+      props = domainName as IDomainProps;
       domainName = undefined;
     }
     if (!domainName) {
@@ -215,7 +225,7 @@ export class DDLHelper {
 
   public async addAutoIncrementTrigger(tableName: string, fieldName: string, sequenceName: string): Promise<string>;
   public async addAutoIncrementTrigger(triggerName: string, tableName: string, fieldName: string, sequenceName: string): Promise<string>;
-  public async addAutoIncrementTrigger(triggerName: any, tableName: any, fieldName: any, sequenceName?: any): Promise<string> {
+  public async addAutoIncrementTrigger(triggerName: any, tableName: any, fieldName: any, sequenceName?: string): Promise<string> {
     if (!sequenceName) {
       sequenceName = fieldName;
       fieldName = tableName;

@@ -20,7 +20,7 @@ import {
 import {Constants} from "../Constants";
 import {IATLoadResult} from "./atData";
 import {loadDocument} from "./document";
-import {gedeminTables} from "./gdtables";
+import {gedeminTables} from "./gdTables";
 
 interface IEntityInput {
   parent?: Entity;
@@ -50,20 +50,21 @@ export class GDEntities {
   private readonly _transaction: ATransaction;
   private readonly _erModel: ERModel;
   private readonly _dbStructure: DBStructure;
-  private readonly _atResult: IATLoadResult;
 
+  private _atResult: IATLoadResult | undefined;
   private _documentClasses: { [ruid: string]: { header: Entity, line?: Entity } } = {};
   private _documentABC: { [name: string]: Entity } = {};
 
-  constructor(connection: AConnection, transaction: ATransaction, erModel: ERModel, dbStructure: DBStructure, atResult: IATLoadResult) {
+  constructor(connection: AConnection, transaction: ATransaction, erModel: ERModel, dbStructure: DBStructure) {
     this._connection = connection;
     this._transaction = transaction;
     this._erModel = erModel;
     this._dbStructure = dbStructure;
-    this._atResult = atResult;
   }
 
-  public async add(): Promise<void> {
+  public async create(atResult: IATLoadResult): Promise<void> {
+    this._atResult = atResult;
+
     if (this._dbStructure.findRelation((rel) => rel.name === "GD_CONTACT")) {
 
       /**
@@ -508,7 +509,9 @@ export class GDEntities {
           adapter: appendAdapter(parentAdapter, inherited.name),
           name:
           inherited.name,
-          lName: this._atResult.atRelations[inherited.name] ? this._atResult.atRelations[inherited.name].lName : {}
+          lName: this._getATResult().atRelations[inherited.name]
+            ? this._getATResult().atRelations[inherited.name].lName
+            : {}
         }));
       }
     }, true);
@@ -531,7 +534,7 @@ export class GDEntities {
       throw new Error("Invalid entity adapter");
     }
 
-    const atRelation = this._atResult.atRelations[relation.relationName];
+    const atRelation = this._getATResult().atRelations[relation.relationName];
     const name = adjustName(input.name || atRelation.entityName || relation.relationName);
     const fake = relationName2Adapter(name);
 
@@ -554,5 +557,12 @@ export class GDEntities {
       );
     }
     return this._erModel.add(entity);
+  }
+
+  private _getATResult(): IATLoadResult {
+    if (!this._atResult) {
+      throw new Error("atResult is undefined");
+    }
+    return this._atResult;
   }
 }

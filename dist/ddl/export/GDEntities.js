@@ -4,18 +4,18 @@ const gdmn_nlp_1 = require("gdmn-nlp");
 const gdmn_orm_1 = require("gdmn-orm");
 const Constants_1 = require("../Constants");
 const document_1 = require("./document");
-const gdtables_1 = require("./gdtables");
+const gdTables_1 = require("./gdTables");
 class GDEntities {
-    constructor(connection, transaction, erModel, dbStructure, atResult) {
+    constructor(connection, transaction, erModel, dbStructure) {
         this._documentClasses = {};
         this._documentABC = {};
         this._connection = connection;
         this._transaction = transaction;
         this._erModel = erModel;
         this._dbStructure = dbStructure;
-        this._atResult = atResult;
     }
-    async add() {
+    async create(atResult) {
+        this._atResult = atResult;
         if (this._dbStructure.findRelation((rel) => rel.name === "GD_CONTACT")) {
             /**
              * Папка из справочника контактов.
@@ -287,7 +287,7 @@ class GDEntities {
                     ]
                 }
             }));
-            gdtables_1.gedeminTables.forEach((t) => {
+            gdTables_1.gedeminTables.forEach((t) => {
                 if (this._dbStructure.findRelation((rel) => rel.name === t)) {
                     this._createEntity({
                         name: t,
@@ -408,7 +408,9 @@ class GDEntities {
                     parent: parentEntity,
                     adapter: gdmn_orm_1.appendAdapter(parentAdapter, inherited.name),
                     name: inherited.name,
-                    lName: this._atResult.atRelations[inherited.name] ? this._atResult.atRelations[inherited.name].lName : {}
+                    lName: this._getATResult().atRelations[inherited.name]
+                        ? this._getATResult().atRelations[inherited.name].lName
+                        : {}
                 }));
             }
         }, true);
@@ -424,7 +426,7 @@ class GDEntities {
         if (!relation || !relation.relationName) {
             throw new Error("Invalid entity adapter");
         }
-        const atRelation = this._atResult.atRelations[relation.relationName];
+        const atRelation = this._getATResult().atRelations[relation.relationName];
         const name = gdmn_orm_1.adjustName(input.name || atRelation.entityName || relation.relationName);
         const fake = gdmn_orm_1.relationName2Adapter(name);
         const entity = new gdmn_orm_1.Entity({
@@ -443,6 +445,12 @@ class GDEntities {
             }));
         }
         return this._erModel.add(entity);
+    }
+    _getATResult() {
+        if (!this._atResult) {
+            throw new Error("atResult is undefined");
+        }
+        return this._atResult;
     }
 }
 GDEntities.CROSS_RELATIONS_ADAPTERS = {

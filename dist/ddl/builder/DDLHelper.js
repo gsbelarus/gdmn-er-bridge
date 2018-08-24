@@ -18,9 +18,6 @@ class DDLHelper {
     get logs() {
         return this._logs;
     }
-    get ddlUniqueGen() {
-        return this._ddlUniqueGen;
-    }
     get prepared() {
         return this._ddlUniqueGen.prepared;
     }
@@ -43,10 +40,18 @@ class DDLHelper {
         await this._connection.execute(this._transaction, `ALTER SEQUENCE ${sequenceName} RESTART WITH 0`);
     }
     async addTable(tableName, scalarFields) {
+        if (!scalarFields) {
+            scalarFields = tableName;
+            tableName = undefined;
+        }
+        if (!tableName) {
+            tableName = Prefix_1.Prefix.join(`${await this._ddlUniqueGen.next()}`, Prefix_1.Prefix.TABLE);
+        }
         const fields = scalarFields.map((item) => (`${item.name.padEnd(31)} ${item.domain.padEnd(31)} ${DDLHelper._getColumnProps(item)}`.trim()));
         const sql = `CREATE TABLE ${tableName} (\n  ` + fields.join(",\n  ") + `\n)`;
         this._logs.push(sql);
         await this._connection.execute(this._transaction, sql);
+        return tableName;
     }
     async addTableCheck(constraintName, tableName, checks) {
         if (!checks) {

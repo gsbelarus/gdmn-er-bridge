@@ -1,5 +1,4 @@
 import { AConnection, ATransaction, DeleteRule, UpdateRule } from "gdmn-db";
-import { DDLUniqueGenerator } from "./DDLUniqueGenerator";
 export interface IColumnsProps {
     notNull?: boolean;
     default?: string;
@@ -31,14 +30,14 @@ export declare class DDLHelper {
     readonly connection: AConnection;
     readonly transaction: ATransaction;
     readonly logs: string[];
-    readonly ddlUniqueGen: DDLUniqueGenerator;
     readonly prepared: boolean;
     private static _getConstraint;
     private static _getColumnProps;
     prepare(): Promise<void>;
     dispose(): Promise<void>;
     addSequence(sequenceName: string): Promise<void>;
-    addTable(tableName: string, scalarFields: IFieldProps[]): Promise<void>;
+    addTable(scalarFields: IFieldProps[]): Promise<string>;
+    addTable(tableName: string, scalarFields: IFieldProps[]): Promise<string>;
     addTableCheck(tableName: string, checks: string[]): Promise<void>;
     addTableCheck(constraintName: string, tableName: string, checks: string[]): Promise<void>;
     addColumns(tableName: string, fields: IFieldProps[]): Promise<void>;

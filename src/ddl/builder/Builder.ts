@@ -61,8 +61,14 @@ export abstract class Builder {
     }
   }
 
-  public static _getOwnRelationName(entity: Entity): string { // TODO own relation position ?
-    return entity.adapter ? entity.adapter.relation[entity.adapter.relation.length - 1].relationName : entity.name;
+  public static _getOwnRelationName(entity: Entity): string {
+    if (entity.adapter) {
+      const relations = entity.adapter.relation.filter((rel) => !rel.weak);
+      if (relations.length) {
+        return relations[relations.length - 1].relationName;
+      }
+    }
+    return entity.name;
   }
 
   public static _getFieldName(attr: Attribute): string {

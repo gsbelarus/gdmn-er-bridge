@@ -9,7 +9,6 @@ import {
   SetAttribute
 } from "gdmn-orm";
 import {Constants} from "../Constants";
-import {Prefix} from "../Prefix";
 import {Builder} from "./Builder";
 import {DDLHelper, IFieldProps} from "./DDLHelper";
 import {DomainResolver} from "./DomainResolver";
@@ -66,42 +65,54 @@ export class EntityBuilder extends Builder {
         masterEntity: entity
       });
     } else if (SetAttribute.isType(attr)) {
-      const crossTableName = attr.adapter
-        ? attr.adapter.crossRelation
-        : Prefix.join(`${await this._getDDLHelper().ddlUniqueGen.next()}`, Prefix.CROSS);
-
       // create cross table
-      const fields: IFieldProps[] = [];
-      for (const crossAttr of Object.values(attr.attributes).filter((attr) => ScalarAttribute.isType(attr))) {
-        const fieldName = Builder._getFieldName(crossAttr);
-        const domainName = await this._getDDLHelper().addDomain(DomainResolver.resolve(crossAttr));
-        await this._insertATAttr(crossAttr, {relationName: crossTableName, fieldName, domainName});
-        const field = {
-          name: fieldName,
-          domain: domainName
-        };
-        fields.push(field);
-      }
-
+      const fields: Array<IFieldProps & { attr?: Attribute }> = [];
       const pkFields: IFieldProps[] = [];
-      const refPKDomainName = await this._getDDLHelper().addDomain(DomainResolver.resolve(attr.entities[0].pk[0]));
-      const refPK = {
-        name: Constants.DEFAULT_CROSS_PK_REF_NAME,
-        domain: refPKDomainName
-      };
-      fields.unshift(refPK);
-      pkFields.unshift(refPK);
 
       const ownPKDomainName = await this._getDDLHelper().addDomain(DomainResolver.resolve(entity.pk[0]));
       const ownPK = {
         name: Constants.DEFAULT_CROSS_PK_OWN_NAME,
         domain: ownPKDomainName
       };
-      fields.unshift(ownPK);
-      pkFields.unshift(ownPK);
+      fields.push(ownPK);
+      pkFields.push(ownPK);
 
-      await this._getDDLHelper().addTable(crossTableName, fields);
+      const refPKDomainName = await this._getDDLHelper().addDomain(DomainResolver.resolve(attr.entities[0].pk[0]));
+      const refPK = {
+        name: Constants.DEFAULT_CROSS_PK_REF_NAME,
+        domain: refPKDomainName
+      };
+      fields.push(refPK);
+      pkFields.push(refPK);
+
+      for (const crossAttr of Object.values(attr.attributes).filter((attr) => ScalarAttribute.isType(attr))) {
+        const fieldName = Builder._getFieldName(crossAttr);
+        const domainName = await this._getDDLHelper().addDomain(DomainResolver.resolve(crossAttr));
+        fields.push({
+          attr: crossAttr,
+          name: fieldName,
+          domain: domainName
+        });
+      }
+
+      let crossTableName: string;
+      if (attr.adapter) {
+        crossTableName = await this._getDDLHelper().addTable(attr.adapter.crossRelation, fields);
+      } else {
+        crossTableName = await this._getDDLHelper().addTable(fields);
+      }
       await this._getDDLHelper().addPrimaryKey(crossTableName, pkFields.map((i) => i.name));
+      for (const field of fields) {
+        if (field.attr) {
+          await this._insertATAttr(field.attr, {
+            relationName: crossTableName,
+            fieldName: field.name,
+            domainName: field.domain
+          });
+        } else {
+          // await this._getATHelper().insertATRelationFields();
+        }
+      }
 
       const crossTableKey = await this._getATHelper().insertATRelations({
         relationName: crossTableName,

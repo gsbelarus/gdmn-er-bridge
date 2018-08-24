@@ -3,7 +3,7 @@ export class Prefix {
   public static GDMN = "GD";
   public static GENERATOR = "G";
   public static DOMAIN = "DOMAIN";
-  public static CROSS = "CROSS";
+  public static TABLE = "TABLE";
   public static UNIQUE = "UQ";
   public static INDEX = "I";
   public static PRIMARY_KEY = "PK";
