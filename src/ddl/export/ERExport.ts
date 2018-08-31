@@ -169,7 +169,6 @@ export class ERExport {
       if (!atRelation) throw new Error(`Relation ${relation.name} not found in AT_RELATIONS table. Synchronization needed.`);
 
       Object.values(relation.relationFields).forEach( relationField => {
-        // ignore non included in adapter.relation.fields
         if (rel.fields && !rel.fields.includes(relationField.name)) {
           return;
         }
