@@ -29,12 +29,6 @@ class UpdateManager {
         for (const update of newUpdates) {
             await update.run();
         }
-        // after adding some tables/fields make sure that corresponding
-        // records will be created inside AT_* tables (synchronization)
-        await gdmn_db_1.AConnection.executeTransaction({
-            connection,
-            callback: transaction => connection.execute(transaction, 'EXECUTE PROCEDURE AT_P_SYNC')
-        });
     }
     sort(updates) {
         updates.sort((a, b) => {

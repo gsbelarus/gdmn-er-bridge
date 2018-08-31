@@ -108,7 +108,9 @@ class ERExport {
                     return;
                 }
                 // ignore lb and rb fields
-                if (relationField.name === Constants_1.Constants.DEFAULT_LB_NAME || relationField.name === Constants_1.Constants.DEFAULT_RB_NAME) {
+                if (Object.values(atRelation.relationFields)
+                    .some((atRf) => (atRf.lbFieldName === relationField.name || atRf.rbFieldName === relationField.name))
+                    || relationField.name === Constants_1.Constants.DEFAULT_LB_NAME || relationField.name === Constants_1.Constants.DEFAULT_RB_NAME) {
                     return;
                 }
                 if (!gdmn_orm_1.hasField(entity.adapter, relation.name, relationField.name)

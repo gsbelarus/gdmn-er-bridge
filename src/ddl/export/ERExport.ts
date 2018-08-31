@@ -179,7 +179,9 @@ export class ERExport {
         }
 
         // ignore lb and rb fields
-        if (relationField.name === Constants.DEFAULT_LB_NAME || relationField.name === Constants.DEFAULT_RB_NAME) {
+        if (Object.values(atRelation.relationFields)
+            .some((atRf) => (atRf.lbFieldName === relationField.name || atRf.rbFieldName === relationField.name))
+          || relationField.name === Constants.DEFAULT_LB_NAME || relationField.name === Constants.DEFAULT_RB_NAME) {
           return;
         }
 

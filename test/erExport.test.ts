@@ -45,7 +45,6 @@ async function loadERModel(dbDetail: IDBDetail) {
     options,
     callback: async (connection) => {
       const erBridge = new ERBridge(connection);
-      await erBridge.initDatabase();
       return await AConnection.executeTransaction({
         connection,
         callback: async (transaction) => {
