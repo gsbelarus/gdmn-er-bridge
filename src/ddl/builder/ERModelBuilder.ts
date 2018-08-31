@@ -3,13 +3,11 @@ import {
   DetailAttribute,
   Entity,
   EntityAttribute,
-  ERModel,
   ParentAttribute,
   Sequence,
   SequenceAttribute,
   SetAttribute
 } from "gdmn-orm";
-import {Constants} from "../Constants";
 import {Builder} from "./Builder";
 import {DDLHelper, IFieldProps} from "./DDLHelper";
 import {DomainResolver} from "./DomainResolver";
@@ -32,40 +30,18 @@ export class ERModelBuilder extends Builder {
     this._entityBuilder = new EntityBuilder(this._getDDLHelper(), this._getATHelper());
   }
 
-  public async initERModel(erModel: ERModel = new ERModel()): Promise<ERModel> {
-    if (!Object.values(erModel.sequencies).some((seq) => seq.name == Constants.GLOBAL_GENERATOR)) {
-      erModel.addSequence(new Sequence({name: Constants.GLOBAL_GENERATOR}));
-    }
-    return erModel;
+  public async addSequence(sequence: Sequence): Promise<Sequence> {
+    // TODO custom adapter name
+    await this._getDDLHelper().addSequence(sequence.name);
+    return sequence;
   }
 
-  public async addSequence(erModel: ERModel, sequence: Sequence): Promise<Sequence> {
-    return erModel.addSequence(sequence);
+  public async removeSequence(_sequence: Sequence): Promise<void> {
+    // TODO
+    throw new Error("Unsupported yet");
   }
 
-  public async addEntity(erModel: ERModel, entity: Entity): Promise<Entity> {
-    // TODO pk only EntityAttribute and ScalarAttribute
-    if (entity.parent) {
-      const entityAttr = entity.add(new EntityAttribute({
-        name: Constants.DEFAULT_INHERITED_KEY_NAME,
-        required: true,
-        lName: {ru: {name: "Родитель"}},
-        entities: [entity.parent]
-      }));
-      entity.pk.push(entityAttr);
-    } else {
-      entity.add(new SequenceAttribute({
-        name: Constants.DEFAULT_ID_NAME,
-        lName: {ru: {name: "Идентификатор"}},
-        sequence: erModel.sequencies[Constants.GLOBAL_GENERATOR],
-        adapter: {
-          relation: Builder._getOwnRelationName(entity),
-          field: Constants.DEFAULT_ID_NAME
-        }
-      }));
-    }
-    erModel.add(entity);
-
+  public async addEntity(entity: Entity): Promise<Entity> {
     const tableName = Builder._getOwnRelationName(entity);
     const fields: IFieldProps[] = [];
     for (const pkAttr of entity.pk) {
@@ -119,7 +95,8 @@ export class ERModelBuilder extends Builder {
     return entity;
   }
 
-  // public removeEntity(erModel: ERModel, entity: Entity): Promise<void> {
-  //   // TODO
-  // }
+  public removeEntity(_entity: Entity): Promise<void> {
+    // TODO
+    throw new Error("Unsupported yet");
+  }
 }
