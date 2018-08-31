@@ -163,30 +163,35 @@ export class ERExport {
 
   private _createAttributes(entity: Entity, forceAdapter: boolean): void {
     const ownRelationName = Builder._getOwnRelationName(entity);
-    entity.adapter.relation.forEach((rel) => {
+    entity.adapter.relation.forEach( rel => {
       const relation = this._dbStructure.relations[rel.relationName];
       const atRelation = this._getATResult().atRelations[relation.name];
 
-      Object.values(relation.relationFields).forEach((relationField) => {
+      if (!atRelation) throw new Error(`Relation ${relation.name} not found in AT_RELATIONS table. Synchronization needed.`);
+
+      Object.values(relation.relationFields).forEach( relationField => {
+
         if (relation.primaryKey && relation.primaryKey.fields.includes(relationField.name)) {
           return;
         }
+
         // ignore lb and rb fields
-        if (Object.values(atRelation.relationFields)
-            .some((atRf) => (atRf.lbFieldName === relationField.name || atRf.rbFieldName === relationField.name))
-          || relationField.name === Constants.DEFAULT_LB_NAME || relationField.name === Constants.DEFAULT_RB_NAME) {
+        if (relationField.name === Constants.DEFAULT_LB_NAME || relationField.name === Constants.DEFAULT_RB_NAME) {
           return;
         }
+
         if (!hasField(entity.adapter, relation.name, relationField.name)
           && !systemFields.find((sf) => sf === relationField.name)
           && !isUserDefined(relationField.name)) {
           return;
         }
+
         if (entity.adapter.relation[0].selector && entity.adapter.relation[0].selector!.field === relationField.name) {
           return;
         }
 
         const atRelationField = atRelation ? atRelation.relationFields[relationField.name] : undefined;
+
         if (atRelationField) {
           if (atRelationField.crossTable || atRelationField.masterEntityName) {
             return;
@@ -194,6 +199,7 @@ export class ERExport {
         }
 
         const attribute = this._createAttribute(relation, relationField, forceAdapter);
+
         // ignore duplicates and override parent attributes
         if ((ownRelationName === rel.relationName && !entity.hasOwnAttribute(attribute.name))
           || !entity.hasAttribute(attribute.name)) {

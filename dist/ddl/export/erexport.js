@@ -95,17 +95,17 @@ class ERExport {
     }
     _createAttributes(entity, forceAdapter) {
         const ownRelationName = Builder_1.Builder._getOwnRelationName(entity);
-        entity.adapter.relation.forEach((rel) => {
+        entity.adapter.relation.forEach(rel => {
             const relation = this._dbStructure.relations[rel.relationName];
             const atRelation = this._getATResult().atRelations[relation.name];
-            Object.values(relation.relationFields).forEach((relationField) => {
+            if (!atRelation)
+                throw new Error(`Relation ${relation.name} not found in AT_RELATIONS table. Synchronization needed.`);
+            Object.values(relation.relationFields).forEach(relationField => {
                 if (relation.primaryKey && relation.primaryKey.fields.includes(relationField.name)) {
                     return;
                 }
                 // ignore lb and rb fields
-                if (Object.values(atRelation.relationFields)
-                    .some((atRf) => (atRf.lbFieldName === relationField.name || atRf.rbFieldName === relationField.name))
-                    || relationField.name === Constants_1.Constants.DEFAULT_LB_NAME || relationField.name === Constants_1.Constants.DEFAULT_RB_NAME) {
+                if (relationField.name === Constants_1.Constants.DEFAULT_LB_NAME || relationField.name === Constants_1.Constants.DEFAULT_RB_NAME) {
                     return;
                 }
                 if (!gdmn_orm_1.hasField(entity.adapter, relation.name, relationField.name)

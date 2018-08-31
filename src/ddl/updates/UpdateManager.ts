@@ -36,6 +36,13 @@ export class UpdateManager {
     for (const update of newUpdates) {
       await update.run();
     }
+
+    // after adding some tables/fields make sure that corresponding
+    // records will be created inside AT_* tables (synchronization)
+    await AConnection.executeTransaction({
+      connection,
+      callback: transaction => connection.execute(transaction, 'EXECUTE PROCEDURE AT_P_SYNC')
+    });
   }
 
   private sort(updates: BaseUpdate[]): void {
@@ -62,7 +69,7 @@ export class UpdateManager {
 
   private async _getDBVersion(connection: AConnection, transaction: ATransaction): Promise<number> {
     const gdmnExists = await connection.executeReturning(transaction, `
-        SELECT COUNT(1) 
+        SELECT COUNT(1)
         FROM RDB$RELATIONS
         WHERE RDB$RELATION_NAME = 'AT_FIELDS'
       `);
@@ -70,7 +77,7 @@ export class UpdateManager {
       return 0; // database is clean
     }
     const versionExists = await connection.executeReturning(transaction, `
-      SELECT COUNT(1) 
+      SELECT COUNT(1)
       FROM RDB$RELATIONS
       WHERE RDB$RELATION_NAME = 'AT_DATABASE'
     `);
