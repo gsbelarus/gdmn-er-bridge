@@ -137,13 +137,15 @@ class EntityBuilder extends Builder_1.Builder {
             const domainName = await this._getDDLHelper().addDomain(DomainResolver_1.DomainResolver.resolve(attr));
             await this._getDDLHelper().addColumns(tableName, [{ name: fieldName, domain: domainName }]);
             await this._insertATAttr(attr, { relationName: tableName, fieldName, domainName });
-            const lbField = attr.adapter ? attr.adapter.lbField : Constants_1.Constants.DEFAULT_LB_NAME;
-            const rbField = attr.adapter ? attr.adapter.rbField : Constants_1.Constants.DEFAULT_RB_NAME;
-            await this._getDDLHelper().addColumns(tableName, [{ name: lbField, domain: "DLB" }]);
-            await this._getDDLHelper().addColumns(tableName, [{ name: rbField, domain: "DRB" }]);
+            /*
+            const lbField = attr.adapter ? attr.adapter.lbField : Constants.DEFAULT_LB_NAME;
+            const rbField = attr.adapter ? attr.adapter.rbField : Constants.DEFAULT_RB_NAME;
+            await this._getDDLHelper().addColumns(tableName, [{name: lbField, domain: "DLB"}]);
+            await this._getDDLHelper().addColumns(tableName, [{name: rbField, domain: "DRB"}]);
             await this._getDDLHelper().createIndex(tableName, "ASC", [lbField]);
             await this._getDDLHelper().createIndex(tableName, "DESC", [rbField]);
             await this._getDDLHelper().addTableCheck(tableName, [`${lbField} <= ${rbField}`]);
+            */
             await this._getDDLHelper().addForeignKey({
                 onUpdate: "CASCADE",
                 onDelete: "CASCADE"

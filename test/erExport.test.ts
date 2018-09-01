@@ -1,6 +1,6 @@
 import * as fs from "fs";
 import {AConnection} from "gdmn-db";
-import {deserializeERModel, ERModel} from "gdmn-orm";
+import {deserializeERModel, ERModel, ParentAttribute, IntegerAttribute} from "gdmn-orm";
 import {IDBDetail} from "../src/ddl/export/dbdetail";
 import {ERBridge} from "../src/ERBridge";
 import {exportTestDBDetail} from "./testDB";
@@ -94,10 +94,16 @@ describe("ERExport", () => {
     expect(serialized).toEqual(deserialized.serialize());
 
     /**
-     * Проверка на то, что древовидная таблица возвращает флаг isTree
+     * Проверка на то, что GD_PLACE древовидная таблица
      */
     const gdPlace = result.erModel.entities['GD_PLACE'];
     expect(gdPlace).toBeDefined();
     expect(gdPlace.isTree).toBeTruthy();
+    expect(gdPlace.attributes['PARENT']).toBeDefined();
+    expect(gdPlace.attributes['PARENT']).toBeInstanceOf(ParentAttribute);
+    expect(gdPlace.attributes['LB']).toBeDefined();
+    expect(gdPlace.attributes['LB']).toBeInstanceOf(IntegerAttribute);
+    expect(gdPlace.attributes['RB']).toBeDefined();
+    expect(gdPlace.attributes['RB']).toBeInstanceOf(IntegerAttribute);
   }, 120000);
 });

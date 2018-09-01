@@ -12,9 +12,9 @@ class ATHelper {
     }
     async prepare() {
         this._createATField = await this._connection.prepare(this._transaction, `
-      INSERT INTO AT_FIELDS (FIELDNAME, LNAME, DESCRIPTION, REFTABLE, REFCONDITION, SETTABLE, SETLISTFIELD, 
+      INSERT INTO AT_FIELDS (FIELDNAME, LNAME, DESCRIPTION, REFTABLE, REFCONDITION, SETTABLE, SETLISTFIELD,
         SETCONDITION, NUMERATION)
-      VALUES (:fieldName, :lName, :description, :refTable, :refCondition, :setTable, :setListField, 
+      VALUES (:fieldName, :lName, :description, :refTable, :refCondition, :setTable, :setListField,
         :setCondition, :numeration)
       RETURNING ID
     `);
@@ -24,12 +24,10 @@ class ATHelper {
       RETURNING ID
     `);
         this._createATRelationField = await this._connection.prepare(this._transaction, `
-      INSERT INTO AT_RELATION_FIELDS (FIELDNAME, RELATIONNAME, FIELDSOURCE, FIELDSOURCEKEY, LNAME, DESCRIPTION, 
-        SEMCATEGORY, CROSSTABLE, CROSSTABLEKEY, CROSSFIELD, ATTRNAME, MASTERENTITYNAME, ISPARENT,
-        LBFIELDNAME, RBFIELDNAME)
-      VALUES (:fieldName, :relationName, :fieldSource, :fieldSourceKey, :lName, :description, 
-        :semCategory, :crossTable, :crossTableKey, :crossField, :attrName, :masterEntityName, :isParent,
-        :lbFieldName, :rbFieldName)
+      INSERT INTO AT_RELATION_FIELDS (FIELDNAME, RELATIONNAME, FIELDSOURCE, FIELDSOURCEKEY, LNAME, DESCRIPTION,
+        SEMCATEGORY, CROSSTABLE, CROSSTABLEKEY, CROSSFIELD, ATTRNAME, MASTERENTITYNAME)
+      VALUES (:fieldName, :relationName, :fieldSource, :fieldSourceKey, :lName, :description,
+        :semCategory, :crossTable, :crossTableKey, :crossField, :attrName, :masterEntityName)
       RETURNING ID
     `);
     }

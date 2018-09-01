@@ -107,11 +107,13 @@ class ERExport {
                     return;
                 }
                 // ignore lb and rb fields
+                /*
                 if (Object.values(atRelation.relationFields)
                     .some((atRf) => (atRf.lbFieldName === relationField.name || atRf.rbFieldName === relationField.name))
-                    || relationField.name === Constants_1.Constants.DEFAULT_LB_NAME || relationField.name === Constants_1.Constants.DEFAULT_RB_NAME) {
-                    return;
+                  || relationField.name === Constants.DEFAULT_LB_NAME || relationField.name === Constants.DEFAULT_RB_NAME) {
+                  return;
                 }
+                */
                 if (!gdmn_orm_1.hasField(entity.adapter, relation.name, relationField.name)
                     && !gdmn_orm_1.systemFields.find((sf) => sf === relationField.name)
                     && !gdmn_orm_1.isUserDefined(relationField.name)) {
@@ -344,14 +346,18 @@ class ERExport {
                     if (!refEntities.length) {
                         console.warn(`${relation.name}.${relationField.name}: no entities for table ${refRelationName}${cond ? ", condition: " + JSON.stringify(cond) : ""}`);
                     }
-                    if (atRelationField && atRelationField.isParent) {
+                    if (relationField.name === Constants_1.Constants.DEFAULT_PARENT_KEY_NAME) {
+                        let lbField = '';
+                        let rbField = '';
                         let parentAttrAdapter;
-                        const lbField = atRelationField.lbFieldName || Constants_1.Constants.DEFAULT_LB_NAME;
-                        const rbField = atRelationField.rbFieldName || Constants_1.Constants.DEFAULT_RB_NAME;
+                        if (relation.relationFields[Constants_1.Constants.DEFAULT_LB_NAME] && relation.relationFields[Constants_1.Constants.DEFAULT_RB_NAME]) {
+                            lbField = Constants_1.Constants.DEFAULT_LB_NAME;
+                            rbField = Constants_1.Constants.DEFAULT_RB_NAME;
+                        }
                         if (adapter) {
                             parentAttrAdapter = { ...adapter, lbField, rbField };
                         }
-                        else if (atRelationField.lbFieldName || atRelationField.rbFieldName) {
+                        else if (lbField || rbField) {
                             parentAttrAdapter = {
                                 relation: relation.name,
                                 field: relationField.name,

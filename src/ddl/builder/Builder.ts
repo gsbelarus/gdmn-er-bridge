@@ -5,7 +5,6 @@ import {
   Entity,
   EntityAttribute,
   EnumAttribute,
-  ParentAttribute,
   ScalarAttribute,
   SetAttribute
 } from "gdmn-orm";
@@ -143,9 +142,6 @@ export abstract class Builder {
       lName: attr.lName.ru ? attr.lName.ru.name : attr.name,
       description: attr.lName.ru ? attr.lName.ru.fullName : attr.name,
       attrName: options.fieldName !== attr.name ? attr.name : undefined,
-      isParent: ParentAttribute.isType(attr) || undefined,
-      lbFieldName: ParentAttribute.isType(attr) && attr.adapter && attr.adapter.lbField || undefined,
-      rbFieldName: ParentAttribute.isType(attr) && attr.adapter && attr.adapter.rbField || undefined,
       masterEntityName: options.masterEntity ? options.masterEntity.name : undefined,
       fieldSource: options.domainName,
       fieldSourceKey,
