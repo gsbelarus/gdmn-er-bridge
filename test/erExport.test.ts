@@ -92,5 +92,12 @@ describe("ERExport", () => {
     }
 
     expect(serialized).toEqual(deserialized.serialize());
+
+    /**
+     * Проверка на то, что древовидная таблица возвращает флаг isTree
+     */
+    const gdPlace = result.erModel.entities['GD_PLACE'];
+    expect(gdPlace).toBeDefined();
+    expect(gdPlace.isTree).toBeTruthy();
   }, 120000);
 });
