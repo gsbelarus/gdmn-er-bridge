@@ -1,27 +1,17 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const DDLHelper_1 = require("../builder/DDLHelper");
-const BaseUpdate_1 = require("./BaseUpdate");
-class Update3 extends BaseUpdate_1.BaseUpdate {
+const BaseSimpleUpdate_1 = require("./BaseSimpleUpdate");
+class Update3 extends BaseSimpleUpdate_1.BaseSimpleUpdate {
     constructor() {
         super(...arguments);
-        this.version = 3;
+        this._version = 3;
+        this._description = "Дополнительные поля для AT_RELATION_FIELDS";
     }
-    async run() {
-        await this._executeTransaction(async (transaction) => {
-            const ddlHelper = new DDLHelper_1.DDLHelper(this._connection, transaction);
-            await ddlHelper.prepare();
-            try {
-                await ddlHelper.addColumns("AT_RELATION_FIELDS", [
-                    { name: "MASTERENTITYNAME", domain: "DTABLENAME" },
-                    { name: "ISPARENT", domain: "DBOOLEAN" }
-                ]);
-            }
-            finally {
-                await ddlHelper.dispose();
-            }
-            await this._updateDatabaseVersion(transaction);
-        });
+    async internalRun(ddlHelper) {
+        await ddlHelper.addColumns("AT_RELATION_FIELDS", [
+            { name: "MASTERENTITYNAME", domain: "DTABLENAME" },
+            { name: "ISPARENT", domain: "DBOOLEAN" }
+        ]);
     }
 }
 exports.Update3 = Update3;

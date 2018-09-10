@@ -97,8 +97,9 @@ class ERExport {
         entity.adapter.relation.forEach(rel => {
             const relation = this._dbStructure.relations[rel.relationName];
             const atRelation = this._getATResult().atRelations[relation.name];
-            if (!atRelation)
+            if (!atRelation) {
                 throw new Error(`Relation ${relation.name} not found in AT_RELATIONS table. Synchronization needed.`);
+            }
             Object.values(relation.relationFields).forEach(relationField => {
                 if (rel.fields && !rel.fields.includes(relationField.name)) {
                     return;
@@ -106,14 +107,6 @@ class ERExport {
                 if (relation.primaryKey && relation.primaryKey.fields.includes(relationField.name)) {
                     return;
                 }
-                // ignore lb and rb fields
-                /*
-                if (Object.values(atRelation.relationFields)
-                    .some((atRf) => (atRf.lbFieldName === relationField.name || atRf.rbFieldName === relationField.name))
-                  || relationField.name === Constants.DEFAULT_LB_NAME || relationField.name === Constants.DEFAULT_RB_NAME) {
-                  return;
-                }
-                */
                 if (!gdmn_orm_1.hasField(entity.adapter, relation.name, relationField.name)
                     && !gdmn_orm_1.systemFields.find((sf) => sf === relationField.name)
                     && !gdmn_orm_1.isUserDefined(relationField.name)) {
@@ -122,7 +115,7 @@ class ERExport {
                 if (entity.adapter.relation[0].selector && entity.adapter.relation[0].selector.field === relationField.name) {
                     return;
                 }
-                const atRelationField = atRelation ? atRelation.relationFields[relationField.name] : undefined;
+                const atRelationField = atRelation.relationFields[relationField.name];
                 if (atRelationField) {
                     if (atRelationField.crossTable || atRelationField.masterEntityName) {
                         return;

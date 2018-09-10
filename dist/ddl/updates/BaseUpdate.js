@@ -5,6 +5,12 @@ class BaseUpdate {
     constructor(connection) {
         this._connection = connection;
     }
+    get version() {
+        return this._version;
+    }
+    get description() {
+        return `(-> v${this._version}) ${this._description}`;
+    }
     async _executeTransaction(callback) {
         return await gdmn_db_1.AConnection.executeTransaction({
             connection: this._connection,
@@ -17,7 +23,7 @@ class BaseUpdate {
       VALUES (1, :version)
       MATCHING (ID)
     `, {
-            version: this.version
+            version: this._version
         });
     }
 }

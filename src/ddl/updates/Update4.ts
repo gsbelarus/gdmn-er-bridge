@@ -1,23 +1,14 @@
 import {DDLHelper} from "../builder/DDLHelper";
-import {BaseUpdate} from "./BaseUpdate";
+import {BaseSimpleUpdate} from "./BaseSimpleUpdate";
 
-export class Update4 extends BaseUpdate {
+export class Update4 extends BaseSimpleUpdate {
 
-  public version: number = 4;
+  protected _version: number = 4;
+  protected _description: string = "Дополнительное поле для AT_RELATIONS";
 
-  public async run(): Promise<void> {
-    await this._executeTransaction(async (transaction) => {
-      const ddlHelper = new DDLHelper(this._connection, transaction);
-
-      await ddlHelper.prepare();
-      try {
-        await ddlHelper.addColumns("AT_RELATIONS", [
-          {name: "ENTITYNAME", domain: "DTABLENAME"}
-        ]);
-      } finally {
-        await ddlHelper.dispose();
-      }
-      await this._updateDatabaseVersion(transaction);
-    });
+  protected async internalRun(ddlHelper: DDLHelper): Promise<void> {
+    await ddlHelper.addColumns("AT_RELATIONS", [
+      {name: "ENTITYNAME", domain: "DTABLENAME"}
+    ]);
   }
 }

@@ -1,5 +1,6 @@
 import { BaseUpdate } from "./BaseUpdate";
 export declare class Update2 extends BaseUpdate {
-    version: number;
+    protected _version: number;
+    protected _description: string;
     run(): Promise<void>;
 }

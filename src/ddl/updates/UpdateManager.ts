@@ -33,9 +33,14 @@ export class UpdateManager {
     });
 
     const newUpdates = updates.filter((item) => item.version > version);
+    console.log("Обновление структуры базы данных...");
+    console.time("Обновление структуры базы данных закончено успешно");
     for (const update of newUpdates) {
+      console.time(update.description);
       await update.run();
+      console.timeEnd(update.description);
     }
+    console.timeEnd("Обновление структуры базы данных закончено успешно");
   }
 
   private sort(updates: BaseUpdate[]): void {

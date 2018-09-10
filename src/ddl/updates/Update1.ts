@@ -2,10 +2,10 @@ import {DDLHelper} from "../builder/DDLHelper";
 import {Constants} from "../Constants";
 import {BaseUpdate} from "./BaseUpdate";
 
-// Update for creating gedemin database
 export class Update1 extends BaseUpdate {
 
-  public version: number = 1;
+  protected _version: number = 1;
+  protected _description: string = "Обновление для чистой базы данных";
 
   public async run(): Promise<void> {
     await this._executeTransaction(async (transaction) => {
@@ -74,21 +74,6 @@ export class Update1 extends BaseUpdate {
       ]);
       await ddlHelper.addPrimaryKey("AT_PK_RELATION_FIELDS", "AT_RELATION_FIELDS", ["ID"]);
       await ddlHelper.addAutoIncrementTrigger("AT_BI_RELATION_FIELDS", "AT_RELATION_FIELDS", "ID", Constants.GLOBAL_GENERATOR);
-
-      // await ddlHelper.addTable("GD_DOCUMENTTYPE", [
-      //   {name: "ID", domain: "DINTKEY"},
-      //   {name: "RUID", domain: "DRUID"},
-      //   {name: "DOCUMENTTYPE", domain: "DDOCUMENTTYPE", default: "'D'"},
-      //   {name: "NAME", domain: "DNAME"},
-      //   {name: "CLASSNAME", domain: "DCLASSNAME"},
-      //   {name: "PARENT", domain: "DPARENT"},
-      //   {name: "LB", domain: "DLB"},
-      //   {name: "RB", domain: "DRB"},
-      //   {name: "HEADERRELKEY", domain: "DFOREIGNKEY"},
-      //   {name: "LINERELKEY", domain: "DFOREIGNKEY"}
-      // ]);
-      // await ddlHelper.addPrimaryKey("GD_PK_DOCUMENTTYPE", "GD_DOCUMENTTYPE", ["ID"]);
-      // await ddlHelper.addAutoIncrementTrigger("GD_BI_DOCUMENTTYPE", "GD_DOCUMENTTYPE", "ID", GLOBAL_GENERATOR);
     });
   }
 }

@@ -166,7 +166,9 @@ export class ERExport {
       const relation = this._dbStructure.relations[rel.relationName];
       const atRelation = this._getATResult().atRelations[relation.name];
 
-      if (!atRelation) throw new Error(`Relation ${relation.name} not found in AT_RELATIONS table. Synchronization needed.`);
+      if (!atRelation) {
+        throw new Error(`Relation ${relation.name} not found in AT_RELATIONS table. Synchronization needed.`);
+      }
 
       Object.values(relation.relationFields).forEach( relationField => {
         if (rel.fields && !rel.fields.includes(relationField.name)) {
@@ -176,15 +178,6 @@ export class ERExport {
         if (relation.primaryKey && relation.primaryKey.fields.includes(relationField.name)) {
           return;
         }
-
-        // ignore lb and rb fields
-        /*
-        if (Object.values(atRelation.relationFields)
-            .some((atRf) => (atRf.lbFieldName === relationField.name || atRf.rbFieldName === relationField.name))
-          || relationField.name === Constants.DEFAULT_LB_NAME || relationField.name === Constants.DEFAULT_RB_NAME) {
-          return;
-        }
-        */
 
         if (!hasField(entity.adapter, relation.name, relationField.name)
           && !systemFields.find((sf) => sf === relationField.name)
@@ -196,7 +189,7 @@ export class ERExport {
           return;
         }
 
-        const atRelationField = atRelation ? atRelation.relationFields[relationField.name] : undefined;
+        const atRelationField = atRelation.relationFields[relationField.name];
 
         if (atRelationField) {
           if (atRelationField.crossTable || atRelationField.masterEntityName) {

@@ -3,12 +3,21 @@ import {TExecutor} from "gdmn-db/src/types";
 
 export abstract class BaseUpdate {
 
-  public abstract version: number;
+  protected abstract _version: number;
+  protected abstract _description: string;
 
   protected _connection: AConnection;
 
   constructor(connection: AConnection) {
     this._connection = connection;
+  }
+
+  get version(): number {
+    return this._version;
+  }
+
+  get description(): string {
+    return `(-> v${this._version}) ${this._description}`;
   }
 
   public abstract run(): Promise<void>;
@@ -26,7 +35,7 @@ export abstract class BaseUpdate {
       VALUES (1, :version)
       MATCHING (ID)
     `, {
-      version: this.version
+      version: this._version
     });
   }
 }

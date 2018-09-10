@@ -2,10 +2,10 @@ import {DDLHelper} from "../builder/DDLHelper";
 import {Constants} from "../Constants";
 import {BaseUpdate} from "./BaseUpdate";
 
-// Update for creating gdmn-back adapted database
 export class Update2 extends BaseUpdate {
 
-  public version: number = 2;
+  protected _version: number = 2;
+  protected _description: string = "Обновление для бд Гедымина, включающее поддержку gdmn web";
 
   public async run(): Promise<void> {
     await this._executeTransaction(async (transaction) => {
@@ -27,6 +27,7 @@ export class Update2 extends BaseUpdate {
         await ddlHelper.dispose();
       }
     });
+
     await this._executeTransaction((transaction) => this._updateDatabaseVersion(transaction));
   }
 }
