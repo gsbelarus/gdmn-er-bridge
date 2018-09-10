@@ -6,8 +6,10 @@ const Update2_1 = require("./Update2");
 const Update3_1 = require("./Update3");
 const Update4_1 = require("./Update4");
 const Update5_1 = require("./Update5");
-const CURRENT_DATABASE_VERSION = 5;
+const Update6_1 = require("./Update6");
+const CURRENT_DATABASE_VERSION = 6;
 const UPDATES_LIST = [
+    Update6_1.Update6,
     Update5_1.Update5,
     Update4_1.Update4,
     Update3_1.Update3,
@@ -26,9 +28,10 @@ class DBSchemaUpdater extends BaseUpdate_1.BaseUpdate {
         this._verifyAmount(updates);
         const version = await this._executeTransaction((transaction) => this._getDatabaseVersion(transaction));
         const newUpdates = updates.filter((item) => item.version > version);
-        console.log("Обновление структуры базы данных...");
+        console.log(this._description + "...");
         console.time(this._description);
         for (const update of newUpdates) {
+            console.log(update.description + "...");
             console.time(update.description);
             await update.run();
             console.timeEnd(update.description);

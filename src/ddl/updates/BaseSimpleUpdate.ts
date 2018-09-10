@@ -5,15 +5,16 @@ export abstract class BaseSimpleUpdate extends BaseUpdate {
 
   public async run(): Promise<void> {
     await this._executeTransaction(async (transaction) => {
-      const ddHelper = new DDLHelper(this._connection, transaction);
+      const ddlHelper = new DDLHelper(this._connection, transaction);
       try {
-        await ddHelper.prepare();
+        await ddlHelper.prepare();
 
-        await this.internalRun(ddHelper);
+        await this.internalRun(ddlHelper);
 
+        console.debug(ddlHelper.logs.join("\n"));
       } finally {
-        if (ddHelper.prepared) {
-          await ddHelper.dispose();
+        if (ddlHelper.prepared) {
+          await ddlHelper.dispose();
         }
       }
 

@@ -17,7 +17,7 @@ export class Update1 extends BaseUpdate {
       await ddlHelper.addDomain("DFOREIGNKEY", {type: "INTEGER"});
       await ddlHelper.addDomain("DLB", {type: "INTEGER", default: "1", notNull: true});
       await ddlHelper.addDomain("DRB", {type: "INTEGER", default: "2", notNull: true});
-      await ddlHelper.addDomain("DRUID", {type: "VARCHAR(21)", notNull: true});
+      await ddlHelper.addDomain("DTIMESTAMP_NOTNULL", {type: "TIMESTAMP", notNull: true});
       await ddlHelper.addDomain("DBOOLEAN", {type: "SMALLINT", default: "0", check: "CHECK (VALUE IN (0, 1))"});
       await ddlHelper.addDomain("DTABLENAME", {type: "VARCHAR(31)", check: "CHECK (VALUE > '')"});
       await ddlHelper.addDomain("DFIELDNAME", {type: "VARCHAR(31)", check: "CHECK (VALUE > '')"});
@@ -26,10 +26,6 @@ export class Update1 extends BaseUpdate {
       await ddlHelper.addDomain("DTEXT60", {type: "VARCHAR(60)"});
       await ddlHelper.addDomain("DNAME", {type: "VARCHAR(60)", notNull: true});
       await ddlHelper.addDomain("DRELATIONTYPE", {type: "VARCHAR(1)", check: "CHECK (VALUE IN ('T', 'V'))"});
-      await ddlHelper.addDomain("DDOCUMENTTYPE", {
-        type: "VARCHAR(1)",
-        check: " CHECK ((VALUE = 'B') OR (VALUE = 'D'))"
-      });
       await ddlHelper.addDomain("DCLASSNAME", {type: "VARCHAR(40)"});
       await ddlHelper.addDomain("DNUMERATIONBLOB", {type: "BLOB SUB_TYPE -1 SEGMENT SIZE 256"});
 
@@ -74,6 +70,8 @@ export class Update1 extends BaseUpdate {
       ]);
       await ddlHelper.addPrimaryKey("AT_PK_RELATION_FIELDS", "AT_RELATION_FIELDS", ["ID"]);
       await ddlHelper.addAutoIncrementTrigger("AT_BI_RELATION_FIELDS", "AT_RELATION_FIELDS", "ID", Constants.GLOBAL_GENERATOR);
+
+      console.debug(ddlHelper.logs.join("\n"));
     });
   }
 }

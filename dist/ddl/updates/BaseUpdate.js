@@ -9,7 +9,7 @@ class BaseUpdate {
         return this._version;
     }
     get description() {
-        return `(-> v${this._version}) ${this._description}`;
+        return `(-> v${this._version}) ${this._description}`.trim();
     }
     async _executeTransaction(callback) {
         return await gdmn_db_1.AConnection.executeTransaction({
@@ -34,8 +34,8 @@ class BaseUpdate {
             return 1;
         }
         const result = await this._connection.executeReturning(transaction, `
-      SELECT FIRST 1
-        VERSION
+      SELECT 
+        MAX(VERSION) AS "VERSION"
       FROM AT_DATABASE
     `);
         return await result.getNumber("VERSION");

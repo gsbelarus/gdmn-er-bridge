@@ -10,7 +10,7 @@ class Update3 extends BaseSimpleUpdate_1.BaseSimpleUpdate {
     async internalRun(ddlHelper) {
         await ddlHelper.addColumns("AT_RELATION_FIELDS", [
             { name: "MASTERENTITYNAME", domain: "DTABLENAME" },
-            { name: "ISPARENT", domain: "DBOOLEAN" }
+            { name: "ISPARENT", domain: "DBOOLEAN" } // // TODO delete this column
         ]);
     }
 }

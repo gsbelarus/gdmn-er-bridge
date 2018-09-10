@@ -5,14 +5,15 @@ const BaseUpdate_1 = require("./BaseUpdate");
 class BaseSimpleUpdate extends BaseUpdate_1.BaseUpdate {
     async run() {
         await this._executeTransaction(async (transaction) => {
-            const ddHelper = new DDLHelper_1.DDLHelper(this._connection, transaction);
+            const ddlHelper = new DDLHelper_1.DDLHelper(this._connection, transaction);
             try {
-                await ddHelper.prepare();
-                await this.internalRun(ddHelper);
+                await ddlHelper.prepare();
+                await this.internalRun(ddlHelper);
+                console.debug(ddlHelper.logs.join("\n"));
             }
             finally {
-                if (ddHelper.prepared) {
-                    await ddHelper.dispose();
+                if (ddlHelper.prepared) {
+                    await ddlHelper.dispose();
                 }
             }
             await this._updateDatabaseVersion(transaction);

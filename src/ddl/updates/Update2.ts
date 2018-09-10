@@ -23,6 +23,8 @@ export class Update2 extends BaseUpdate {
         await ddlHelper.addColumns("AT_RELATION_FIELDS", [
           {name: "ATTRNAME", domain: "DFIELDNAME"}
         ]);
+
+        console.debug(ddlHelper.logs.join("\n"));
       } finally {
         await ddlHelper.dispose();
       }

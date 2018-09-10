@@ -17,7 +17,7 @@ export abstract class BaseUpdate {
   }
 
   get description(): string {
-    return `(-> v${this._version}) ${this._description}`;
+    return `(-> v${this._version}) ${this._description}`.trim();
   }
 
   public abstract run(): Promise<void>;
@@ -47,8 +47,8 @@ export abstract class BaseUpdate {
       return 1;
     }
     const result = await this._connection.executeReturning(transaction, `
-      SELECT FIRST 1
-        VERSION
+      SELECT 
+        MAX(VERSION) AS "VERSION"
       FROM AT_DATABASE
     `);
     return await result.getNumber("VERSION");

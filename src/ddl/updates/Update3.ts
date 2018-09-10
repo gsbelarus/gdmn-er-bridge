@@ -9,7 +9,7 @@ export class Update3 extends BaseSimpleUpdate {
   protected async internalRun(ddlHelper: DDLHelper): Promise<void> {
     await ddlHelper.addColumns("AT_RELATION_FIELDS", [
       {name: "MASTERENTITYNAME", domain: "DTABLENAME"},
-      {name: "ISPARENT", domain: "DBOOLEAN"}
+      {name: "ISPARENT", domain: "DBOOLEAN"}    // // TODO delete this column
     ]);
   }
 }

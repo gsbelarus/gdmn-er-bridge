@@ -5,10 +5,12 @@ import {Update2} from "./Update2";
 import {Update3} from "./Update3";
 import {Update4} from "./Update4";
 import {Update5} from "./Update5";
+import {Update6} from "./Update6";
 
-const CURRENT_DATABASE_VERSION = 5;
+const CURRENT_DATABASE_VERSION = 6;
 
 const UPDATES_LIST: UpdateConstructor[] = [
+  Update6,
   Update5,
   Update4,
   Update3,
@@ -32,9 +34,10 @@ export class DBSchemaUpdater extends BaseUpdate {
     const version = await this._executeTransaction((transaction) => this._getDatabaseVersion(transaction));
 
     const newUpdates = updates.filter((item) => item.version > version);
-    console.log("Обновление структуры базы данных...");
+    console.log(this._description + "...");
     console.time(this._description);
     for (const update of newUpdates) {
+      console.log(update.description + "...");
       console.time(update.description);
       await update.run();
       console.timeEnd(update.description);
