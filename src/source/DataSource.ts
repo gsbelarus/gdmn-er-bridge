@@ -1,7 +1,7 @@
 import {AConnection} from "gdmn-db";
 import {ERModel, IDataSource, ISequenceSource, Sequence} from "gdmn-orm";
 import {Constants} from "../ddl/Constants";
-import {UpdateManager} from "../ddl/updates/UpdateManager";
+import {DBSchemaUpdater} from "../ddl/updates/DBSchemaUpdater";
 import {EntitySource} from "./EntitySource";
 import {SequenceSource} from "./SequenceSource";
 import {Transaction} from "./Transaction";
@@ -16,7 +16,7 @@ export class DataSource implements IDataSource {
   }
 
   public async init(obj: ERModel): Promise<ERModel> {
-    await new UpdateManager().updateDatabase(this._connection);
+    await new DBSchemaUpdater(this._connection).run();
 
     if (!Object.values(obj.sequencies).some((seq) => seq.name == Constants.GLOBAL_GENERATOR)) {
       obj.addSequence(new Sequence({name: Constants.GLOBAL_GENERATOR}));

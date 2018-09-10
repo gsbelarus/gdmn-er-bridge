@@ -36,12 +36,8 @@ class DDLHelper {
         await this._ddlUniqueGen.dispose();
     }
     async addSequence(sequenceName) {
-        let sql = `CREATE SEQUENCE ${sequenceName}`;
-        this._logs.push(sql);
-        await this._connection.execute(this._transaction, sql);
-        sql = `ALTER SEQUENCE ${sequenceName} RESTART WITH 0`;
-        this._logs.push(sql);
-        await this._connection.execute(this._transaction, sql);
+        await this._loggedExecute(`CREATE SEQUENCE ${sequenceName}`);
+        await this._loggedExecute(`ALTER SEQUENCE ${sequenceName} RESTART WITH 0`);
     }
     async addTable(tableName, scalarFields) {
         if (!scalarFields) {
@@ -52,9 +48,7 @@ class DDLHelper {
             tableName = Prefix_1.Prefix.join(`${await this._ddlUniqueGen.next()}`, Prefix_1.Prefix.TABLE);
         }
         const fields = scalarFields.map((item) => (`${item.name.padEnd(31)} ${item.domain.padEnd(31)} ${DDLHelper._getColumnProps(item)}`.trim()));
-        const sql = `CREATE TABLE ${tableName} (\n  ` + fields.join(",\n  ") + `\n)`;
-        this._logs.push(sql);
-        await this._connection.execute(this._transaction, sql);
+        await this._loggedExecute(`CREATE TABLE ${tableName} (\n  ` + fields.join(",\n  ") + `\n)`);
         return tableName;
     }
     async addTableCheck(constraintName, tableName, checks) {
@@ -64,17 +58,13 @@ class DDLHelper {
             constraintName = undefined;
         }
         for (const check of checks) {
-            const sql = `ALTER TABLE ${tableName} ADD ${DDLHelper._getConstraint(constraintName)} CHECK (${check})`;
-            this._logs.push(sql);
-            await this._connection.execute(this._transaction, sql);
+            await this._loggedExecute(`ALTER TABLE ${tableName} ADD ${DDLHelper._getConstraint(constraintName)} CHECK (${check})`);
         }
     }
     async addColumns(tableName, fields) {
         for (const field of fields) {
             const column = field.name.padEnd(31) + " " + field.domain.padEnd(31);
-            const sql = `ALTER TABLE ${tableName} ADD ${column} ${DDLHelper._getColumnProps(field)}`.trim();
-            this._logs.push(sql);
-            await this._connection.execute(this._transaction, sql);
+            await this._loggedExecute(`ALTER TABLE ${tableName} ADD ${column} ${DDLHelper._getColumnProps(field)}`.trim());
         }
     }
     async createIndex(indexName, tableName, type, fieldNames) {
@@ -87,9 +77,7 @@ class DDLHelper {
         if (!indexName) {
             indexName = Prefix_1.Prefix.join(`${await this._ddlUniqueGen.next()}`, Prefix_1.Prefix.INDEX);
         }
-        const sql = `CREATE ${type} INDEX ${indexName} ON ${tableName} (${fieldNames.join(", ")})`;
-        this._logs.push(sql);
-        await this._connection.execute(this._transaction, sql);
+        await this._loggedExecute(`CREATE ${type} INDEX ${indexName} ON ${tableName} (${fieldNames.join(", ")})`);
         return indexName;
     }
     async addUnique(constraintName, tableName, fieldNames) {
@@ -102,9 +90,7 @@ class DDLHelper {
             constraintName = Prefix_1.Prefix.join(`${await this._ddlUniqueGen.next()}`, Prefix_1.Prefix.UNIQUE);
         }
         const f = fieldNames.join(", ");
-        const sql = `ALTER TABLE ${tableName} ADD ${DDLHelper._getConstraint(constraintName)} UNIQUE (${f})`;
-        this._logs.push(sql);
-        await this._connection.execute(this._transaction, sql);
+        await this._loggedExecute(`ALTER TABLE ${tableName} ADD ${DDLHelper._getConstraint(constraintName)} UNIQUE (${f})`);
         return constraintName;
     }
     async addPrimaryKey(constraintName, tableName, fieldNames) {
@@ -114,9 +100,7 @@ class DDLHelper {
             constraintName = undefined;
         }
         const pk = fieldNames.join(", ");
-        const sql = `ALTER TABLE ${tableName} ADD ${DDLHelper._getConstraint(constraintName)} PRIMARY KEY (${pk})`;
-        this._logs.push(sql);
-        await this._connection.execute(this._transaction, sql);
+        await this._loggedExecute(`ALTER TABLE ${tableName} ADD ${DDLHelper._getConstraint(constraintName)} PRIMARY KEY (${pk})`);
         return constraintName;
     }
     async addForeignKey(constraintName, options, from, to) {
@@ -127,12 +111,10 @@ class DDLHelper {
             constraintName = undefined;
         }
         const { tableName, fieldName } = from;
-        const sql = `ALTER TABLE ${tableName} ADD ${DDLHelper._getConstraint(constraintName)} FOREIGN KEY (${fieldName}) ` +
+        await this._loggedExecute(`ALTER TABLE ${tableName} ADD ${DDLHelper._getConstraint(constraintName)} FOREIGN KEY (${fieldName}) ` +
             `REFERENCES ${to.tableName} (${to.fieldName}) ` +
             (options.onUpdate ? `ON UPDATE ${options.onUpdate} ` : "") +
-            (options.onDelete ? `ON DELETE ${options.onDelete} ` : "");
-        this._logs.push(sql);
-        await this._connection.execute(this._transaction, sql);
+            (options.onDelete ? `ON DELETE ${options.onDelete} ` : ""));
         return constraintName;
     }
     async addDomain(domainName, props) {
@@ -143,10 +125,8 @@ class DDLHelper {
         if (!domainName) {
             domainName = Prefix_1.Prefix.join(`${await this._ddlUniqueGen.next()}`, Prefix_1.Prefix.DOMAIN);
         }
-        const sql = `CREATE DOMAIN ${domainName.padEnd(31)} AS ${props.type.padEnd(31)}` +
-            DDLHelper._getColumnProps(props);
-        this._logs.push(sql);
-        await this._connection.execute(this._transaction, sql);
+        await this._loggedExecute(`CREATE DOMAIN ${domainName.padEnd(31)} AS ${props.type.padEnd(31)}` +
+            DDLHelper._getColumnProps(props));
         return domainName;
     }
     async addAutoIncrementTrigger(triggerName, tableName, fieldName, sequenceName) {
@@ -159,17 +139,19 @@ class DDLHelper {
         if (!triggerName) {
             triggerName = Prefix_1.Prefix.join(`${await this._ddlUniqueGen.next()}`, Prefix_1.Prefix.TRIGGER_BI);
         }
-        const sql = `
+        await this._loggedExecute(`
       CREATE TRIGGER ${triggerName} FOR ${tableName}
         ACTIVE BEFORE INSERT POSITION 0
       AS
       BEGIN
         IF (NEW.${fieldName} IS NULL) THEN NEW.${fieldName} = NEXT VALUE FOR ${sequenceName};
       END
-    `;
+    `);
+        return triggerName;
+    }
+    async _loggedExecute(sql) {
         this._logs.push(sql);
         await this._connection.execute(this._transaction, sql);
-        return triggerName;
     }
 }
 DDLHelper.DEFAULT_FK_OPTIONS = {

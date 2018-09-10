@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const gdmn_orm_1 = require("gdmn-orm");
 const Constants_1 = require("../ddl/Constants");
-const UpdateManager_1 = require("../ddl/updates/UpdateManager");
+const DBSchemaUpdater_1 = require("../ddl/updates/DBSchemaUpdater");
 const EntitySource_1 = require("./EntitySource");
 const SequenceSource_1 = require("./SequenceSource");
 const Transaction_1 = require("./Transaction");
@@ -11,7 +11,7 @@ class DataSource {
         this._connection = connection;
     }
     async init(obj) {
-        await new UpdateManager_1.UpdateManager().updateDatabase(this._connection);
+        await new DBSchemaUpdater_1.DBSchemaUpdater(this._connection).run();
         if (!Object.values(obj.sequencies).some((seq) => seq.name == Constants_1.Constants.GLOBAL_GENERATOR)) {
             obj.addSequence(new gdmn_orm_1.Sequence({ name: Constants_1.Constants.GLOBAL_GENERATOR }));
         }

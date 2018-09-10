@@ -4,8 +4,8 @@ import {BaseUpdate} from "./BaseUpdate";
 
 export class Update1 extends BaseUpdate {
 
-  protected _version: number = 1;
-  protected _description: string = "Обновление для чистой базы данных";
+  protected readonly _version: number = 1;
+  protected readonly _description: string = "Обновление для чистой базы данных";
 
   public async run(): Promise<void> {
     await this._executeTransaction(async (transaction) => {

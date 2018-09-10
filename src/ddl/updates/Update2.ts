@@ -4,8 +4,8 @@ import {BaseUpdate} from "./BaseUpdate";
 
 export class Update2 extends BaseUpdate {
 
-  protected _version: number = 2;
-  protected _description: string = "Обновление для бд Гедымина, включающее поддержку gdmn web";
+  protected readonly _version: number = 2;
+  protected readonly _description: string = "Обновление для бд Гедымина, включающее поддержку gdmn web";
 
   public async run(): Promise<void> {
     await this._executeTransaction(async (transaction) => {
