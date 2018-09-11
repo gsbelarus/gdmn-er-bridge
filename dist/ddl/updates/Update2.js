@@ -12,9 +12,9 @@ class Update2 extends BaseUpdate_1.BaseUpdate {
     async run() {
         await this._executeTransaction(async (transaction) => {
             const ddlHelper = new DDLHelper_1.DDLHelper(this._connection, transaction);
-            await ddlHelper.addSequence(Constants_1.Constants.GLOBAL_DDL_GENERATOR);
-            await ddlHelper.prepare();
             try {
+                await ddlHelper.addSequence(Constants_1.Constants.GLOBAL_DDL_GENERATOR);
+                await ddlHelper.prepare();
                 await ddlHelper.addTable("AT_DATABASE", [
                     { name: "ID", domain: "DINTKEY" },
                     { name: "VERSION", domain: "DINTKEY" }
@@ -23,10 +23,12 @@ class Update2 extends BaseUpdate_1.BaseUpdate {
                 await ddlHelper.addColumns("AT_RELATION_FIELDS", [
                     { name: "ATTRNAME", domain: "DFIELDNAME" }
                 ]);
-                console.debug(ddlHelper.logs.join("\n"));
             }
             finally {
-                await ddlHelper.dispose();
+                console.debug(ddlHelper.logs.join("\n"));
+                if (ddlHelper.prepared) {
+                    await ddlHelper.dispose();
+                }
             }
         });
         await this._executeTransaction((transaction) => this._updateDatabaseVersion(transaction));

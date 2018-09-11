@@ -9,14 +9,14 @@ class BaseSimpleUpdate extends BaseUpdate_1.BaseUpdate {
             try {
                 await ddlHelper.prepare();
                 await this.internalRun(ddlHelper);
-                console.debug(ddlHelper.logs.join("\n"));
+                await this._updateDatabaseVersion(transaction);
             }
             finally {
+                console.debug(ddlHelper.logs.join("\n"));
                 if (ddlHelper.prepared) {
                     await ddlHelper.dispose();
                 }
             }
-            await this._updateDatabaseVersion(transaction);
         });
     }
 }

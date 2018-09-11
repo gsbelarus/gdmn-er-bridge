@@ -10,15 +10,14 @@ export abstract class BaseSimpleUpdate extends BaseUpdate {
         await ddlHelper.prepare();
 
         await this.internalRun(ddlHelper);
+        await this._updateDatabaseVersion(transaction);
 
-        console.debug(ddlHelper.logs.join("\n"));
       } finally {
+        console.debug(ddlHelper.logs.join("\n"));
         if (ddlHelper.prepared) {
           await ddlHelper.dispose();
         }
       }
-
-      await this._updateDatabaseVersion(transaction);
     });
   }
 
