@@ -1,7 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const gdmn_orm_1 = require("gdmn-orm");
-const Constants_1 = require("../Constants");
 const Builder_1 = require("./Builder");
 const DDLHelper_1 = require("./DDLHelper");
 const DomainResolver_1 = require("./DomainResolver");
@@ -17,38 +16,16 @@ class ERModelBuilder extends Builder_1.Builder {
         await super.prepare(connection, transaction);
         this._entityBuilder = new EntityBuilder_1.EntityBuilder(this._getDDLHelper(), this._getATHelper());
     }
-    async initERModel(erModel = new gdmn_orm_1.ERModel()) {
-        if (!Object.values(erModel.sequencies).some((seq) => seq.name == Constants_1.Constants.GLOBAL_GENERATOR)) {
-            erModel.addSequence(new gdmn_orm_1.Sequence({ name: Constants_1.Constants.GLOBAL_GENERATOR }));
-        }
-        return erModel;
+    async addSequence(sequence) {
+        // TODO custom adapter name
+        await this._getDDLHelper().addSequence(sequence.name);
+        return sequence;
     }
-    async addSequence(erModel, sequence) {
-        return erModel.addSequence(sequence);
+    async removeSequence(_sequence) {
+        // TODO
+        throw new Error("Unsupported yet");
     }
-    async addEntity(erModel, entity) {
-        // TODO pk only EntityAttribute and ScalarAttribute
-        if (entity.parent) {
-            const entityAttr = entity.add(new gdmn_orm_1.EntityAttribute({
-                name: Constants_1.Constants.DEFAULT_INHERITED_KEY_NAME,
-                required: true,
-                lName: { ru: { name: "Родитель" } },
-                entities: [entity.parent]
-            }));
-            entity.pk.push(entityAttr);
-        }
-        else {
-            entity.add(new gdmn_orm_1.SequenceAttribute({
-                name: Constants_1.Constants.DEFAULT_ID_NAME,
-                lName: { ru: { name: "Идентификатор" } },
-                sequence: erModel.sequencies[Constants_1.Constants.GLOBAL_GENERATOR],
-                adapter: {
-                    relation: Builder_1.Builder._getOwnRelationName(entity),
-                    field: Constants_1.Constants.DEFAULT_ID_NAME
-                }
-            }));
-        }
-        erModel.add(entity);
+    async addEntity(entity) {
         const tableName = Builder_1.Builder._getOwnRelationName(entity);
         const fields = [];
         for (const pkAttr of entity.pk) {
@@ -98,6 +75,10 @@ class ERModelBuilder extends Builder_1.Builder {
             await this.entityBuilder.addUnique(entity, unique);
         }
         return entity;
+    }
+    removeEntity(_entity) {
+        // TODO
+        throw new Error("Unsupported yet");
     }
 }
 exports.ERModelBuilder = ERModelBuilder;

@@ -7,9 +7,6 @@ export interface IInputATRelationFields {
   description: string | undefined;
   attrName: string | undefined;
   masterEntityName: string | undefined;
-  isParent: boolean | undefined;
-  lbFieldName: string | undefined;
-  rbFieldName: string | undefined;
   fieldSource: string;
   fieldSourceKey: number;
   semCategory: string | undefined;
@@ -61,9 +58,9 @@ export class ATHelper {
 
   public async prepare(): Promise<void> {
     this._createATField = await this._connection.prepare(this._transaction, `
-      INSERT INTO AT_FIELDS (FIELDNAME, LNAME, DESCRIPTION, REFTABLE, REFCONDITION, SETTABLE, SETLISTFIELD, 
+      INSERT INTO AT_FIELDS (FIELDNAME, LNAME, DESCRIPTION, REFTABLE, REFCONDITION, SETTABLE, SETLISTFIELD,
         SETCONDITION, NUMERATION)
-      VALUES (:fieldName, :lName, :description, :refTable, :refCondition, :setTable, :setListField, 
+      VALUES (:fieldName, :lName, :description, :refTable, :refCondition, :setTable, :setListField,
         :setCondition, :numeration)
       RETURNING ID
     `);
@@ -73,12 +70,10 @@ export class ATHelper {
       RETURNING ID
     `);
     this._createATRelationField = await this._connection.prepare(this._transaction, `
-      INSERT INTO AT_RELATION_FIELDS (FIELDNAME, RELATIONNAME, FIELDSOURCE, FIELDSOURCEKEY, LNAME, DESCRIPTION, 
-        SEMCATEGORY, CROSSTABLE, CROSSTABLEKEY, CROSSFIELD, ATTRNAME, MASTERENTITYNAME, ISPARENT,
-        LBFIELDNAME, RBFIELDNAME)
-      VALUES (:fieldName, :relationName, :fieldSource, :fieldSourceKey, :lName, :description, 
-        :semCategory, :crossTable, :crossTableKey, :crossField, :attrName, :masterEntityName, :isParent,
-        :lbFieldName, :rbFieldName)
+      INSERT INTO AT_RELATION_FIELDS (FIELDNAME, RELATIONNAME, FIELDSOURCE, FIELDSOURCEKEY, LNAME, DESCRIPTION,
+        SEMCATEGORY, CROSSTABLE, CROSSTABLEKEY, CROSSFIELD, ATTRNAME, MASTERENTITYNAME)
+      VALUES (:fieldName, :relationName, :fieldSource, :fieldSourceKey, :lName, :description,
+        :semCategory, :crossTable, :crossTableKey, :crossField, :attrName, :masterEntityName)
       RETURNING ID
     `);
   }

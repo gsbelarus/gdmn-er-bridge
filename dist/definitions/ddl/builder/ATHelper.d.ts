@@ -7,9 +7,6 @@ export interface IInputATRelationFields {
     description: string | undefined;
     attrName: string | undefined;
     masterEntityName: string | undefined;
-    isParent: boolean | undefined;
-    lbFieldName: string | undefined;
-    rbFieldName: string | undefined;
     fieldSource: string;
     fieldSourceKey: number;
     semCategory: string | undefined;

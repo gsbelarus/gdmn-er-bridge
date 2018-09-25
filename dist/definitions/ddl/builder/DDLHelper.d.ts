@@ -53,4 +53,5 @@ export declare class DDLHelper {
     addDomain(domainName: string, props: IDomainProps): Promise<string>;
     addAutoIncrementTrigger(tableName: string, fieldName: string, sequenceName: string): Promise<string>;
     addAutoIncrementTrigger(triggerName: string, tableName: string, fieldName: string, sequenceName: string): Promise<string>;
+    private _loggedExecute;
 }

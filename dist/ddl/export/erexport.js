@@ -72,13 +72,12 @@ class ERExport {
         }
         const entity = new gdmn_orm_1.Entity({ parent, name, lName, semCategories, adapter });
         if (parent) {
-            const entityAttr = entity.add(new gdmn_orm_1.EntityAttribute({
+            entity.add(new gdmn_orm_1.EntityAttribute({
                 name: Constants_1.Constants.DEFAULT_INHERITED_KEY_NAME,
                 required: true,
                 lName: { ru: { name: "Родитель" } },
                 entities: [parent]
             }));
-            entity.pk.push(entityAttr);
         }
         else {
             entity.add(new gdmn_orm_1.SequenceAttribute({
@@ -95,21 +94,17 @@ class ERExport {
     }
     _createAttributes(entity, forceAdapter) {
         const ownRelationName = Builder_1.Builder._getOwnRelationName(entity);
-        entity.adapter.relation.forEach((rel) => {
+        entity.adapter.relation.forEach(rel => {
             const relation = this._dbStructure.relations[rel.relationName];
             const atRelation = this._getATResult().atRelations[relation.name];
-            Object.values(relation.relationFields).forEach((relationField) => {
-                // ignore non including in adapter.relation.fields
+            if (!atRelation) {
+                throw new Error(`Relation ${relation.name} not found in AT_RELATIONS table. Synchronization needed.`);
+            }
+            Object.values(relation.relationFields).forEach(relationField => {
                 if (rel.fields && !rel.fields.includes(relationField.name)) {
                     return;
                 }
                 if (relation.primaryKey && relation.primaryKey.fields.includes(relationField.name)) {
-                    return;
-                }
-                // ignore lb and rb fields
-                if (Object.values(atRelation.relationFields)
-                    .some((atRf) => (atRf.lbFieldName === relationField.name || atRf.rbFieldName === relationField.name))
-                    || relationField.name === Constants_1.Constants.DEFAULT_LB_NAME || relationField.name === Constants_1.Constants.DEFAULT_RB_NAME) {
                     return;
                 }
                 if (!gdmn_orm_1.hasField(entity.adapter, relation.name, relationField.name)
@@ -120,7 +115,7 @@ class ERExport {
                 if (entity.adapter.relation[0].selector && entity.adapter.relation[0].selector.field === relationField.name) {
                     return;
                 }
-                const atRelationField = atRelation ? atRelation.relationFields[relationField.name] : undefined;
+                const atRelationField = atRelation.relationFields[relationField.name];
                 if (atRelationField) {
                     if (atRelationField.crossTable || atRelationField.masterEntityName) {
                         return;
@@ -344,14 +339,18 @@ class ERExport {
                     if (!refEntities.length) {
                         console.warn(`${relation.name}.${relationField.name}: no entities for table ${refRelationName}${cond ? ", condition: " + JSON.stringify(cond) : ""}`);
                     }
-                    if (atRelationField && atRelationField.isParent) {
+                    if (relationField.name === Constants_1.Constants.DEFAULT_PARENT_KEY_NAME) {
+                        let lbField = '';
+                        let rbField = '';
                         let parentAttrAdapter;
-                        const lbField = atRelationField.lbFieldName || Constants_1.Constants.DEFAULT_LB_NAME;
-                        const rbField = atRelationField.rbFieldName || Constants_1.Constants.DEFAULT_RB_NAME;
+                        if (relation.relationFields[Constants_1.Constants.DEFAULT_LB_NAME] && relation.relationFields[Constants_1.Constants.DEFAULT_RB_NAME]) {
+                            lbField = Constants_1.Constants.DEFAULT_LB_NAME;
+                            rbField = Constants_1.Constants.DEFAULT_RB_NAME;
+                        }
                         if (adapter) {
                             parentAttrAdapter = { ...adapter, lbField, rbField };
                         }
-                        else if (atRelationField.lbFieldName || atRelationField.rbFieldName) {
+                        else if (lbField || rbField) {
                             parentAttrAdapter = {
                                 relation: relation.name,
                                 field: relationField.name,

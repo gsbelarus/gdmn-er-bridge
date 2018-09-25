@@ -138,13 +138,12 @@ export class ERExport {
 
     const entity = new Entity({parent, name, lName, semCategories, adapter});
     if (parent) {
-      const entityAttr = entity.add(new EntityAttribute({
+      entity.add(new EntityAttribute({
         name: Constants.DEFAULT_INHERITED_KEY_NAME,
         required: true,
         lName: {ru: {name: "Родитель"}},
         entities: [parent]
       }));
-      entity.pk.push(entityAttr);
     } else {
       entity.add(
         new SequenceAttribute({
@@ -163,34 +162,35 @@ export class ERExport {
 
   private _createAttributes(entity: Entity, forceAdapter: boolean): void {
     const ownRelationName = Builder._getOwnRelationName(entity);
-    entity.adapter.relation.forEach((rel) => {
+    entity.adapter.relation.forEach( rel => {
       const relation = this._dbStructure.relations[rel.relationName];
       const atRelation = this._getATResult().atRelations[relation.name];
 
-      Object.values(relation.relationFields).forEach((relationField) => {
-        // ignore non including in adapter.relation.fields
+      if (!atRelation) {
+        throw new Error(`Relation ${relation.name} not found in AT_RELATIONS table. Synchronization needed.`);
+      }
+
+      Object.values(relation.relationFields).forEach( relationField => {
         if (rel.fields && !rel.fields.includes(relationField.name)) {
           return;
         }
+
         if (relation.primaryKey && relation.primaryKey.fields.includes(relationField.name)) {
           return;
         }
-        // ignore lb and rb fields
-        if (Object.values(atRelation.relationFields)
-            .some((atRf) => (atRf.lbFieldName === relationField.name || atRf.rbFieldName === relationField.name))
-          || relationField.name === Constants.DEFAULT_LB_NAME || relationField.name === Constants.DEFAULT_RB_NAME) {
-          return;
-        }
+
         if (!hasField(entity.adapter, relation.name, relationField.name)
           && !systemFields.find((sf) => sf === relationField.name)
           && !isUserDefined(relationField.name)) {
           return;
         }
+
         if (entity.adapter.relation[0].selector && entity.adapter.relation[0].selector!.field === relationField.name) {
           return;
         }
 
-        const atRelationField = atRelation ? atRelation.relationFields[relationField.name] : undefined;
+        const atRelationField = atRelation.relationFields[relationField.name];
+
         if (atRelationField) {
           if (atRelationField.crossTable || atRelationField.masterEntityName) {
             return;
@@ -198,6 +198,7 @@ export class ERExport {
         }
 
         const attribute = this._createAttribute(relation, relationField, forceAdapter);
+
         // ignore duplicates and override parent attributes
         if ((ownRelationName === rel.relationName && !entity.hasOwnAttribute(attribute.name))
           || !entity.hasAttribute(attribute.name)) {
@@ -450,19 +451,26 @@ export class ERExport {
             console.warn(`${relation.name}.${relationField.name}: no entities for table ${refRelationName}${cond ? ", condition: " + JSON.stringify(cond) : ""}`);
           }
 
-          if (atRelationField && atRelationField.isParent) {
+          if (relationField.name === Constants.DEFAULT_PARENT_KEY_NAME) {
+            let lbField = '';
+            let rbField = '';
             let parentAttrAdapter: IParentAttributeAdapter | undefined;
-            const lbField = atRelationField.lbFieldName || Constants.DEFAULT_LB_NAME;
-            const rbField = atRelationField.rbFieldName || Constants.DEFAULT_RB_NAME;
+
+            if (relation.relationFields[Constants.DEFAULT_LB_NAME] && relation.relationFields[Constants.DEFAULT_RB_NAME]) {
+              lbField = Constants.DEFAULT_LB_NAME;
+              rbField = Constants.DEFAULT_RB_NAME;
+            }
+
             if (adapter) {
               parentAttrAdapter = {...adapter, lbField, rbField};
-            } else if (atRelationField.lbFieldName || atRelationField.rbFieldName) {
+            } else if (lbField || rbField) {
               parentAttrAdapter = {
                 relation: relation.name,
                 field: relationField.name,
                 lbField, rbField
               };
             }
+
             return new ParentAttribute({name, lName, entities: refEntities, semCategories, adapter: parentAttrAdapter});
           }
           return new EntityAttribute({name, lName, required, entities: refEntities, semCategories, adapter});

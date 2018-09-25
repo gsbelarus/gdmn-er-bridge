@@ -3,18 +3,18 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const DDLHelper_1 = require("../builder/DDLHelper");
 const Constants_1 = require("../Constants");
 const BaseUpdate_1 = require("./BaseUpdate");
-// Update for creating gdmn-back adapted database
 class Update2 extends BaseUpdate_1.BaseUpdate {
     constructor() {
         super(...arguments);
-        this.version = 2;
+        this._version = 2;
+        this._description = "Обновление для бд Гедымина, включающее поддержку gdmn web";
     }
     async run() {
         await this._executeTransaction(async (transaction) => {
             const ddlHelper = new DDLHelper_1.DDLHelper(this._connection, transaction);
-            await ddlHelper.addSequence(Constants_1.Constants.GLOBAL_DDL_GENERATOR);
-            await ddlHelper.prepare();
             try {
+                await ddlHelper.addSequence(Constants_1.Constants.GLOBAL_DDL_GENERATOR);
+                await ddlHelper.prepare();
                 await ddlHelper.addTable("AT_DATABASE", [
                     { name: "ID", domain: "DINTKEY" },
                     { name: "VERSION", domain: "DINTKEY" }
@@ -25,7 +25,10 @@ class Update2 extends BaseUpdate_1.BaseUpdate {
                 ]);
             }
             finally {
-                await ddlHelper.dispose();
+                console.debug(ddlHelper.logs.join("\n"));
+                if (ddlHelper.prepared) {
+                    await ddlHelper.dispose();
+                }
             }
         });
         await this._executeTransaction((transaction) => this._updateDatabaseVersion(transaction));
