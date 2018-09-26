@@ -8,7 +8,7 @@
     "clean": "rimraf dist",
     "build": "tsc",
     "rebuild": "npm run clean && npm run build",
-    "test": "cls && tsc && jest"
+    "test": "tsc && jest"
   },
   "repository": {
     "type": "git",
