@@ -1,8 +1,7 @@
 import { Step, IUpdate, IScalarAttrValue, IEntityAttrValue, ISetAttrValue } from "./Crud";
 import { Entity } from "gdmn-orm";
 import { Constants } from "../ddl/Constants";
-import { groupAttrsValuesByType, makeDetailAttrsSteps } from "./common";
-import _ from "lodash";
+import { groupAttrsValuesByType, makeDetailAttrsSteps, flatten, zip3 } from "./common";
 
 export function buildUpdateSteps(input: IUpdate): Step[] {
   const { entity, attrsValues } = input;
@@ -80,7 +79,7 @@ function makeScalarsAndEntitiesSteps(
 
 function makeSetAttrsSteps(crossPKOwn: number, setAttrsValues: ISetAttrValue[]): Step[] {
 
-  const flatten = _.flatten(setAttrsValues.map(currSetAttrValue => {
+  const flat = flatten(setAttrsValues.map(currSetAttrValue => {
 
     const { crossValues, refIDs } = currSetAttrValue;
 
@@ -90,9 +89,9 @@ function makeSetAttrsSteps(crossPKOwn: number, setAttrsValues: ISetAttrValue[]):
       throw new Error("ISetAttrValue must provide currRefIDs for Update operation");
     }
 
-    const innerSteps = _.zip(refIDs, currRefIDs, crossValues).map(([refID, currRefID, currValues]) => {
+    const innerSteps = zip3(refIDs, currRefIDs, crossValues).map(([refID, currRefID, currValues]) => {
 
-      const currCrossValues = currValues || [];
+      const currCrossValues = currValues as IScalarAttrValue[] || [];
 
       const restCrossAttrsParams = currCrossValues.reduce((acc, curr: IScalarAttrValue) => {
         return { ...acc, [curr.attribute.name]: curr.value };
@@ -137,5 +136,5 @@ function makeSetAttrsSteps(crossPKOwn: number, setAttrsValues: ISetAttrValue[]):
 
   }));
 
-  return flatten;
+  return flat;
 }

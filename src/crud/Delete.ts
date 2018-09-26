@@ -1,6 +1,5 @@
 import { Step, IDelete } from "./Crud";
-import { SetAttribute, DetailAttribute } from "gdmn-orm";
-import { Constants } from "../ddl/Constants";
+import { SetAttribute, DetailAttribute } from "gdmn-orm"; import { Constants } from "../ddl/Constants";
 
 export function buildDeleteSteps(input: IDelete): Step[] {
   const { pk, entity } = input;

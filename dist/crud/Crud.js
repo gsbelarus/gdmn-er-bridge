@@ -1,16 +1,13 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 const gdmn_db_1 = require("gdmn-db");
 const UpdateOrInsert_1 = require("./UpdateOrInsert");
 const Update_1 = require("./Update");
 const Insert_1 = require("./Insert");
 const Delete_1 = require("./Delete");
-const lodash_1 = __importDefault(require("lodash"));
+const common_1 = require("./common");
 async function runPrepNestedSteps(connection, transaction, nestedSteps) {
-    if (lodash_1.default.flatten(nestedSteps).length > 0) {
+    if (common_1.flatten(nestedSteps).length > 0) {
         for (const setSteps of nestedSteps) {
             const generalSQL = setSteps[0].sql;
             const statement = await connection.prepare(transaction, generalSQL);
@@ -50,7 +47,7 @@ class Crud {
         const datoms = Array.isArray(input) ? input : [input];
         const datomsWithPK = datoms.filter(d => d.pk);
         const nestedSteps = datomsWithPK.map(d => UpdateOrInsert_1.buildUpdateOrInsertSteps(d));
-        const flattenSteps = lodash_1.default.flatten(nestedSteps);
+        const flattenSteps = common_1.flatten(nestedSteps);
         await gdmn_db_1.AConnection.executeTransaction({
             connection,
             callback: async (transaction) => {
@@ -69,7 +66,7 @@ class Crud {
     static async executeUpdate(connection, input) {
         const datoms = Array.isArray(input) ? input : [input];
         const nestedSteps = datoms.map(d => Update_1.buildUpdateSteps(d));
-        const flattenSteps = lodash_1.default.flatten(nestedSteps);
+        const flattenSteps = common_1.flatten(nestedSteps);
         await gdmn_db_1.AConnection.executeTransaction({
             connection,
             callback: async (transaction) => {
@@ -82,7 +79,7 @@ class Crud {
     static async executeDelete(connection, input) {
         const datoms = Array.isArray(input) ? input : [input];
         const nestedSteps = datoms.map(d => Delete_1.buildDeleteSteps(d));
-        const flattenSteps = lodash_1.default.flatten(nestedSteps);
+        const flattenSteps = common_1.flatten(nestedSteps);
         await gdmn_db_1.AConnection.executeTransaction({
             connection,
             callback: async (transaction) => {

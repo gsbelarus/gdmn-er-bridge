@@ -4,7 +4,7 @@ import { buildUpdateOrInsertSteps } from "./UpdateOrInsert";
 import { buildUpdateSteps } from "./Update";
 import { buildInsertSteps } from "./Insert";
 import { buildDeleteSteps } from "./Delete";
-import _ from "lodash";
+import { flatten } from "./common";
 
 export type Scalar = string | boolean | number | Date | null;
 
@@ -76,7 +76,7 @@ async function runPrepNestedSteps(
   transaction: ATransaction,
   nestedSteps: Step[][]): Promise<void> {
 
-  if (_.flatten(nestedSteps).length > 0) {
+  if (flatten(nestedSteps).length > 0) {
     for (const setSteps of nestedSteps) {
       const generalSQL = setSteps[0].sql;
       const statement = await connection.prepare(transaction, generalSQL);
@@ -136,7 +136,7 @@ export abstract class Crud {
 
     const datomsWithPK = datoms.filter(d => d.pk);
     const nestedSteps = datomsWithPK.map(d => buildUpdateOrInsertSteps(d));
-    const flattenSteps = _.flatten(nestedSteps);
+    const flattenSteps = flatten(nestedSteps);
 
     await AConnection.executeTransaction({
       connection,
@@ -168,7 +168,7 @@ export abstract class Crud {
     const datoms = Array.isArray(input) ? input : [input];
 
     const nestedSteps = datoms.map(d => buildUpdateSteps(d));
-    const flattenSteps = _.flatten(nestedSteps);
+    const flattenSteps = flatten(nestedSteps);
 
     await AConnection.executeTransaction({
       connection,
@@ -192,7 +192,7 @@ export abstract class Crud {
     const datoms = Array.isArray(input) ? input : [input];
 
     const nestedSteps = datoms.map(d => buildDeleteSteps(d));
-    const flattenSteps = _.flatten(nestedSteps);
+    const flattenSteps = flatten(nestedSteps);
 
     await AConnection.executeTransaction({
       connection,

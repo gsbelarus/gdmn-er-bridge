@@ -1,11 +1,7 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 const Constants_1 = require("../ddl/Constants");
 const common_1 = require("./common");
-const lodash_1 = __importDefault(require("lodash"));
 function buildUpdateSteps(input) {
     const { entity, attrsValues } = input;
     const pk = input.pk;
@@ -55,13 +51,13 @@ function makeScalarsAndEntitiesSteps(entity, pk, scalarAttrsValues, entityAttrsV
     return steps;
 }
 function makeSetAttrsSteps(crossPKOwn, setAttrsValues) {
-    const flatten = lodash_1.default.flatten(setAttrsValues.map(currSetAttrValue => {
+    const flat = common_1.flatten(setAttrsValues.map(currSetAttrValue => {
         const { crossValues, refIDs } = currSetAttrValue;
         const currRefIDs = currSetAttrValue.currRefIDs;
         if (currRefIDs === undefined) {
             throw new Error("ISetAttrValue must provide currRefIDs for Update operation");
         }
-        const innerSteps = lodash_1.default.zip(refIDs, currRefIDs, crossValues).map(([refID, currRefID, currValues]) => {
+        const innerSteps = common_1.zip3(refIDs, currRefIDs, crossValues).map(([refID, currRefID, currValues]) => {
             const currCrossValues = currValues || [];
             const restCrossAttrsParams = currCrossValues.reduce((acc, curr) => {
                 return { ...acc, [curr.attribute.name]: curr.value };
@@ -95,6 +91,6 @@ function makeSetAttrsSteps(crossPKOwn, setAttrsValues) {
         });
         return innerSteps;
     }));
-    return flatten;
+    return flat;
 }
 //# sourceMappingURL=Update.js.map

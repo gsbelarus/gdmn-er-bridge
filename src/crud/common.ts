@@ -1,7 +1,23 @@
 import { ScalarAttribute, SetAttribute, DetailAttribute, EntityAttribute } from "gdmn-orm";
 import { IAttrsValuesByType, AttrsValues, IScalarAttrValue, ISetAttrValue, IDetailAttrValue, IEntityAttrValue, Step, Scalar } from "./Crud";
 import { Constants } from "../ddl/Constants";
-import _ from "lodash";
+
+export function flatten(nestedList: any[][]): any[] {
+  const flatList = nestedList.reduce((acc, curr) => {
+    if (Array.isArray(curr)) {
+      return [...acc, ...curr];
+    }
+    return [...acc, curr];
+  }, []);
+  return flatList;
+}
+
+export function zip3(xs: any[], ys: any[], zs: any[]): any[] {
+  const zipped = xs.map((x, index) => {
+    return [x, ys[index], zs[index]];
+  });
+  return zipped;
+}
 
 export function groupAttrsValuesByType(attrsValues: AttrsValues) {
 
@@ -134,6 +150,6 @@ export function makeSetAttrsSteps(makeSQL: (tableName: string, attrsNames: strin
     return innerSteps;
   });
 
-  const flatten = _.flatten(steps);
-  return flatten;
+  const flat = flatten(steps);
+  return flat;
 }

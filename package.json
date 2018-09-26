@@ -26,12 +26,10 @@
   "dependencies": {
     "gdmn-db": "git://github.com/gsbelarus/gdmn-db.git",
     "gdmn-orm": "git://github.com/gsbelarus/gdmn-orm.git",
-    "lodash": "^4.17.11",
     "moment": "^2.22.2"
   },
   "devDependencies": {
     "@types/jest": "^23.3.2",
-    "@types/lodash": "^4.14.116",
     "@types/moment": "^2.13.0",
     "jest": "^23.6.0",
     "ts-jest": "^23.1.4",

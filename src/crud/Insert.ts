@@ -1,7 +1,6 @@
 import { Entity } from "gdmn-orm";
 import { groupAttrsValuesByType, makeDetailAttrsSteps, makeSetAttrsSteps } from "./common";
 import { Step, IInsert, IScalarAttrValue, IEntityAttrValue } from "./Crud";
-import _ from "lodash";
 
 type SetsThunk = (crossPKOwn: number) => Step[];
 type DetailsThunk = (masterKey: number) => Step[];

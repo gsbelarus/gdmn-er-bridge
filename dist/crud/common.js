@@ -1,11 +1,24 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 const gdmn_orm_1 = require("gdmn-orm");
 const Constants_1 = require("../ddl/Constants");
-const lodash_1 = __importDefault(require("lodash"));
+function flatten(nestedList) {
+    const flatList = nestedList.reduce((acc, curr) => {
+        if (Array.isArray(curr)) {
+            return [...acc, ...curr];
+        }
+        return [...acc, curr];
+    }, []);
+    return flatList;
+}
+exports.flatten = flatten;
+function zip3(xs, ys, zs) {
+    const zipped = xs.map((x, index) => {
+        return [x, ys[index], zs[index]];
+    });
+    return zipped;
+}
+exports.zip3 = zip3;
 function groupAttrsValuesByType(attrsValues) {
     const byType = {
         scalarAttrsValues: [],
@@ -106,8 +119,8 @@ function makeSetAttrsSteps(makeSQL, crossPKOwn, setAttrsValues) {
         });
         return innerSteps;
     });
-    const flatten = lodash_1.default.flatten(steps);
-    return flatten;
+    const flat = flatten(steps);
+    return flat;
 }
 exports.makeSetAttrsSteps = makeSetAttrsSteps;
 //# sourceMappingURL=common.js.map

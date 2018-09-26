@@ -1,7 +1,6 @@
 import { Step, IUpdateOrInsert, IScalarAttrValue, IEntityAttrValue } from "./Crud";
 import { Entity } from "gdmn-orm";
 import { groupAttrsValuesByType, makeSetAttrsSteps, makeDetailAttrsSteps } from "./common";
-import _ from "lodash";
 
 export function buildUpdateOrInsertSteps(input: IUpdateOrInsert): Step[] {
 
