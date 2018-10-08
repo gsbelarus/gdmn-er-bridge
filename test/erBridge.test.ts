@@ -1,6 +1,6 @@
-import { existsSync, unlinkSync } from "fs";
-import { AConnection, TExecutor } from "gdmn-db";
-import { SemCategory } from "gdmn-nlp";
+import {existsSync, unlinkSync} from "fs";
+import {AConnection, TExecutor} from "gdmn-db";
+import {SemCategory} from "gdmn-nlp";
 import {
   BlobAttribute,
   BooleanAttribute,
@@ -25,18 +25,24 @@ import {
   TimeStampAttribute
 } from "gdmn-orm";
 import moment from "moment";
-import { Constants } from "../src/ddl/Constants";
-import { ERBridge } from "../src/ERBridge";
-import { DataSource } from "../src/source/DataSource";
-import { importTestDBDetail } from "./testDB";
-import { testInsert } from "./testInsert";
-import { testUpdateOrInsert } from "./testUpdateOrInsert";
-import { testUpdate } from "./testUpdate";
-import { testDelete } from "./testDelete";
-import { IScalarAttrValue, IDelete, Crud, IUpdateOrInsert, IDetailAttrValue, ISetAttrValue, IInsert, IEntityAttrValue, IUpdate } from "../src/crud/Crud";
+import {
+  Crud,
+  IDelete,
+  IDetailAttrValue,
+  IEntityAttrValue,
+  IInsert,
+  IScalarAttrValue,
+  ISetAttrValue,
+  IUpdate,
+  IUpdateOrInsert
+} from "../src/crud/Crud";
+import {Constants} from "../src/ddl/Constants";
+import {ERBridge} from "../src/ERBridge";
+import {DataSource} from "../src/source/DataSource";
+import {importTestDBDetail} from "./testDB";
 
 describe("ERBridge", () => {
-  const { driver, options } = importTestDBDetail;
+  const {driver, options} = importTestDBDetail;
   const connection = driver.newConnection();
   const erBridge = new ERBridge(connection);
 
@@ -77,49 +83,49 @@ describe("ERBridge", () => {
     await initERModel(erModel, async (transaction) => {
 
       const appEntity = await erModel.create(transaction, new Entity({
-        name: "APPLICATION", lName: { ru: { name: "Приложение" } }
+        name: "APPLICATION", lName: {ru: {name: "Приложение"}}
       }));
 
       await appEntity.create(transaction, new StringAttribute({
-        name: "UID", lName: { ru: { name: "Идентификатор приложения" } }, required: true, minLength: 1, maxLength: 36
+        name: "UID", lName: {ru: {name: "Идентификатор приложения"}}, required: true, minLength: 1, maxLength: 36
       }));
 
       await appEntity.addAttrUnique(transaction, [appEntity.attribute("UID")]);
 
       const backupEntity = await erModel.create(transaction, new Entity({
-        name: "APPLICATION_BACKUPS", lName: { ru: { name: "Бэкап" } }
+        name: "APPLICATION_BACKUPS", lName: {ru: {name: "Бэкап"}}
       }));
       await backupEntity.create(transaction, new StringAttribute({
-        name: "UID", lName: { ru: { name: "Идентификатор бэкапа" } }, required: true, minLength: 1, maxLength: 36
+        name: "UID", lName: {ru: {name: "Идентификатор бэкапа"}}, required: true, minLength: 1, maxLength: 36
       }));
       await backupEntity.addAttrUnique(transaction, [backupEntity.attribute("UID")]);
       await backupEntity.create(transaction,
         new EntityAttribute({
-          name: "APP", lName: { ru: { name: " " } }, required: true, entities: [appEntity]
+          name: "APP", lName: {ru: {name: " "}}, required: true, entities: [appEntity]
         })
       );
       await backupEntity.create(transaction, new StringAttribute({
-        name: "ALIAS", lName: { ru: { name: "Название бэкапа" } }, required: true, minLength: 1, maxLength: 120
+        name: "ALIAS", lName: {ru: {name: "Название бэкапа"}}, required: true, minLength: 1, maxLength: 120
       }));
 
-      const placeEntity = await erModel.create(transaction, new Entity({ name: "PLACE", lName: { ru: { name: "Место" } } }));
+      const placeEntity = await erModel.create(transaction, new Entity({name: "PLACE", lName: {ru: {name: "Место"}}}));
       await placeEntity.create(transaction, new StringAttribute({
-        name: "ADDRESS", lName: { ru: { name: "Адрес" } }, required: true, minLength: 1, maxLength: 100
+        name: "ADDRESS", lName: {ru: {name: "Адрес"}}, required: true, minLength: 1, maxLength: 100
       }));
 
       const userEntity = await erModel.create(transaction, new Entity({
-        name: "APP_USER", lName: { ru: { name: "Пользователь" } }
+        name: "APP_USER", lName: {ru: {name: "Пользователь"}}
       }));
-      const userLogin = await userEntity.create(transaction, new StringAttribute({
-        name: "LOGIN", lName: { ru: { name: "Логин" } }, required: true, minLength: 1,
+      await userEntity.create(transaction, new StringAttribute({
+        name: "LOGIN", lName: {ru: {name: "Логин"}}, required: true, minLength: 1,
         maxLength: 32
       }));
       const appSet = new SetAttribute({
-        name: "APPLICATIONS", lName: { ru: { name: "Приложения" } }, entities: [appEntity],
-        adapter: { crossRelation: "APP_USER_APPLICATIONS" }
+        name: "APPLICATIONS", lName: {ru: {name: "Приложения"}}, entities: [appEntity],
+        adapter: {crossRelation: "APP_USER_APPLICATIONS"}
       });
       appSet.add(new StringAttribute({
-        name: "ALIAS", lName: { ru: { name: "Название приложения" } }, required: true, minLength: 1, maxLength: 120
+        name: "ALIAS", lName: {ru: {name: "Название приложения"}}, required: true, minLength: 1, maxLength: 120
       }));
       await userEntity.create(transaction, appSet);
 
@@ -127,7 +133,7 @@ describe("ERBridge", () => {
         name: "PLACE", lName: {}, entities: [placeEntity]
       }));
       await userEntity.create(transaction, new DetailAttribute({
-        name: "DETAIL_PLACE", lName: { ru: { name: "Детальное место" } },
+        name: "DETAIL_PLACE", lName: {ru: {name: "Детальное место"}},
         required: false, entities: [placeEntity],
         adapter: {
           masterLinks: [{
@@ -476,7 +482,7 @@ describe("ERBridge", () => {
 
         await placesResult.close();
 
-        const userAppSetSQL = `SELECT * FROM ${appSetAttribute.adapter.crossRelation}`;
+        const userAppSetSQL = `SELECT * FROM ${appSetAttribute.adapter!.crossRelation}`;
         const userAppSetResult = await connection.executeQuery(transaction, userAppSetSQL);
 
         const [expectedAppID1, expectedAppID2, expectedAppID3] = userAppSetAttrValue1.refIDs;
@@ -553,49 +559,49 @@ describe("ERBridge", () => {
     await initERModel(erModel, async (transaction) => {
 
       const appEntity = await erModel.create(transaction, new Entity({
-        name: "APPLICATION", lName: { ru: { name: "Приложение" } }
+        name: "APPLICATION", lName: {ru: {name: "Приложение"}}
       }));
 
       await appEntity.create(transaction, new StringAttribute({
-        name: "UID", lName: { ru: { name: "Идентификатор приложения" } }, required: true, minLength: 1, maxLength: 36
+        name: "UID", lName: {ru: {name: "Идентификатор приложения"}}, required: true, minLength: 1, maxLength: 36
       }));
 
       await appEntity.addAttrUnique(transaction, [appEntity.attribute("UID")]);
 
       const backupEntity = await erModel.create(transaction, new Entity({
-        name: "APPLICATION_BACKUPS", lName: { ru: { name: "Бэкап" } }
+        name: "APPLICATION_BACKUPS", lName: {ru: {name: "Бэкап"}}
       }));
       await backupEntity.create(transaction, new StringAttribute({
-        name: "UID", lName: { ru: { name: "Идентификатор бэкапа" } }, required: true, minLength: 1, maxLength: 36
+        name: "UID", lName: {ru: {name: "Идентификатор бэкапа"}}, required: true, minLength: 1, maxLength: 36
       }));
       await backupEntity.addAttrUnique(transaction, [backupEntity.attribute("UID")]);
       await backupEntity.create(transaction,
         new EntityAttribute({
-          name: "APP", lName: { ru: { name: " " } }, required: true, entities: [appEntity]
+          name: "APP", lName: {ru: {name: " "}}, required: true, entities: [appEntity]
         })
       );
       await backupEntity.create(transaction, new StringAttribute({
-        name: "ALIAS", lName: { ru: { name: "Название бэкапа" } }, required: true, minLength: 1, maxLength: 120
+        name: "ALIAS", lName: {ru: {name: "Название бэкапа"}}, required: true, minLength: 1, maxLength: 120
       }));
 
-      const placeEntity = await erModel.create(transaction, new Entity({ name: "PLACE", lName: { ru: { name: "Место" } } }));
+      const placeEntity = await erModel.create(transaction, new Entity({name: "PLACE", lName: {ru: {name: "Место"}}}));
       await placeEntity.create(transaction, new StringAttribute({
-        name: "ADDRESS", lName: { ru: { name: "Адрес" } }, required: true, minLength: 1, maxLength: 100
+        name: "ADDRESS", lName: {ru: {name: "Адрес"}}, required: true, minLength: 1, maxLength: 100
       }));
 
       const userEntity = await erModel.create(transaction, new Entity({
-        name: "APP_USER", lName: { ru: { name: "Пользователь" } }
+        name: "APP_USER", lName: {ru: {name: "Пользователь"}}
       }));
-      const userLogin = await userEntity.create(transaction, new StringAttribute({
-        name: "LOGIN", lName: { ru: { name: "Логин" } }, required: true, minLength: 1,
+      await userEntity.create(transaction, new StringAttribute({
+        name: "LOGIN", lName: {ru: {name: "Логин"}}, required: true, minLength: 1,
         maxLength: 32
       }));
       const appSet = new SetAttribute({
-        name: "APPLICATIONS", lName: { ru: { name: "Приложения" } }, entities: [appEntity],
-        adapter: { crossRelation: "APP_USER_APPLICATIONS" }
+        name: "APPLICATIONS", lName: {ru: {name: "Приложения"}}, entities: [appEntity],
+        adapter: {crossRelation: "APP_USER_APPLICATIONS"}
       });
       appSet.add(new StringAttribute({
-        name: "ALIAS", lName: { ru: { name: "Название приложения" } }, required: true, minLength: 1, maxLength: 120
+        name: "ALIAS", lName: {ru: {name: "Название приложения"}}, required: true, minLength: 1, maxLength: 120
       }));
       await userEntity.create(transaction, appSet);
 
@@ -603,7 +609,7 @@ describe("ERBridge", () => {
         name: "PLACE", lName: {}, entities: [placeEntity]
       }));
       await userEntity.create(transaction, new DetailAttribute({
-        name: "DETAIL_PLACE", lName: { ru: { name: "Детальное место" } },
+        name: "DETAIL_PLACE", lName: {ru: {name: "Детальное место"}},
         required: false, entities: [placeEntity],
         adapter: {
           masterLinks: [{
@@ -747,10 +753,10 @@ describe("ERBridge", () => {
       attribute: appSetAttribute.attribute("ALIAS"),
       value: "alias1"
     };
-    const appAliasValue2: IScalarAttrValue = {
-      attribute: appSetAttribute.attribute("ALIAS"),
-      value: "alias2"
-    };
+    // const appAliasValue2: IScalarAttrValue = {
+    //   attribute: appSetAttribute.attribute("ALIAS"),
+    //   value: "alias2"
+    // };
     const userAppSetAttrValue: ISetAttrValue = {
       attribute: appSetAttribute,
       crossValues: [[appAliasValue1]],
@@ -802,7 +808,7 @@ describe("ERBridge", () => {
 
         const backupsIDParams = {
           backupID1: backupsIDs[0],
-          backupID2: backupsIDs[1],
+          backupID2: backupsIDs[1]
         };
 
         const backupsResult = await connection.executeQuery(
@@ -837,7 +843,7 @@ describe("ERBridge", () => {
 
         await backupsResult.close();
 
-        const userAppSetSQL = `SELECT * FROM ${appSetAttribute.adapter.crossRelation}`;
+        const userAppSetSQL = `SELECT * FROM ${appSetAttribute.adapter!.crossRelation}`;
         const userAppSetResult = await connection.executeQuery(transaction, userAppSetSQL);
 
         await userAppSetResult.next();
@@ -855,7 +861,7 @@ describe("ERBridge", () => {
   ID = :placeID1 OR ID = :placeID2`;
         const placesIDParams = {
           placeID1: placesIDs[0],
-          placeID2: placesIDs[1],
+          placeID2: placesIDs[1]
         };
 
         const placesResult = await connection.executeQuery(
@@ -876,7 +882,7 @@ describe("ERBridge", () => {
         const address2 = placesResult.getString("ADDRESS");
         const expectedAddress2 = places[1].attrsValues[0] as IScalarAttrValue;
         expect(address2).toEqual(expectedAddress2.value);
-        const masterKey2 = placesResult.getNumber(Constants.DEFAULT_MASTER_KEY_NAME);
+        placesResult.getNumber(Constants.DEFAULT_MASTER_KEY_NAME);
         const expectedMasterKey2 = usersIDs[0];
         expect(masterKey1).toEqual(expectedMasterKey2);
 
@@ -891,49 +897,49 @@ describe("ERBridge", () => {
     await initERModel(erModel, async (transaction) => {
 
       const appEntity = await erModel.create(transaction, new Entity({
-        name: "APPLICATION", lName: { ru: { name: "Приложение" } }
+        name: "APPLICATION", lName: {ru: {name: "Приложение"}}
       }));
 
       await appEntity.create(transaction, new StringAttribute({
-        name: "UID", lName: { ru: { name: "Идентификатор приложения" } }, required: true, minLength: 1, maxLength: 36
+        name: "UID", lName: {ru: {name: "Идентификатор приложения"}}, required: true, minLength: 1, maxLength: 36
       }));
 
       await appEntity.addAttrUnique(transaction, [appEntity.attribute("UID")]);
 
       const backupEntity = await erModel.create(transaction, new Entity({
-        name: "APPLICATION_BACKUPS", lName: { ru: { name: "Бэкап" } }
+        name: "APPLICATION_BACKUPS", lName: {ru: {name: "Бэкап"}}
       }));
       await backupEntity.create(transaction, new StringAttribute({
-        name: "UID", lName: { ru: { name: "Идентификатор бэкапа" } }, required: true, minLength: 1, maxLength: 36
+        name: "UID", lName: {ru: {name: "Идентификатор бэкапа"}}, required: true, minLength: 1, maxLength: 36
       }));
       await backupEntity.addAttrUnique(transaction, [backupEntity.attribute("UID")]);
       await backupEntity.create(transaction,
         new EntityAttribute({
-          name: "APP", lName: { ru: { name: " " } }, required: true, entities: [appEntity]
+          name: "APP", lName: {ru: {name: " "}}, required: true, entities: [appEntity]
         })
       );
       await backupEntity.create(transaction, new StringAttribute({
-        name: "ALIAS", lName: { ru: { name: "Название бэкапа" } }, required: true, minLength: 1, maxLength: 120
+        name: "ALIAS", lName: {ru: {name: "Название бэкапа"}}, required: true, minLength: 1, maxLength: 120
       }));
 
-      const placeEntity = await erModel.create(transaction, new Entity({ name: "PLACE", lName: { ru: { name: "Место" } } }));
+      const placeEntity = await erModel.create(transaction, new Entity({name: "PLACE", lName: {ru: {name: "Место"}}}));
       await placeEntity.create(transaction, new StringAttribute({
-        name: "ADDRESS", lName: { ru: { name: "Адрес" } }, required: true, minLength: 1, maxLength: 100
+        name: "ADDRESS", lName: {ru: {name: "Адрес"}}, required: true, minLength: 1, maxLength: 100
       }));
 
       const userEntity = await erModel.create(transaction, new Entity({
-        name: "APP_USER", lName: { ru: { name: "Пользователь" } }
+        name: "APP_USER", lName: {ru: {name: "Пользователь"}}
       }));
-      const userLogin = await userEntity.create(transaction, new StringAttribute({
-        name: "LOGIN", lName: { ru: { name: "Логин" } }, required: true, minLength: 1,
+      await userEntity.create(transaction, new StringAttribute({
+        name: "LOGIN", lName: {ru: {name: "Логин"}}, required: true, minLength: 1,
         maxLength: 32
       }));
       const appSet = new SetAttribute({
-        name: "APPLICATIONS", lName: { ru: { name: "Приложения" } }, entities: [appEntity],
-        adapter: { crossRelation: "APP_USER_APPLICATIONS" }
+        name: "APPLICATIONS", lName: {ru: {name: "Приложения"}}, entities: [appEntity],
+        adapter: {crossRelation: "APP_USER_APPLICATIONS"}
       });
       appSet.add(new StringAttribute({
-        name: "ALIAS", lName: { ru: { name: "Название приложения" } }, required: true, minLength: 1, maxLength: 120
+        name: "ALIAS", lName: {ru: {name: "Название приложения"}}, required: true, minLength: 1, maxLength: 120
       }));
       await userEntity.create(transaction, appSet);
 
@@ -941,7 +947,7 @@ describe("ERBridge", () => {
         name: "PLACE", lName: {}, entities: [placeEntity]
       }));
       await userEntity.create(transaction, new DetailAttribute({
-        name: "DETAIL_PLACE", lName: { ru: { name: "Детальное место" } },
+        name: "DETAIL_PLACE", lName: {ru: {name: "Детальное место"}},
         required: false, entities: [placeEntity],
         adapter: {
           masterLinks: [{
@@ -1148,7 +1154,7 @@ describe("ERBridge", () => {
 
         const backupsIDParams = {
           backupID1: backupsIDs[0],
-          backupID2: backupsIDs[1],
+          backupID2: backupsIDs[1]
         };
 
         const backupsResult = await connection.executeQuery(
@@ -1187,7 +1193,7 @@ describe("ERBridge", () => {
               ID = :placeID1 OR ID = :placeID2`;
         const placesIDParams = {
           placeID1: placesIDs[0],
-          placeID2: placesIDs[1],
+          placeID2: placesIDs[1]
         };
 
         const placesResult = await connection.executeQuery(
@@ -1208,7 +1214,7 @@ describe("ERBridge", () => {
 
         await placesResult.close();
 
-        const userAppSetSQL = `SELECT * FROM ${appSetAttribute.adapter.crossRelation}`;
+        const userAppSetSQL = `SELECT * FROM ${appSetAttribute.adapter!.crossRelation}`;
         const userAppSetResult = await connection.executeQuery(transaction, userAppSetSQL);
 
         await userAppSetResult.next();
@@ -1221,7 +1227,7 @@ describe("ERBridge", () => {
 
         await userAppSetResult.next();
         const userID2 = userAppSetResult.getNumber(Constants.DEFAULT_CROSS_PK_OWN_NAME);
-        const cossAppID2 = userAppSetResult.getNumber(Constants.DEFAULT_CROSS_PK_REF_NAME);
+        userAppSetResult.getNumber(Constants.DEFAULT_CROSS_PK_REF_NAME);
         const updAlias2 = userAppSetResult.getString("ALIAS");
         expect(userID2).toBe(usersIDs[0]);
         expect(appID2).toBe(expectedAppID2);
@@ -1238,49 +1244,49 @@ describe("ERBridge", () => {
     await initERModel(erModel, async (transaction) => {
 
       const appEntity = await erModel.create(transaction, new Entity({
-        name: "APPLICATION", lName: { ru: { name: "Приложение" } }
+        name: "APPLICATION", lName: {ru: {name: "Приложение"}}
       }));
 
       await appEntity.create(transaction, new StringAttribute({
-        name: "UID", lName: { ru: { name: "Идентификатор приложения" } }, required: true, minLength: 1, maxLength: 36
+        name: "UID", lName: {ru: {name: "Идентификатор приложения"}}, required: true, minLength: 1, maxLength: 36
       }));
 
       await appEntity.addAttrUnique(transaction, [appEntity.attribute("UID")]);
 
       const backupEntity = await erModel.create(transaction, new Entity({
-        name: "APPLICATION_BACKUPS", lName: { ru: { name: "Бэкап" } }
+        name: "APPLICATION_BACKUPS", lName: {ru: {name: "Бэкап"}}
       }));
       await backupEntity.create(transaction, new StringAttribute({
-        name: "UID", lName: { ru: { name: "Идентификатор бэкапа" } }, required: true, minLength: 1, maxLength: 36
+        name: "UID", lName: {ru: {name: "Идентификатор бэкапа"}}, required: true, minLength: 1, maxLength: 36
       }));
       await backupEntity.addAttrUnique(transaction, [backupEntity.attribute("UID")]);
       await backupEntity.create(transaction,
         new EntityAttribute({
-          name: "APP", lName: { ru: { name: " " } }, required: true, entities: [appEntity]
+          name: "APP", lName: {ru: {name: " "}}, required: true, entities: [appEntity]
         })
       );
       await backupEntity.create(transaction, new StringAttribute({
-        name: "ALIAS", lName: { ru: { name: "Название бэкапа" } }, required: true, minLength: 1, maxLength: 120
+        name: "ALIAS", lName: {ru: {name: "Название бэкапа"}}, required: true, minLength: 1, maxLength: 120
       }));
 
-      const placeEntity = await erModel.create(transaction, new Entity({ name: "PLACE", lName: { ru: { name: "Место" } } }));
+      const placeEntity = await erModel.create(transaction, new Entity({name: "PLACE", lName: {ru: {name: "Место"}}}));
       await placeEntity.create(transaction, new StringAttribute({
-        name: "ADDRESS", lName: { ru: { name: "Адрес" } }, required: true, minLength: 1, maxLength: 100
+        name: "ADDRESS", lName: {ru: {name: "Адрес"}}, required: true, minLength: 1, maxLength: 100
       }));
 
       const userEntity = await erModel.create(transaction, new Entity({
-        name: "APP_USER", lName: { ru: { name: "Пользователь" } }
+        name: "APP_USER", lName: {ru: {name: "Пользователь"}}
       }));
-      const userLogin = await userEntity.create(transaction, new StringAttribute({
-        name: "LOGIN", lName: { ru: { name: "Логин" } }, required: true, minLength: 1,
+      await userEntity.create(transaction, new StringAttribute({
+        name: "LOGIN", lName: {ru: {name: "Логин"}}, required: true, minLength: 1,
         maxLength: 32
       }));
       const appSet = new SetAttribute({
-        name: "APPLICATIONS", lName: { ru: { name: "Приложения" } }, entities: [appEntity],
-        adapter: { crossRelation: "APP_USER_APPLICATIONS" }
+        name: "APPLICATIONS", lName: {ru: {name: "Приложения"}}, entities: [appEntity],
+        adapter: {crossRelation: "APP_USER_APPLICATIONS"}
       });
       appSet.add(new StringAttribute({
-        name: "ALIAS", lName: { ru: { name: "Название приложения" } }, required: true, minLength: 1, maxLength: 120
+        name: "ALIAS", lName: {ru: {name: "Название приложения"}}, required: true, minLength: 1, maxLength: 120
       }));
       await userEntity.create(transaction, appSet);
 
@@ -1288,7 +1294,7 @@ describe("ERBridge", () => {
         name: "PLACE", lName: {}, entities: [placeEntity]
       }));
       await userEntity.create(transaction, new DetailAttribute({
-        name: "DETAIL_PLACE", lName: { ru: { name: "Детальное место" } },
+        name: "DETAIL_PLACE", lName: {ru: {name: "Детальное место"}},
         required: false, entities: [placeEntity],
         adapter: {
           masterLinks: [{
@@ -1454,7 +1460,7 @@ describe("ERBridge", () => {
 
         const backupsIDParams = {
           backupID1: backupsIDs[0],
-          backupID2: backupsIDs[1],
+          backupID2: backupsIDs[1]
         };
 
         const backupsResult = await connection.executeQuery(
@@ -1470,7 +1476,7 @@ describe("ERBridge", () => {
                     ID = :placeID1 OR ID = :placeID2`;
         const placesIDParams = {
           placeID1: placesIDs[0],
-          placeID2: placesIDs[1],
+          placeID2: placesIDs[1]
         };
 
         const placesResult = await connection.executeQuery(
@@ -1497,7 +1503,7 @@ describe("ERBridge", () => {
 
         await placesResult.close();
 
-        const userAppSetSQL = `SELECT * FROM ${appSetAttribute.adapter.crossRelation}`;
+        const userAppSetSQL = `SELECT * FROM ${appSetAttribute.adapter!.crossRelation}`;
         const userAppSetResult = await connection.executeQuery(transaction, userAppSetSQL);
         expect(await userAppSetResult.next()).toBeFalsy();
 
@@ -1518,16 +1524,16 @@ describe("ERBridge", () => {
     await initERModel(erModel, async (transaction) => {
       await erModel.create(transaction, new Entity({
         name: "TEST1",
-        lName: { ru: { name: "entity name", fullName: "full entity name" } },
+        lName: {ru: {name: "entity name", fullName: "full entity name"}},
         semCategories: [SemCategory.Company],
         adapter: {
-          relation: [{ relationName: "TEST_ADAPTER" }]
+          relation: [{relationName: "TEST_ADAPTER"}]
         }
       }));
 
       await erModel.create(transaction, new Entity({
         name: "TEST2",
-        lName: { ru: { name: "entity name", fullName: "full entity name" } }
+        lName: {ru: {name: "entity name", fullName: "full entity name"}}
       }));
     });
 
@@ -1547,16 +1553,16 @@ describe("ERBridge", () => {
     await initERModel(erModel, async (transaction) => {
       const entity = await erModel.create(transaction, new Entity({
         name: "TEST",
-        lName: { ru: { name: "entity name", fullName: "full entity name" } }
+        lName: {ru: {name: "entity name", fullName: "full entity name"}}
       }));
 
       await entity.create(transaction, new IntegerAttribute({
-        name: "FIELD1", lName: { ru: { name: "Поле 1", fullName: "FULLNAME" } }, required: true,
+        name: "FIELD1", lName: {ru: {name: "Поле 1", fullName: "FULLNAME"}}, required: true,
         minValue: MIN_16BIT_INT, maxValue: MAX_16BIT_INT, defaultValue: -10000,
-        adapter: { relation: "TEST", field: "FIELD_ADAPTER" }
+        adapter: {relation: "TEST", field: "FIELD_ADAPTER"}
       }));
       await entity.create(transaction, new IntegerAttribute({
-        name: "FIELD2", lName: { ru: { name: "Поле 2", fullName: "FULLNAME" } }, required: true,
+        name: "FIELD2", lName: {ru: {name: "Поле 2", fullName: "FULLNAME"}}, required: true,
         minValue: MIN_32BIT_INT, maxValue: MAX_32BIT_INT, defaultValue: -10000
       }));
       // await entity.create(transaction, new IntegerAttribute({
@@ -1564,11 +1570,11 @@ describe("ERBridge", () => {
       //   minValue: MIN_64BIT_INT, maxValue: MAX_64BIT_INT, defaultValue: -100000000000000
       // }));
       await entity.create(transaction, new IntegerAttribute({
-        name: "FIELD4", lName: { ru: { name: "Поле 4", fullName: "FULLNAME" } },
+        name: "FIELD4", lName: {ru: {name: "Поле 4", fullName: "FULLNAME"}},
         minValue: MIN_16BIT_INT, maxValue: MAX_16BIT_INT + 1, defaultValue: 0
       }));
       await entity.create(transaction, new IntegerAttribute({
-        name: "FIELD5", lName: { ru: { name: "Поле 5", fullName: "FULLNAME" } },
+        name: "FIELD5", lName: {ru: {name: "Поле 5", fullName: "FULLNAME"}},
         minValue: MIN_16BIT_INT, maxValue: MAX_16BIT_INT + 1
       }));
     });
@@ -1585,20 +1591,20 @@ describe("ERBridge", () => {
     await initERModel(erModel, async (transaction) => {
       const entity = await erModel.create(transaction, new Entity({
         name: "TEST",
-        lName: { ru: { name: "entity name", fullName: "full entity name" } }
+        lName: {ru: {name: "entity name", fullName: "full entity name"}}
       }));
 
       await entity.create(transaction, new NumericAttribute({
-        name: "FIELD1", lName: { ru: { name: "Поле 1" } }, required: true,
+        name: "FIELD1", lName: {ru: {name: "Поле 1"}}, required: true,
         precision: 4, scale: 2, minValue: 40, maxValue: 1000, defaultValue: 40.36,
-        adapter: { relation: "TEST", field: "FIELD_ADAPTER" }
+        adapter: {relation: "TEST", field: "FIELD_ADAPTER"}
       }));
       await entity.create(transaction, new NumericAttribute({
-        name: "FIELD2", lName: { ru: { name: "Поле 2" } },
+        name: "FIELD2", lName: {ru: {name: "Поле 2"}},
         precision: 4, scale: 2, minValue: 40, maxValue: 1000, defaultValue: 40.36
       }));
       await entity.create(transaction, new NumericAttribute({
-        name: "FIELD3", lName: { ru: { name: "Поле 3" } },
+        name: "FIELD3", lName: {ru: {name: "Поле 3"}},
         precision: 4, scale: 2, minValue: 40, maxValue: 1000
       }));
     });
@@ -1615,15 +1621,15 @@ describe("ERBridge", () => {
     await initERModel(erModel, async (transaction) => {
       const entity = await erModel.create(transaction, new Entity({
         name: "TEST",
-        lName: { ru: { name: "entity name", fullName: "full entity name" } }
+        lName: {ru: {name: "entity name", fullName: "full entity name"}}
       }));
 
       await entity.create(transaction, new BlobAttribute({
-        name: "FIELD1", lName: { ru: { name: "Поле 1" } }, required: true,
-        adapter: { relation: "TEST", field: "FIELD_ADAPTER" }
+        name: "FIELD1", lName: {ru: {name: "Поле 1"}}, required: true,
+        adapter: {relation: "TEST", field: "FIELD_ADAPTER"}
       }));
       await entity.create(transaction, new BlobAttribute({
-        name: "FIELD2", lName: { ru: { name: "Поле 2" } }
+        name: "FIELD2", lName: {ru: {name: "Поле 2"}}
       }));
     });
 
@@ -1639,15 +1645,15 @@ describe("ERBridge", () => {
     await initERModel(erModel, async (transaction) => {
       const entity = await erModel.create(transaction, new Entity({
         name: "TEST",
-        lName: { ru: { name: "entity name", fullName: "full entity name" } }
+        lName: {ru: {name: "entity name", fullName: "full entity name"}}
       }));
 
       await entity.create(transaction, new BooleanAttribute({
-        name: "FIELD1", lName: { ru: { name: "Поле 1" } }, required: true,
-        defaultValue: true, adapter: { relation: "TEST", field: "FIELD_ADAPTER" }
+        name: "FIELD1", lName: {ru: {name: "Поле 1"}}, required: true,
+        defaultValue: true, adapter: {relation: "TEST", field: "FIELD_ADAPTER"}
       }));
       await entity.create(transaction, new BooleanAttribute({
-        name: "FIELD2", lName: { ru: { name: "Поле 2" } }
+        name: "FIELD2", lName: {ru: {name: "Поле 2"}}
       }));
     });
 
@@ -1663,24 +1669,24 @@ describe("ERBridge", () => {
     await initERModel(erModel, async (transaction) => {
       const entity = await erModel.create(transaction, new Entity({
         name: "TEST",
-        lName: { ru: { name: "entity name", fullName: "full entity name" } }
+        lName: {ru: {name: "entity name", fullName: "full entity name"}}
       }));
 
       await entity.create(transaction, new StringAttribute({
-        name: "FIELD1", lName: { ru: { name: "Поле 1" } }, required: true,
+        name: "FIELD1", lName: {ru: {name: "Поле 1"}}, required: true,
         minLength: 5, maxLength: 30, defaultValue: "test default", autoTrim: true,
-        adapter: { relation: "TEST", field: "FIELD_ADAPTER" }
+        adapter: {relation: "TEST", field: "FIELD_ADAPTER"}
       }));
       await entity.create(transaction, new StringAttribute({
-        name: "FIELD2", lName: { ru: { name: "Поле 2" } },
+        name: "FIELD2", lName: {ru: {name: "Поле 2"}},
         minLength: 1, maxLength: 160, defaultValue: "test default", autoTrim: true
       }));
       await entity.create(transaction, new StringAttribute({
-        name: "FIELD3", lName: { ru: { name: "Поле 3" } },
+        name: "FIELD3", lName: {ru: {name: "Поле 3"}},
         minLength: 1, maxLength: 160, autoTrim: true
       }));
       await entity.create(transaction, new StringAttribute({
-        name: "FIELD4", lName: { ru: { name: "Поле 3" } },
+        name: "FIELD4", lName: {ru: {name: "Поле 3"}},
         minLength: 1, autoTrim: true
       }));
     });
@@ -1697,24 +1703,24 @@ describe("ERBridge", () => {
     await initERModel(erModel, async (transaction) => {
       const entity = await erModel.create(transaction, new Entity({
         name: "TEST",
-        lName: { ru: { name: "entity name", fullName: "full entity name" } }
+        lName: {ru: {name: "entity name", fullName: "full entity name"}}
       }));
 
       await entity.create(transaction, new DateAttribute({
-        name: "FIELD1", lName: { ru: { name: "Поле 1" } }, required: true,
+        name: "FIELD1", lName: {ru: {name: "Поле 1"}}, required: true,
         minValue: moment.utc().year(1999).month(10).date(3).startOf("date").local().toDate(),
         maxValue: moment.utc().year(2099).startOf("year").local().toDate(),
         defaultValue: moment.utc().startOf("date").local().toDate(),
-        adapter: { relation: "TEST", field: "FIELD_ADAPTER" }
+        adapter: {relation: "TEST", field: "FIELD_ADAPTER"}
       }));
       await entity.create(transaction, new DateAttribute({
-        name: "FIELD2", lName: { ru: { name: "Поле 2" } },
+        name: "FIELD2", lName: {ru: {name: "Поле 2"}},
         minValue: moment.utc(Constants.MIN_TIMESTAMP).startOf("date").local().toDate(),
         maxValue: moment.utc(Constants.MAX_TIMESTAMP).startOf("date").local().toDate(),
         defaultValue: "CURRENT_DATE"
       }));
       await entity.create(transaction, new DateAttribute({
-        name: "FIELD3", lName: { ru: { name: "Поле 3" } },
+        name: "FIELD3", lName: {ru: {name: "Поле 3"}},
         minValue: moment.utc(Constants.MIN_TIMESTAMP).startOf("date").local().toDate(),
         maxValue: moment.utc(Constants.MAX_TIMESTAMP).startOf("date").local().toDate()
       }));
@@ -1732,21 +1738,21 @@ describe("ERBridge", () => {
     await initERModel(erModel, async (transaction) => {
       const entity = await erModel.create(transaction, new Entity({
         name: "TEST",
-        lName: { ru: { name: "entity name", fullName: "full entity name" } }
+        lName: {ru: {name: "entity name", fullName: "full entity name"}}
       }));
 
       await entity.create(transaction, new TimeAttribute({
-        name: "FIELD1", lName: { ru: { name: "Поле 1" } }, required: true,
+        name: "FIELD1", lName: {ru: {name: "Поле 1"}}, required: true,
         minValue: moment.utc().year(Constants.MIN_TIMESTAMP.getUTCFullYear()).month(Constants.MIN_TIMESTAMP.getUTCMonth())
           .date(Constants.MIN_TIMESTAMP.getDate()).startOf("date").local().toDate(),
         maxValue: moment.utc().year(Constants.MIN_TIMESTAMP.getUTCFullYear()).month(Constants.MIN_TIMESTAMP.getUTCMonth())
           .date(Constants.MIN_TIMESTAMP.getDate()).endOf("date").local().toDate(),
         defaultValue: moment.utc().year(Constants.MIN_TIMESTAMP.getUTCFullYear()).month(Constants.MIN_TIMESTAMP.getUTCMonth())
           .date(Constants.MIN_TIMESTAMP.getDate()).local().toDate(),
-        adapter: { relation: "TEST", field: "FIELD_ADAPTER" }
+        adapter: {relation: "TEST", field: "FIELD_ADAPTER"}
       }));
       await entity.create(transaction, new TimeAttribute({
-        name: "FIELD2", lName: { ru: { name: "Поле 2" } },
+        name: "FIELD2", lName: {ru: {name: "Поле 2"}},
         minValue: moment.utc(Constants.MIN_TIMESTAMP, Constants.TIME_TEMPLATE).local().toDate(),
         maxValue: moment.utc(Constants.MAX_TIMESTAMP, Constants.TIME_TEMPLATE)
           .year(Constants.MIN_TIMESTAMP.getUTCFullYear()).month(Constants.MIN_TIMESTAMP.getUTCMonth())
@@ -1754,7 +1760,7 @@ describe("ERBridge", () => {
         defaultValue: "CURRENT_TIME"
       }));
       await entity.create(transaction, new TimeAttribute({
-        name: "FIELD3", lName: { ru: { name: "Поле 3" } },
+        name: "FIELD3", lName: {ru: {name: "Поле 3"}},
         minValue: moment.utc(Constants.MIN_TIMESTAMP, Constants.TIME_TEMPLATE).local().toDate(),
         maxValue: moment.utc(Constants.MAX_TIMESTAMP, Constants.TIME_TEMPLATE)
           .year(Constants.MIN_TIMESTAMP.getUTCFullYear()).month(Constants.MIN_TIMESTAMP.getUTCMonth())
@@ -1774,24 +1780,24 @@ describe("ERBridge", () => {
     await initERModel(erModel, async (transaction) => {
       const entity = await erModel.create(transaction, new Entity({
         name: "TEST",
-        lName: { ru: { name: "entity name", fullName: "full entity name" } }
+        lName: {ru: {name: "entity name", fullName: "full entity name"}}
       }));
 
       await entity.create(transaction, new TimeStampAttribute({
-        name: "FIELD1", lName: { ru: { name: "Поле 1" } }, required: true,
+        name: "FIELD1", lName: {ru: {name: "Поле 1"}}, required: true,
         minValue: moment.utc().year(1999).month(10).startOf("month").local().toDate(),
         maxValue: moment.utc().year(2099).month(1).date(1).endOf("date").local().toDate(),
         defaultValue: moment.utc().local().toDate(),
-        adapter: { relation: "TEST", field: "FIELD_ADAPTER" }
+        adapter: {relation: "TEST", field: "FIELD_ADAPTER"}
       }));
       await entity.create(transaction, new TimeStampAttribute({
-        name: "FIELD2", lName: { ru: { name: "Поле 2" } },
+        name: "FIELD2", lName: {ru: {name: "Поле 2"}},
         minValue: moment.utc(Constants.MIN_TIMESTAMP).local().toDate(),
         maxValue: moment.utc(Constants.MAX_TIMESTAMP).local().toDate(),
         defaultValue: "CURRENT_TIMESTAMP"
       }));
       await entity.create(transaction, new TimeStampAttribute({
-        name: "FIELD3", lName: { ru: { name: "Поле 3" } },
+        name: "FIELD3", lName: {ru: {name: "Поле 3"}},
         minValue: moment.utc(Constants.MIN_TIMESTAMP).local().toDate(),
         maxValue: moment.utc(Constants.MAX_TIMESTAMP).local().toDate()
       }));
@@ -1809,20 +1815,20 @@ describe("ERBridge", () => {
     await initERModel(erModel, async (transaction) => {
       const entity = await erModel.create(transaction, new Entity({
         name: "TEST",
-        lName: { ru: { name: "entity name", fullName: "full entity name" } }
+        lName: {ru: {name: "entity name", fullName: "full entity name"}}
       }));
 
       await entity.create(transaction, new FloatAttribute({
-        name: "FIELD1", lName: { ru: { name: "Поле 1" } }, required: true,
+        name: "FIELD1", lName: {ru: {name: "Поле 1"}}, required: true,
         minValue: -123, maxValue: 123123123123123123123123, defaultValue: 40,
-        adapter: { relation: "TEST", field: "FIELD_ADAPTER" }
+        adapter: {relation: "TEST", field: "FIELD_ADAPTER"}
       }));
       // await entity.create(transaction, new FloatAttribute({
       //   name: "FIELD2", lName: {ru: {name: "Поле 2"}},
       //   minValue: Number.MIN_VALUE, maxValue: Number.MAX_VALUE, defaultValue: 40
       // }));
       await entity.create(transaction, new FloatAttribute({
-        name: "FIELD3", lName: { ru: { name: "Поле 3" } }, required: true,
+        name: "FIELD3", lName: {ru: {name: "Поле 3"}}, required: true,
         minValue: -123, maxValue: 123123123123123123123123
       }));
     });
@@ -1839,34 +1845,34 @@ describe("ERBridge", () => {
     await initERModel(erModel, async (transaction) => {
       const entity = await erModel.create(transaction, new Entity({
         name: "TEST",
-        lName: { ru: { name: "entity name", fullName: "full entity name" } }
+        lName: {ru: {name: "entity name", fullName: "full entity name"}}
       }));
 
       await entity.create(transaction, new EnumAttribute({
-        name: "FIELD1", lName: { ru: { name: "Поле 1" } }, required: true,
+        name: "FIELD1", lName: {ru: {name: "Поле 1"}}, required: true,
         values: [
           {
             value: "Z",
-            lName: { ru: { name: "Перечисление Z" } }
+            lName: {ru: {name: "Перечисление Z"}}
           },
           {
             value: "X",
-            lName: { ru: { name: "Перечисление X" } }
+            lName: {ru: {name: "Перечисление X"}}
           },
           {
             value: "Y",
-            lName: { ru: { name: "Перечисление Y" } }
+            lName: {ru: {name: "Перечисление Y"}}
           }
         ], defaultValue: "Z",
-        adapter: { relation: "TEST", field: "FIELD_ADAPTER" }
+        adapter: {relation: "TEST", field: "FIELD_ADAPTER"}
       }));
       await entity.create(transaction, new EnumAttribute({
-        name: "FIELD2", lName: { ru: { name: "Поле 2" } },
-        values: [{ value: "Z" }, { value: "X" }, { value: "Y" }], defaultValue: "Z"
+        name: "FIELD2", lName: {ru: {name: "Поле 2"}},
+        values: [{value: "Z"}, {value: "X"}, {value: "Y"}], defaultValue: "Z"
       }));
       await entity.create(transaction, new EnumAttribute({
-        name: "FIELD3", lName: { ru: { name: "Поле 3" } },
-        values: [{ value: "Z" }, { value: "X" }, { value: "Y" }]
+        name: "FIELD3", lName: {ru: {name: "Поле 3"}},
+        values: [{value: "Z"}, {value: "X"}, {value: "Y"}]
       }));
     });
 
@@ -1882,18 +1888,18 @@ describe("ERBridge", () => {
     await initERModel(erModel, async (transaction) => {
       const entity1 = await erModel.create(transaction, new Entity({
         name: "TEST1",
-        lName: { ru: { name: "entity name", fullName: "full entity name" } }
+        lName: {ru: {name: "entity name", fullName: "full entity name"}}
       }));
       const entity2 = await erModel.create(transaction, new Entity({
         name: "TEST2",
-        lName: { ru: { name: "entity name", fullName: "full entity name" } }
+        lName: {ru: {name: "entity name", fullName: "full entity name"}}
       }));
 
       await entity1.create(transaction, new EntityAttribute({
-        name: "LINK1", lName: { ru: { name: "Ссылка " } }, required: true, entities: [entity2]
+        name: "LINK1", lName: {ru: {name: "Ссылка "}}, required: true, entities: [entity2]
       }));
       await entity2.create(transaction, new EntityAttribute({
-        name: "LINK", lName: { ru: { name: "Ссылка" } }, entities: [entity1]
+        name: "LINK", lName: {ru: {name: "Ссылка"}}, entities: [entity1]
       }));
     });
 
@@ -1913,11 +1919,11 @@ describe("ERBridge", () => {
     await initERModel(erModel, async (transaction) => {
       const entity = await erModel.create(transaction, new Entity({
         name: "TEST",
-        lName: { ru: { name: "entity name", fullName: "full entity name" } }
+        lName: {ru: {name: "entity name", fullName: "full entity name"}}
       }));
 
       await entity.create(transaction, new ParentAttribute({
-        name: "PARENT", lName: { ru: { name: "Дерево" } }, entities: [entity]
+        name: "PARENT", lName: {ru: {name: "Дерево"}}, entities: [entity]
       }));
     });
 
@@ -1933,20 +1939,20 @@ describe("ERBridge", () => {
     await initERModel(erModel, async (transaction) => {
       const entity2 = await erModel.create(transaction, new Entity({
         name: "TEST2",
-        lName: { ru: { name: "entity name", fullName: "full entity name" } }
+        lName: {ru: {name: "entity name", fullName: "full entity name"}}
       }));
       const entity1 = await erModel.create(transaction, new Entity({
         name: "TEST1",
-        lName: { ru: { name: "entity name", fullName: "full entity name" } }
+        lName: {ru: {name: "entity name", fullName: "full entity name"}}
       }));
       const entity3 = await erModel.create(transaction, new Entity({
         name: "TEST3",
-        lName: { ru: { name: "entity name", fullName: "full entity name" } }
+        lName: {ru: {name: "entity name", fullName: "full entity name"}}
       }));
 
 
       await entity1.create(transaction, new DetailAttribute({
-        name: "DETAILLINK", lName: { ru: { name: "Позиции 1" } }, required: true, entities: [entity2],
+        name: "DETAILLINK", lName: {ru: {name: "Позиции 1"}}, required: true, entities: [entity2],
         adapter: {
           masterLinks: [{
             detailRelation: "TEST2",
@@ -1955,7 +1961,7 @@ describe("ERBridge", () => {
         }
       }));
       await entity1.create(transaction, new DetailAttribute({
-        name: "TEST3", lName: { ru: { name: "Позиции 2" } }, required: true, entities: [entity3]
+        name: "TEST3", lName: {ru: {name: "Позиции 2"}}, required: true, entities: [entity3]
       }));
     });
 
@@ -1979,36 +1985,36 @@ describe("ERBridge", () => {
     await initERModel(erModel, async (transaction) => {
       const entity1 = await erModel.create(transaction, new Entity({
         name: "TEST1",
-        lName: { ru: { name: "entity name", fullName: "full entity name" } }
+        lName: {ru: {name: "entity name", fullName: "full entity name"}}
       }));
       const entity2 = await erModel.create(transaction, new Entity({
         name: "TEST2",
-        lName: { ru: { name: "entity name", fullName: "full entity name" } }
+        lName: {ru: {name: "entity name", fullName: "full entity name"}}
       }));
 
 
       await entity1.create(transaction, new SetAttribute({
-        name: "SET1", lName: { ru: { name: "Ссылка1" } }, required: true, entities: [entity2], presLen: 120,
-        adapter: { crossRelation: "CROSS_TABLE_ADAPTER1", presentationField: "SET_FIELD_ADAPTER" }
+        name: "SET1", lName: {ru: {name: "Ссылка1"}}, required: true, entities: [entity2], presLen: 120,
+        adapter: {crossRelation: "CROSS_TABLE_ADAPTER1", presentationField: "SET_FIELD_ADAPTER"}
       }));
       const setAttr = new SetAttribute({
-        name: "SET2", lName: { ru: { name: "Ссылка2" } }, required: true, entities: [entity2], presLen: 120,
-        adapter: { crossRelation: "CROSS_TABLE_ADAPTER2" }
+        name: "SET2", lName: {ru: {name: "Ссылка2"}}, required: true, entities: [entity2], presLen: 120,
+        adapter: {crossRelation: "CROSS_TABLE_ADAPTER2"}
       });
       setAttr.add(new IntegerAttribute({
-        name: "FIELD1", lName: { ru: { name: "Поле 1", fullName: "FULLNAME" } }, required: true,
+        name: "FIELD1", lName: {ru: {name: "Поле 1", fullName: "FULLNAME"}}, required: true,
         minValue: MIN_16BIT_INT, maxValue: MAX_16BIT_INT, defaultValue: -100,
-        adapter: { relation: "CROSS_TABLE_ADAPTER2", field: "FIELD_ADAPTER1" }
+        adapter: {relation: "CROSS_TABLE_ADAPTER2", field: "FIELD_ADAPTER1"}
       }));
       setAttr.add(new IntegerAttribute({
-        name: "FIELD2", lName: { ru: { name: "Поле 2", fullName: "FULLNAME" } }, required: true,
+        name: "FIELD2", lName: {ru: {name: "Поле 2", fullName: "FULLNAME"}}, required: true,
         minValue: MIN_32BIT_INT, maxValue: MAX_32BIT_INT, defaultValue: -1000
       }));
       await entity1.create(transaction, setAttr);
 
       await entity1.create(transaction, new SetAttribute({
-        name: "SET3", lName: { ru: { name: "Ссылка3" } }, required: true, entities: [entity2],
-        adapter: { crossRelation: "TABLE_7" } // generated
+        name: "SET3", lName: {ru: {name: "Ссылка3"}}, required: true, entities: [entity2],
+        adapter: {crossRelation: "TABLE_7"} // generated
       }));
     });
 
@@ -2028,23 +2034,23 @@ describe("ERBridge", () => {
     await initERModel(erModel, async (transaction) => {
       const entity = await erModel.create(transaction, new Entity({
         name: "TEST",
-        lName: { ru: { name: "entity name", fullName: "full entity name" } }
+        lName: {ru: {name: "entity name", fullName: "full entity name"}}
       }));
 
       await entity.create(transaction, new StringAttribute({
-        name: "FIELD1", lName: { ru: { name: "Поле 1" } }, required: true,
+        name: "FIELD1", lName: {ru: {name: "Поле 1"}}, required: true,
         minLength: 5, maxLength: 30, defaultValue: "test default", autoTrim: true,
-        adapter: { relation: "TEST", field: "FIELD_ADAPTER1" }
+        adapter: {relation: "TEST", field: "FIELD_ADAPTER1"}
       }));
       await entity.create(transaction, new IntegerAttribute({
-        name: "FIELD2", lName: { ru: { name: "Поле 2", fullName: "FULLNAME" } }, required: true,
+        name: "FIELD2", lName: {ru: {name: "Поле 2", fullName: "FULLNAME"}}, required: true,
         minValue: MIN_16BIT_INT, maxValue: MAX_16BIT_INT, defaultValue: -100,
-        adapter: { relation: "TEST", field: "FIELD_ADAPTER2" }
+        adapter: {relation: "TEST", field: "FIELD_ADAPTER2"}
       }));
       await entity.create(transaction, new FloatAttribute({
-        name: "FIELD3", lName: { ru: { name: "Поле 3" } }, required: true,
+        name: "FIELD3", lName: {ru: {name: "Поле 3"}}, required: true,
         minValue: -123, maxValue: 123123123123123123123123, defaultValue: 40,
-        adapter: { relation: "TEST", field: "FIELD_ADAPTER3" }
+        adapter: {relation: "TEST", field: "FIELD_ADAPTER3"}
       }));
 
       await entity.addAttrUnique(transaction, [entity.attribute("FIELD1"), entity.attribute("FIELD2")]);
@@ -2063,40 +2069,40 @@ describe("ERBridge", () => {
     await initERModel(erModel, async (transaction) => {
       const entity1 = await erModel.create(transaction, new Entity({
         name: "TEST1",
-        lName: { ru: { name: "entity name", fullName: "full entity name" } }
+        lName: {ru: {name: "entity name", fullName: "full entity name"}}
       }));
       await entity1.create(transaction, new StringAttribute({
-        name: "TEST_FIELD1", lName: { ru: { name: "Поле 1" } },
-        adapter: { relation: "TEST1", field: "FIELD_ADAPTER1" }
+        name: "TEST_FIELD1", lName: {ru: {name: "Поле 1"}},
+        adapter: {relation: "TEST1", field: "FIELD_ADAPTER1"}
       }));
 
       const entity2 = await erModel.create(transaction, new Entity({
         name: "TEST2",
         parent: entity1,
-        lName: { ru: { name: "entity name", fullName: "full entity name" } },
+        lName: {ru: {name: "entity name", fullName: "full entity name"}},
         adapter: {
-          relation: [...entity1.adapter.relation, { relationName: "TEST2" }]
+          relation: [...entity1.adapter.relation, {relationName: "TEST2"}]
         }
       }));
       await entity2.create(transaction, new StringAttribute({
-        name: "TEST_FIELD2", lName: { ru: { name: "Поле 2" } },
-        adapter: { relation: "TEST2", field: "FIELD_ADAPTER2" }
+        name: "TEST_FIELD2", lName: {ru: {name: "Поле 2"}},
+        adapter: {relation: "TEST2", field: "FIELD_ADAPTER2"}
       }));
 
       const entity3 = await erModel.create(transaction, new Entity({
         name: "TEST3",
         parent: entity1,
-        lName: { ru: { name: "entity name", fullName: "full entity name" } },
+        lName: {ru: {name: "entity name", fullName: "full entity name"}},
         adapter: {
-          relation: [...entity1.adapter.relation, { relationName: "TEST3" }]
+          relation: [...entity1.adapter.relation, {relationName: "TEST3"}]
         }
       }));
       await entity3.create(transaction, new StringAttribute({
-        name: "TEST_FIELD3", lName: { ru: { name: "Поле 3" } }
+        name: "TEST_FIELD3", lName: {ru: {name: "Поле 3"}}
       }));
       await entity3.create(transaction, new StringAttribute({
         name: "TEST_FIELD1",
-        lName: { ru: { name: "Переопределенное Поле 1" } },
+        lName: {ru: {name: "Переопределенное Поле 1"}},
         required: true
       }));
     });
@@ -2121,63 +2127,63 @@ describe("ERBridge", () => {
     await initERModel(erModel, async (transaction) => {
       // APP_USER
       const userEntity = await erModel.create(transaction, new Entity({
-        name: "APP_USER", lName: { ru: { name: "Пользователь" } }
+        name: "APP_USER", lName: {ru: {name: "Пользователь"}}
       }));
       await userEntity.create(transaction, new StringAttribute({
-        name: "LOGIN", lName: { ru: { name: "Логин" } }, required: true, minLength: 1, maxLength: 32
+        name: "LOGIN", lName: {ru: {name: "Логин"}}, required: true, minLength: 1, maxLength: 32
       }));
       await userEntity.create(transaction, new BlobAttribute({
-        name: "PASSWORD_HASH", lName: { ru: { name: "Хешированный пароль" } }, required: true
+        name: "PASSWORD_HASH", lName: {ru: {name: "Хешированный пароль"}}, required: true
       }));
       await userEntity.create(transaction, new BlobAttribute({
-        name: "SALT", lName: { ru: { name: "Примесь" } }, required: true
+        name: "SALT", lName: {ru: {name: "Примесь"}}, required: true
       }));
       await userEntity.create(transaction, new BooleanAttribute({
-        name: "IS_ADMIN", lName: { ru: { name: "Флаг администратора" } }
+        name: "IS_ADMIN", lName: {ru: {name: "Флаг администратора"}}
       }));
 
       // APPLICATION
       const appEntity = await erModel.create(transaction, new Entity({
-        name: "APPLICATION", lName: { ru: { name: "Приложение" } }
+        name: "APPLICATION", lName: {ru: {name: "Приложение"}}
       }));
       const appUid = new StringAttribute({
-        name: "UID", lName: { ru: { name: "Идентификатор приложения" } }, required: true, minLength: 1, maxLength: 36
+        name: "UID", lName: {ru: {name: "Идентификатор приложения"}}, required: true, minLength: 1, maxLength: 36
       });
       await appEntity.create(transaction, appUid);
       await appEntity.addAttrUnique(transaction, [appUid]);
       await appEntity.create(transaction, new TimeStampAttribute({
-        name: "CREATIONDATE", lName: { ru: { name: "Дата создания" } }, required: true,
+        name: "CREATIONDATE", lName: {ru: {name: "Дата создания"}}, required: true,
         minValue: Constants.MIN_TIMESTAMP, maxValue: Constants.MAX_TIMESTAMP, defaultValue: "CURRENT_TIMESTAMP"
       }));
       const appSet = new SetAttribute({
-        name: "APPLICATIONS", lName: { ru: { name: "Приложения" } }, entities: [appEntity],
-        adapter: { crossRelation: "APP_USER_APPLICATIONS" }
+        name: "APPLICATIONS", lName: {ru: {name: "Приложения"}}, entities: [appEntity],
+        adapter: {crossRelation: "APP_USER_APPLICATIONS"}
       });
       appSet.add(new StringAttribute({
-        name: "ALIAS", lName: { ru: { name: "Название приложения" } }, required: true, minLength: 1, maxLength: 120
+        name: "ALIAS", lName: {ru: {name: "Название приложения"}}, required: true, minLength: 1, maxLength: 120
       }));
 
       await userEntity.create(transaction, appSet);
 
       // APPLICATION_BACKUPS
       const backupEntity = await erModel.create(transaction, new Entity({
-        name: "APPLICATION_BACKUPS", lName: { ru: { name: "Резервная копия" } }
+        name: "APPLICATION_BACKUPS", lName: {ru: {name: "Резервная копия"}}
       }));
       const backupUid = new StringAttribute({
-        name: "UID", lName: { ru: { name: "Идентификатор бэкапа" } }, required: true, minLength: 1, maxLength: 36
+        name: "UID", lName: {ru: {name: "Идентификатор бэкапа"}}, required: true, minLength: 1, maxLength: 36
       });
       await backupEntity.create(transaction, backupUid);
       await backupEntity.addAttrUnique(transaction, [backupUid]);
 
       await backupEntity.create(transaction, new EntityAttribute({
-        name: "APP", lName: { ru: { name: "Приложение" } }, required: true, entities: [appEntity]
+        name: "APP", lName: {ru: {name: "Приложение"}}, required: true, entities: [appEntity]
       }));
       await backupEntity.create(transaction, new TimeStampAttribute({
-        name: "CREATIONDATE", lName: { ru: { name: "Дата создания" } }, required: true,
+        name: "CREATIONDATE", lName: {ru: {name: "Дата создания"}}, required: true,
         minValue: Constants.MIN_TIMESTAMP, maxValue: Constants.MAX_TIMESTAMP, defaultValue: "CURRENT_TIMESTAMP"
       }));
       await backupEntity.create(transaction, new StringAttribute({
-        name: "ALIAS", lName: { ru: { name: "Название бэкапа" } }, required: true, minLength: 1, maxLength: 120
+        name: "ALIAS", lName: {ru: {name: "Название бэкапа"}}, required: true, minLength: 1, maxLength: 120
       }));
     });
 
