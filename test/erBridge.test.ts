@@ -29,7 +29,7 @@ import { Constants } from "../src/ddl/Constants";
 import { ERBridge } from "../src/ERBridge";
 import { DataSource } from "../src/source/DataSource";
 import { importTestDBDetail } from "./testDB";
-import { ERModelBuilder } from "../src/ddl/builder/ERModelBuilder";
+import { testInsert } from "./testInsert";
 import { testUpdateOrInsert } from "./testUpdateOrInsert";
 import { testUpdate } from "./testUpdate";
 import { testDelete } from "./testDelete";
