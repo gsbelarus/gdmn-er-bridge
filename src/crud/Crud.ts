@@ -83,6 +83,7 @@ async function runPrepNestedSteps(
       for (const { params } of setSteps) {
         await statement.execute(params);
       }
+      await statement.dispose();
     }
   }
 }
@@ -114,6 +115,8 @@ export abstract class Crud {
           const id = result.getNumber("ID");
           ids.push(id);
         }
+
+        await returningStatement.dispose();
 
         const setsNestedSteps = nestedSteps.map(({ setAttrsValuesThunk }, currIndex) => setAttrsValuesThunk(ids[currIndex]));
         await runPrepNestedSteps(connection, transaction, setsNestedSteps);
