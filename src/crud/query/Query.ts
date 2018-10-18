@@ -1,14 +1,15 @@
 import {AccessMode, AConnection, DBStructure} from "gdmn-db";
 import {EntityQuery, ERModel, IEntityQueryInspector} from "gdmn-orm";
 import {IQueryResponse} from "../../ERBridge";
-import {SQLBuilder} from "./SQLBuilder";
+import {SelectBuilder} from "./SelectBuilder";
 
+// TODO remove
 export abstract class Query {
 
   public static async execute(connection: AConnection, erModel: ERModel, dbStructure: DBStructure, query: IEntityQueryInspector): Promise<IQueryResponse> {
     const bodyQuery = EntityQuery.inspectorToObject(erModel, query);
 
-    const {sql, params, fieldAliases} = new SQLBuilder(erModel, dbStructure, bodyQuery).build();
+    const {sql, params, fieldAliases} = new SelectBuilder(dbStructure, bodyQuery).build();
 
     const data = await AConnection.executeTransaction({
       connection,

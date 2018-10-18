@@ -5,5 +5,5 @@ function __export(m) {
 Object.defineProperty(exports, "__esModule", { value: true });
 __export(require("./ERBridge"));
 __export(require("./source/DataSource"));
-__export(require("./crud/query/SQLBuilder"));
+__export(require("./crud/query/SelectBuilder"));
 //# sourceMappingURL=index.js.map

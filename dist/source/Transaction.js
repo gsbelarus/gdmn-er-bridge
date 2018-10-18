@@ -10,6 +10,9 @@ class Transaction {
     get finished() {
         return this._transaction.finished;
     }
+    get dbTransaction() {
+        return this._transaction;
+    }
     async getBuilder() {
         if (!this._builder.prepared) {
             await this._builder.prepare(this._connection, this._transaction);

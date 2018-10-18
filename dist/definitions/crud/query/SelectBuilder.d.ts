@@ -1,18 +1,15 @@
 import { DBStructure, INamedParams } from "gdmn-db";
-import { EntityQuery, EntityQueryField, ERModel, IEntityQueryInspector } from "gdmn-orm";
+import { EntityQuery, EntityQueryField } from "gdmn-orm";
 export interface IEntityQueryFieldAlias {
     [attrName: string]: string;
 }
-export declare class SQLBuilder {
-    private readonly _erModel;
+export declare class SelectBuilder {
     private readonly _dbStructure;
     private readonly _query;
     private _linkAliases;
     private _fieldAliases;
     private _params;
-    constructor(erModel: ERModel, dbStructure: DBStructure, query: string);
-    constructor(erModel: ERModel, dbStructure: DBStructure, query: IEntityQueryInspector);
-    constructor(erModel: ERModel, dbStructure: DBStructure, query: EntityQuery);
+    constructor(dbStructure: DBStructure, query: EntityQuery);
     private static _arrayJoinWithBracket;
     private static _getAttrAdapter;
     private static _getPrimaryAttribute;

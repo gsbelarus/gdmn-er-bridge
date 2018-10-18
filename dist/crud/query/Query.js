@@ -2,11 +2,12 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const gdmn_db_1 = require("gdmn-db");
 const gdmn_orm_1 = require("gdmn-orm");
-const SQLBuilder_1 = require("./SQLBuilder");
+const SelectBuilder_1 = require("./SelectBuilder");
+// TODO remove
 class Query {
     static async execute(connection, erModel, dbStructure, query) {
         const bodyQuery = gdmn_orm_1.EntityQuery.inspectorToObject(erModel, query);
-        const { sql, params, fieldAliases } = new SQLBuilder_1.SQLBuilder(erModel, dbStructure, bodyQuery).build();
+        const { sql, params, fieldAliases } = new SelectBuilder_1.SelectBuilder(dbStructure, bodyQuery).build();
         const data = await gdmn_db_1.AConnection.executeTransaction({
             connection,
             options: { accessMode: gdmn_db_1.AccessMode.READ_ONLY },

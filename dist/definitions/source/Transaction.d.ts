@@ -7,6 +7,7 @@ export declare class Transaction implements ITransaction {
     private readonly _builder;
     constructor(connection: AConnection, transaction: ATransaction);
     readonly finished: boolean;
+    readonly dbTransaction: ATransaction;
     getBuilder(): Promise<ERModelBuilder>;
     commit(): Promise<void>;
     rollback(): Promise<void>;

@@ -17,6 +17,10 @@ export class Transaction implements ITransaction {
     return this._transaction.finished;
   }
 
+  get dbTransaction(): ATransaction {
+    return this._transaction;
+  }
+
   public async getBuilder(): Promise<ERModelBuilder> {
     if (!this._builder.prepared) {
       await this._builder.prepare(this._connection, this._transaction);

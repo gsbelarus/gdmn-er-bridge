@@ -2,22 +2,13 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const gdmn_orm_1 = require("gdmn-orm");
 const SQLTemplates_1 = require("./SQLTemplates");
-class SQLBuilder {
-    constructor(erModel, dbStructure, query) {
+class SelectBuilder {
+    constructor(dbStructure, query) {
         this._linkAliases = new Map();
         this._fieldAliases = new Map();
         this._params = {};
-        this._erModel = erModel;
         this._dbStructure = dbStructure;
-        if (query instanceof gdmn_orm_1.EntityQuery) {
-            this._query = query;
-        }
-        else if (typeof query === "object") {
-            this._query = gdmn_orm_1.EntityQuery.inspectorToObject(this._erModel, query);
-        }
-        else {
-            this._query = gdmn_orm_1.EntityQuery.deserialize(this._erModel, query);
-        }
+        this._query = query;
     }
     static _arrayJoinWithBracket(array, separator) {
         if (array.length === 1) {
@@ -63,7 +54,7 @@ class SQLBuilder {
         if (map) {
             return Object.values(map).some((value) => {
                 for (const key of value.keys()) {
-                    if (SQLBuilder._getAttrAdapter(entity, key).relationName === relationName) {
+                    if (SelectBuilder._getAttrAdapter(entity, key).relationName === relationName) {
                         return true;
                     }
                 }
@@ -102,7 +93,7 @@ class SQLBuilder {
                         this._fieldAliases.set(field, fieldAlias);
                     }
                     if (field.attribute.adapter) {
-                        const setAdapter = SQLBuilder._getAttrAdapter(field.link.entity, field.attribute);
+                        const setAdapter = SelectBuilder._getAttrAdapter(field.link.entity, field.attribute);
                         const alias = this._linkAliases.get(link);
                         if (alias) {
                             alias[setAdapter.relationName] = `E$${aliasNumber}_${Object.keys(alias).length + 1}$S`;
@@ -152,14 +143,14 @@ class SQLBuilder {
         const fields = link.fields
             .filter((field) => !field.link)
             .map((field) => {
-            const attrAdapter = SQLBuilder._getAttrAdapter(link.entity, field.attribute);
+            const attrAdapter = SelectBuilder._getAttrAdapter(link.entity, field.attribute);
             return SQLTemplates_1.SQLTemplates.field(this._getTableAlias(link, attrAdapter.relationName), this._getFieldAlias(field), attrAdapter.fieldName);
         });
         const joinedFields = link.fields.reduce((items, field) => {
             if (field.link) {
                 if (field.setAttributes) {
                     field.setAttributes.map((attr) => {
-                        const attrAdapter = SQLBuilder._getAttrAdapter(link.entity, attr);
+                        const attrAdapter = SelectBuilder._getAttrAdapter(link.entity, attr);
                         return SQLTemplates_1.SQLTemplates.field(this._getTableAlias(link, attrAdapter.relationName), this._getFieldAlias(field, attr), attrAdapter.fieldName);
                     });
                 }
@@ -170,8 +161,8 @@ class SQLBuilder {
         return fields.concat(joinedFields);
     }
     _makeFrom(link) {
-        const primaryAttr = SQLBuilder._getPrimaryAttribute(link.entity);
-        const primaryAttrAdapter = SQLBuilder._getAttrAdapter(link.entity, primaryAttr);
+        const primaryAttr = SelectBuilder._getPrimaryAttribute(link.entity);
+        const primaryAttrAdapter = SelectBuilder._getAttrAdapter(link.entity, primaryAttr);
         const mainRelation = link.entity.adapter.relation[0];
         const from = SQLTemplates_1.SQLTemplates.from(this._getTableAlias(link), mainRelation.relationName);
         const join = link.entity.adapter.relation.reduce((joins, rel, index) => {
@@ -186,13 +177,13 @@ class SQLBuilder {
         return join.join("\n");
     }
     _makeJoin(link) {
-        const primaryAttr = SQLBuilder._getPrimaryAttribute(link.entity);
-        const primaryAttrAdapter = SQLBuilder._getAttrAdapter(link.entity, primaryAttr);
+        const primaryAttr = SelectBuilder._getPrimaryAttribute(link.entity);
+        const primaryAttrAdapter = SelectBuilder._getAttrAdapter(link.entity, primaryAttr);
         return link.fields.reduce((joins, field) => {
             if (field.link) {
-                const attrAdapter = SQLBuilder._getAttrAdapter(link.entity, field.attribute);
-                const nestedPrimaryAttr = SQLBuilder._getPrimaryAttribute(field.link.entity);
-                const nestedPrimaryAttrAdapter = SQLBuilder._getAttrAdapter(field.link.entity, nestedPrimaryAttr);
+                const attrAdapter = SelectBuilder._getAttrAdapter(link.entity, field.attribute);
+                const nestedPrimaryAttr = SelectBuilder._getPrimaryAttribute(field.link.entity);
+                const nestedPrimaryAttrAdapter = SelectBuilder._getAttrAdapter(field.link.entity, nestedPrimaryAttr);
                 const mainRelation = field.link.entity.adapter.relation[0];
                 if (gdmn_orm_1.SetAttribute.isType(field.attribute)) {
                     joins.push(SQLTemplates_1.SQLTemplates.join(attrAdapter.relationName, this._getTableAlias(link, attrAdapter.relationName), this._getPrimaryName(attrAdapter.relationName), this._getTableAlias(link), primaryAttrAdapter.fieldName));
@@ -243,7 +234,7 @@ class SQLBuilder {
             filters = Object.entries(isNull)
                 .reduce((items, [linkAlias, condition]) => {
                 const findLink = this._deepFindLinkByAlias(this._query.link, linkAlias);
-                const attrAdapter = SQLBuilder._getAttrAdapter(findLink.entity, condition);
+                const attrAdapter = SelectBuilder._getAttrAdapter(findLink.entity, condition);
                 const alias = this._getTableAlias(findLink, attrAdapter.relationName);
                 items.push(SQLTemplates_1.SQLTemplates.isNull(alias, attrAdapter.fieldName));
                 return items;
@@ -255,11 +246,11 @@ class SQLBuilder {
                 const findLink = this._deepFindLinkByAlias(this._query.link, linkAlias);
                 const equalsFilters = [];
                 for (const [attribute, value] of condition.entries()) {
-                    const attrAdapter = SQLBuilder._getAttrAdapter(findLink.entity, attribute);
+                    const attrAdapter = SelectBuilder._getAttrAdapter(findLink.entity, attribute);
                     const alias = this._getTableAlias(findLink, attrAdapter.relationName);
                     equalsFilters.push(SQLTemplates_1.SQLTemplates.equals(alias, attrAdapter.fieldName, this._addToParams(value)));
                 }
-                const equalsFilter = SQLBuilder._arrayJoinWithBracket(equalsFilters, " AND ");
+                const equalsFilter = SelectBuilder._arrayJoinWithBracket(equalsFilters, " AND ");
                 if (equalsFilter) {
                     items.push(equalsFilter);
                 }
@@ -272,11 +263,11 @@ class SQLBuilder {
                 const findLink = this._deepFindLinkByAlias(this._query.link, linkAlias);
                 const greaterFilters = [];
                 for (const [attribute, value] of condition) {
-                    const attrAdapter = SQLBuilder._getAttrAdapter(findLink.entity, attribute);
+                    const attrAdapter = SelectBuilder._getAttrAdapter(findLink.entity, attribute);
                     const alias = this._getTableAlias(findLink, attrAdapter.relationName);
                     greaterFilters.push(SQLTemplates_1.SQLTemplates.greater(alias, attrAdapter.fieldName, this._addToParams(value)));
                 }
-                const greaterFilter = SQLBuilder._arrayJoinWithBracket(greaterFilters, " AND ");
+                const greaterFilter = SelectBuilder._arrayJoinWithBracket(greaterFilters, " AND ");
                 if (greaterFilter) {
                     items.push(greaterFilter);
                 }
@@ -289,26 +280,26 @@ class SQLBuilder {
                 const findLink = this._deepFindLinkByAlias(this._query.link, linkAlias);
                 const lessFilters = [];
                 for (const [attribute, value] of condition) {
-                    const attrAdapter = SQLBuilder._getAttrAdapter(findLink.entity, attribute);
+                    const attrAdapter = SelectBuilder._getAttrAdapter(findLink.entity, attribute);
                     const alias = this._getTableAlias(findLink, attrAdapter.relationName);
                     lessFilters.push(SQLTemplates_1.SQLTemplates.less(alias, attrAdapter.fieldName, this._addToParams(value)));
                 }
-                const lessFilter = SQLBuilder._arrayJoinWithBracket(lessFilters, " AND ");
+                const lessFilter = SelectBuilder._arrayJoinWithBracket(lessFilters, " AND ");
                 if (lessFilter) {
                     items.push(lessFilter);
                 }
                 return items;
             }, filters);
         }
-        const notFilter = SQLBuilder._arrayJoinWithBracket(this._makeWhereConditions(not), " AND ");
+        const notFilter = SelectBuilder._arrayJoinWithBracket(this._makeWhereConditions(not), " AND ");
         if (notFilter) {
             filters.push(`NOT ${notFilter}`);
         }
-        const andFilter = SQLBuilder._arrayJoinWithBracket(this._makeWhereConditions(and), " AND ");
+        const andFilter = SelectBuilder._arrayJoinWithBracket(this._makeWhereConditions(and), " AND ");
         if (andFilter) {
             filters.push(andFilter);
         }
-        const orFilter = SQLBuilder._arrayJoinWithBracket(this._makeWhereConditions(or), " OR ");
+        const orFilter = SelectBuilder._arrayJoinWithBracket(this._makeWhereConditions(or), " OR ");
         if (orFilter) {
             filters.push(orFilter);
         }
@@ -319,7 +310,7 @@ class SQLBuilder {
             return Object.entries(this._query.options.order).reduce((orders, [linkAlias, order]) => {
                 const link = this._deepFindLinkByAlias(this._query.link, linkAlias);
                 for (const [key, value] of order) {
-                    const attrAdapter = SQLBuilder._getAttrAdapter(link.entity, key);
+                    const attrAdapter = SelectBuilder._getAttrAdapter(link.entity, key);
                     const alias = this._getTableAlias(link, attrAdapter.relationName);
                     orders.push(SQLTemplates_1.SQLTemplates.order(alias, attrAdapter.fieldName, value.toUpperCase()));
                 }
@@ -369,7 +360,7 @@ class SQLBuilder {
     }
     _isExistInQuery(link, relationName) {
         const existInFields = link.fields.some((field) => {
-            const attrAdapter = SQLBuilder._getAttrAdapter(link.entity, field.attribute);
+            const attrAdapter = SelectBuilder._getAttrAdapter(link.entity, field.attribute);
             return attrAdapter.relationName === relationName;
         });
         if (existInFields) {
@@ -377,16 +368,16 @@ class SQLBuilder {
         }
         const where = this._query.options && this._query.options.where;
         if (where) {
-            if (where.isNull && Object.values(where.isNull).some((condition) => (SQLBuilder._getAttrAdapter(link.entity, condition).relationName === relationName))) {
+            if (where.isNull && Object.values(where.isNull).some((condition) => (SelectBuilder._getAttrAdapter(link.entity, condition).relationName === relationName))) {
                 return true;
             }
-            if (SQLBuilder._checkInAttrMap(link.entity, relationName, where.equals)
-                || SQLBuilder._checkInAttrMap(link.entity, relationName, where.greater)
-                || SQLBuilder._checkInAttrMap(link.entity, relationName, where.less)) {
+            if (SelectBuilder._checkInAttrMap(link.entity, relationName, where.equals)
+                || SelectBuilder._checkInAttrMap(link.entity, relationName, where.greater)
+                || SelectBuilder._checkInAttrMap(link.entity, relationName, where.less)) {
                 return true;
             }
         }
-        return SQLBuilder._checkInAttrMap(link.entity, relationName, this._query.options && this._query.options.order);
+        return SelectBuilder._checkInAttrMap(link.entity, relationName, this._query.options && this._query.options.order);
     }
     _addToParams(value) {
         const length = Object.keys(this._params).length;
@@ -400,5 +391,5 @@ class SQLBuilder {
         this._fieldAliases.clear();
     }
 }
-exports.SQLBuilder = SQLBuilder;
-//# sourceMappingURL=SQLBuilder.js.map
+exports.SelectBuilder = SelectBuilder;
+//# sourceMappingURL=SelectBuilder.js.map
