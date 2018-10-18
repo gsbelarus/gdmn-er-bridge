@@ -9,12 +9,17 @@ const EntitySource_1 = require("./EntitySource");
 const SequenceSource_1 = require("./SequenceSource");
 const Transaction_1 = require("./Transaction");
 class DataSource {
-    constructor(connection, dbStructure) {
+    constructor(connection) {
         this._connection = connection;
-        this._dbStructure = dbStructure;
     }
     async init(obj) {
         await new DBSchemaUpdater_1.DBSchemaUpdater(this._connection).run();
+        // TODO tmp
+        this._dbStructure = await gdmn_db_1.AConnection.executeTransaction({
+            connection: this._connection,
+            options: { accessMode: gdmn_db_1.AccessMode.READ_ONLY },
+            callback: (transaction) => gdmn_db_1.Factory.FBDriver.readDBStructure(this._connection, transaction)
+        });
         if (!Object.values(obj.sequencies).some((seq) => seq.name == Constants_1.Constants.GLOBAL_GENERATOR)) {
             obj.addSequence(new gdmn_orm_1.Sequence({ name: Constants_1.Constants.GLOBAL_GENERATOR }));
         }

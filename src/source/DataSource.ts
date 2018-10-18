@@ -1,4 +1,4 @@
-import {AConnection, DBStructure} from "gdmn-db";
+import {AccessMode, AConnection, DBStructure, Factory} from "gdmn-db";
 import {EntityQuery, ERModel, IDataSource, IQueryResponse, ISequenceSource, Sequence} from "gdmn-orm";
 import {SelectBuilder} from "../crud/query/SelectBuilder";
 import {Constants} from "../ddl/Constants";
@@ -10,16 +10,22 @@ import {Transaction} from "./Transaction";
 export class DataSource implements IDataSource {
 
   private readonly _connection: AConnection;
-  private readonly _dbStructure: DBStructure;
+  private _dbStructure: DBStructure | undefined;
   private _globalSequence: Sequence | undefined;
 
-  constructor(connection: AConnection, dbStructure: DBStructure) {
+  constructor(connection: AConnection) {
     this._connection = connection;
-    this._dbStructure = dbStructure;
   }
 
   public async init(obj: ERModel): Promise<ERModel> {
     await new DBSchemaUpdater(this._connection).run();
+
+    // TODO tmp
+    this._dbStructure = await AConnection.executeTransaction({
+      connection: this._connection,
+      options: {accessMode: AccessMode.READ_ONLY},
+      callback: (transaction) => Factory.FBDriver.readDBStructure(this._connection, transaction)
+    });
 
     if (!Object.values(obj.sequencies).some((seq) => seq.name == Constants.GLOBAL_GENERATOR)) {
       obj.addSequence(new Sequence({name: Constants.GLOBAL_GENERATOR}));
@@ -34,7 +40,7 @@ export class DataSource implements IDataSource {
   }
 
   public async query(transaction: Transaction, query: EntityQuery): Promise<IQueryResponse> {
-    const {sql, params, fieldAliases} = new SelectBuilder(this._dbStructure, query).build();
+    const {sql, params, fieldAliases} = new SelectBuilder(this._dbStructure!, query).build();
 
     const data = await AConnection.executeQueryResultSet({
       connection: this._connection,

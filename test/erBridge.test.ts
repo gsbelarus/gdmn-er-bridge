@@ -55,11 +55,7 @@ describe("ERBridge", () => {
   });
 
   const initERModel = async <R>(erModel: ERModel, callback: TExecutor<ITransaction, R>): Promise<R> => {
-    const dbStructure = await AConnection.executeTransaction({
-      connection,
-      callback: (transaction) => driver.readDBStructure(connection, transaction)
-    });
-    await erModel.initDataSource(new DataSource(connection, dbStructure));
+    await erModel.initDataSource(new DataSource(connection));
     const transaction = await erModel.startTransaction();
     try {
       return await callback(transaction);
