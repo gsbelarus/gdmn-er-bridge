@@ -12,6 +12,12 @@ class DataSource {
     constructor(connection) {
         this._connection = connection;
     }
+    get globalSequence() {
+        if (!this._globalSequence) {
+            throw new Error("globalSequence is not found");
+        }
+        return this._globalSequence;
+    }
     async init(obj) {
         await new DBSchemaUpdater_1.DBSchemaUpdater(this._connection).run();
         // TODO tmp
@@ -30,55 +36,74 @@ class DataSource {
         const dbTransaction = await this._connection.startTransaction();
         return new Transaction_1.Transaction(this._connection, dbTransaction);
     }
-    async query(transaction, query) {
-        const { sql, params, fieldAliases } = new SelectBuilder_1.SelectBuilder(this._dbStructure, query).build();
-        const data = await gdmn_db_1.AConnection.executeQueryResultSet({
-            connection: this._connection,
-            transaction: transaction.dbTransaction,
-            sql,
-            params,
-            callback: async (resultSet) => {
-                const result = [];
-                while (await resultSet.next()) {
-                    const row = {};
-                    for (let i = 0; i < resultSet.metadata.columnCount; i++) {
-                        // TODO binary blob support
-                        row[resultSet.metadata.getColumnLabel(i)] = await resultSet.getAny(i);
+    async query(query, transaction) {
+        return await this.withTransaction(transaction, async (trans) => {
+            const { sql, params, fieldAliases } = new SelectBuilder_1.SelectBuilder(this._dbStructure, query).build();
+            const data = await gdmn_db_1.AConnection.executeQueryResultSet({
+                connection: this._connection,
+                transaction: trans.dbTransaction,
+                sql,
+                params,
+                callback: async (resultSet) => {
+                    const result = [];
+                    while (await resultSet.next()) {
+                        const row = {};
+                        for (let i = 0; i < resultSet.metadata.columnCount; i++) {
+                            // TODO binary blob support
+                            row[resultSet.metadata.getColumnLabel(i)] = await resultSet.getAny(i);
+                        }
+                        result.push(row);
                     }
-                    result.push(row);
+                    return result;
                 }
-                return result;
-            }
-        });
-        const aliases = [];
-        for (const [key, value] of fieldAliases) {
-            const link = query.link.deepFindLinkByField(key);
-            if (!link) {
-                throw new Error("Field not found");
-            }
-            aliases.push({
-                alias: link.alias,
-                attribute: key.attribute.name,
-                values: value
             });
-        }
-        return {
-            data,
-            aliases,
-            info: {
-                select: sql,
-                params
+            const aliases = [];
+            for (const [key, value] of fieldAliases) {
+                const link = query.link.deepFindLinkByField(key);
+                if (!link) {
+                    throw new Error("Field not found");
+                }
+                aliases.push({
+                    alias: link.alias,
+                    attribute: key.attribute.name,
+                    values: value
+                });
             }
-        };
+            return {
+                data,
+                aliases,
+                info: {
+                    select: sql,
+                    params
+                }
+            };
+        });
     }
     getEntitySource() {
         if (!this._globalSequence) {
             throw new Error("globalSequence is undefined");
         }
-        return new EntitySource_1.EntitySource(this._globalSequence);
+        return new EntitySource_1.EntitySource(this);
     }
     getSequenceSource() {
-        return new SequenceSource_1.SequenceSource();
+        return new SequenceSource_1.SequenceSource(this);
+    }
+    async withTransaction(transaction, callback) {
+        if (transaction) {
+            return await callback(transaction);
+        }
+        else {
+            const trans = await this.startTransaction();
+            try {
+                const result = await callback(trans);
+                await trans.commit();
+                return result;
+            }
+            catch (error) {
+                await trans.rollback();
+                throw error;
+            }
+        }
     }
 }
 exports.DataSource = DataSource;

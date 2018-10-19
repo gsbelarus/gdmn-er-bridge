@@ -17,6 +17,13 @@ export class DataSource implements IDataSource {
     this._connection = connection;
   }
 
+  get globalSequence(): Sequence {
+    if (!this._globalSequence) {
+      throw new Error("globalSequence is not found");
+    }
+    return this._globalSequence;
+  }
+
   public async init(obj: ERModel): Promise<ERModel> {
     await new DBSchemaUpdater(this._connection).run();
 
@@ -39,59 +46,79 @@ export class DataSource implements IDataSource {
     return new Transaction(this._connection, dbTransaction);
   }
 
-  public async query(transaction: Transaction, query: EntityQuery): Promise<IQueryResponse> {
-    const {sql, params, fieldAliases} = new SelectBuilder(this._dbStructure!, query).build();
+  public async query(query: EntityQuery, transaction?: Transaction): Promise<IQueryResponse> {
+    return await this.withTransaction(transaction, async (trans) => {
+      const {sql, params, fieldAliases} = new SelectBuilder(this._dbStructure!, query).build();
 
-    const data = await AConnection.executeQueryResultSet({
-      connection: this._connection,
-      transaction: transaction.dbTransaction,
-      sql,
-      params,
-      callback: async (resultSet) => {
-        const result = [];
-        while (await resultSet.next()) {
-          const row: { [key: string]: any } = {};
-          for (let i = 0; i < resultSet.metadata.columnCount; i++) {
-            // TODO binary blob support
-            row[resultSet.metadata.getColumnLabel(i)] = await resultSet.getAny(i);
+      const data = await AConnection.executeQueryResultSet({
+        connection: this._connection,
+        transaction: trans.dbTransaction,
+        sql,
+        params,
+        callback: async (resultSet) => {
+          const result = [];
+          while (await resultSet.next()) {
+            const row: { [key: string]: any } = {};
+            for (let i = 0; i < resultSet.metadata.columnCount; i++) {
+              // TODO binary blob support
+              row[resultSet.metadata.getColumnLabel(i)] = await resultSet.getAny(i);
+            }
+            result.push(row);
           }
-          result.push(row);
+          return result;
         }
-        return result;
-      }
-    });
-
-    const aliases = [];
-    for (const [key, value] of fieldAliases) {
-      const link = query.link.deepFindLinkByField(key);
-      if (!link) {
-        throw new Error("Field not found");
-      }
-      aliases.push({
-        alias: link.alias,
-        attribute: key.attribute.name,
-        values: value
       });
-    }
 
-    return {
-      data,
-      aliases,
-      info: {
-        select: sql,
-        params
+      const aliases = [];
+      for (const [key, value] of fieldAliases) {
+        const link = query.link.deepFindLinkByField(key);
+        if (!link) {
+          throw new Error("Field not found");
+        }
+        aliases.push({
+          alias: link.alias,
+          attribute: key.attribute.name,
+          values: value
+        });
       }
-    };
+
+      return {
+        data,
+        aliases,
+        info: {
+          select: sql,
+          params
+        }
+      };
+    });
   }
 
-  getEntitySource(): EntitySource {
+  public getEntitySource(): EntitySource {
     if (!this._globalSequence) {
       throw new Error("globalSequence is undefined");
     }
-    return new EntitySource(this._globalSequence);
+    return new EntitySource(this);
   }
 
-  getSequenceSource(): ISequenceSource {
-    return new SequenceSource();
+  public getSequenceSource(): ISequenceSource {
+    return new SequenceSource(this);
+  }
+
+  public async withTransaction<R>(transaction: Transaction | undefined,
+                                  callback: (transaction: Transaction) => Promise<R>): Promise<R> {
+    if (transaction) {
+      return await callback(transaction);
+    } else {
+      const trans = await this.startTransaction();
+      try {
+        const result = await callback(trans);
+        await trans.commit();
+        return result;
+
+      } catch (error) {
+        await trans.rollback();
+        throw error;
+      }
+    }
   }
 }

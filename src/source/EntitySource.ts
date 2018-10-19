@@ -5,20 +5,20 @@ import {
   ERModel,
   IAttributeSource,
   IEntitySource,
-  Sequence,
   SequenceAttribute
 } from "gdmn-orm";
 import {Builder} from "../ddl/builder/Builder";
 import {Constants} from "../ddl/Constants";
 import {AttributeSource} from "./AttributeSource";
+import {DataSource} from "./DataSource";
 import {Transaction} from "./Transaction";
 
 export class EntitySource implements IEntitySource {
 
-  private readonly _globalSequence: Sequence;
+  private readonly _dataSource: DataSource;
 
-  constructor(globalSequence: Sequence) {
-    this._globalSequence = globalSequence;
+  constructor(dataSource: DataSource) {
+    this._dataSource = dataSource;
   }
 
   public async init(obj: Entity): Promise<Entity> {
@@ -34,7 +34,7 @@ export class EntitySource implements IEntitySource {
       obj.add(new SequenceAttribute({
         name: Constants.DEFAULT_ID_NAME,
         lName: {ru: {name: "Идентификатор"}},
-        sequence: this._globalSequence,
+        sequence: this._dataSource.globalSequence,
         adapter: {
           relation: Builder._getOwnRelationName(obj),
           field: Constants.DEFAULT_ID_NAME
@@ -44,26 +44,32 @@ export class EntitySource implements IEntitySource {
     return obj;
   }
 
-  public async create<T extends Entity>(transaction: Transaction, _: ERModel, obj: T): Promise<T> {
-    const builder = await transaction.getBuilder();
-    return (await builder.addEntity(obj)) as T;
+  public async create<T extends Entity>(_: ERModel, obj: T, transaction?: Transaction): Promise<T> {
+    return await this._dataSource.withTransaction(transaction, async (trans) => {
+      const builder = await trans.getBuilder();
+      return (await builder.addEntity(obj)) as T;
+    });
   }
 
-  public async delete(transaction: Transaction, _: ERModel, obj: Entity): Promise<void> {
-    const builder = await transaction.getBuilder();
-    await builder.removeEntity(obj);
+  public async delete(_: ERModel, obj: Entity, transaction?: Transaction): Promise<void> {
+    return await this._dataSource.withTransaction(transaction, async (trans) => {
+      const builder = await trans.getBuilder();
+      await builder.removeEntity(obj);
+    });
   }
 
-  public async addUnique(transaction: Transaction, entity: Entity, attrs: Attribute[]): Promise<void> {
-    const builder = await transaction.getBuilder();
-    return await builder.entityBuilder.addUnique(entity, attrs);
+  public async addUnique(entity: Entity, attrs: Attribute[], transaction?: Transaction): Promise<void> {
+    return await this._dataSource.withTransaction(transaction, async (trans) => {
+      const builder = await trans.getBuilder();
+      return await builder.entityBuilder.addUnique(entity, attrs);
+    });
   }
 
   public async removeUnique(): Promise<void> {
     throw new Error("Unsupported yet");
   }
 
-  getAttributeSource(): IAttributeSource {
-    return new AttributeSource();
+  public getAttributeSource(): IAttributeSource {
+    return new AttributeSource(this._dataSource);
   }
 }
