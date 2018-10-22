@@ -1171,9 +1171,9 @@ gauge@~2.7.3:
     strip-ansi "^3.0.1"
     wide-align "^1.1.0"
 
-"gdmn-db@git://github.com/gsbelarus/gdmn-db.git":
+"gdmn-db@git+https://github.com/gsbelarus/gdmn-db.git#2.0.0":
   version "2.0.0"
-  resolved "git://github.com/gsbelarus/gdmn-db.git#24ca5174e612b7fd5d133c515510d9afeaca61b8"
+  resolved "git+https://github.com/gsbelarus/gdmn-db.git#4b37088de786ec31e420145674a6ee5a1c57dcdd"
   dependencies:
     generic-pool "^3.4.2"
     node-firebird-native-api "^0.1.0"
