@@ -20,3 +20,4 @@ export declare class GDEntities {
     private _createEntity;
     private _getATResult;
 }
+//# sourceMappingURL=GDEntities.d.ts.map

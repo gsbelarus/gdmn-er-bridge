@@ -29,3 +29,4 @@ export declare function default2String(defaultSource: string | null): string | u
 export declare function default2Time(defaultSource: string | null): Date | ContextVariables | undefined;
 export declare function default2Timestamp(defaultSource: string | null): Date | ContextVariables | undefined;
 export declare function default2Date(defaultSource: string | null): Date | ContextVariables | undefined;
+//# sourceMappingURL=util.d.ts.map

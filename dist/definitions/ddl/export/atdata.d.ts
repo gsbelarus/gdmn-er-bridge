@@ -57,3 +57,4 @@ export interface IATLoadResult {
     atRelations: IATRelations;
 }
 export declare function load(connection: AConnection, transaction: ATransaction): Promise<IATLoadResult>;
+//# sourceMappingURL=atData.d.ts.map

@@ -5,3 +5,4 @@ export declare class EntityBuilder extends Builder {
     addAttribute(entity: Entity, attr: Attribute): Promise<Attribute>;
     removeAttribute(_entity: Entity, _attribute: Attribute): Promise<void>;
 }
+//# sourceMappingURL=EntityBuilder.d.ts.map

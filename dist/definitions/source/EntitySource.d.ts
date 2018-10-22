@@ -11,3 +11,4 @@ export declare class EntitySource implements IEntitySource {
     removeUnique(): Promise<void>;
     getAttributeSource(): IAttributeSource;
 }
+//# sourceMappingURL=EntitySource.d.ts.map

@@ -7,10 +7,7 @@ function buildDeleteSteps(input) {
     const pkNames = entity.pk.map(key => key.adapter.field);
     const pkValues = pk;
     const params = pkNames.reduce((acc, currName, currIndex) => {
-        return {
-            ...acc,
-            [currName]: pkValues[currIndex]
-        };
+        return Object.assign({}, acc, { [currName]: pkValues[currIndex] });
     }, {});
     const wherePart = pkNames.map(name => `${name} = :${name}`).join(" AND ");
     const sql = `DELETE FROM ${entity.name} WHERE ${wherePart}`;

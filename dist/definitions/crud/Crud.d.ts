@@ -50,3 +50,4 @@ export declare abstract class Crud {
     static executeUpdate(connection: AConnection, input: IUpdate | IUpdate[]): Promise<void>;
     static executeDelete(connection: AConnection, input: IDelete | IDelete[]): Promise<void>;
 }
+//# sourceMappingURL=Crud.d.ts.map

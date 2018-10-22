@@ -15,3 +15,4 @@ export declare class DataSource implements IDataSource {
     getSequenceSource(): ISequenceSource;
     withTransaction<R>(transaction: Transaction | undefined, callback: (transaction: Transaction) => Promise<R>): Promise<R>;
 }
+//# sourceMappingURL=DataSource.d.ts.map

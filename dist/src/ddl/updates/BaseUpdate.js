@@ -14,7 +14,7 @@ class BaseUpdate {
     async _executeTransaction(callback) {
         return await gdmn_db_1.AConnection.executeTransaction({
             connection: this._connection,
-            callback: callback
+            callback
         });
     }
     async _updateDatabaseVersion(transaction) {

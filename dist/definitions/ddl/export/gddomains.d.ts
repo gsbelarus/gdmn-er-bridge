@@ -3,3 +3,4 @@ export declare type createDomainFunc = (attributeName: string, lName: ILName, ad
 export declare const gdDomains: {
     [name: string]: createDomainFunc;
 };
+//# sourceMappingURL=gddomains.d.ts.map

@@ -20,3 +20,4 @@ export declare class ERBridge {
     exportFromDatabase(dbStructure: DBStructure, transaction: ATransaction, erModel?: ERModel): Promise<ERModel>;
     query(erModel: ERModel, dbStructure: DBStructure, query: IEntityQueryInspector): Promise<IQueryResponse>;
 }
+//# sourceMappingURL=ERBridge.d.ts.map

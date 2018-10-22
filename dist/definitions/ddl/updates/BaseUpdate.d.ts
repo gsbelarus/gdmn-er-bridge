@@ -1,5 +1,4 @@
-import { AConnection, ATransaction } from "gdmn-db";
-import { TExecutor } from "gdmn-db/src/types";
+import { AConnection, ATransaction, TExecutor } from "gdmn-db";
 export declare abstract class BaseUpdate {
     protected abstract readonly _version: number;
     protected abstract readonly _description: string;
@@ -13,3 +12,4 @@ export declare abstract class BaseUpdate {
     protected _getDatabaseVersion(transaction: ATransaction): Promise<number>;
     private _isTableExists;
 }
+//# sourceMappingURL=BaseUpdate.d.ts.map

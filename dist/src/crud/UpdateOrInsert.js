@@ -25,18 +25,15 @@ function makeScalarsAndEntitiesSteps(entity, pk, scalarAttrsValues, entityAttrsV
     // with complex primary keys?
     const pkNames = entity.pk.map(key => key.adapter.field);
     const pkParams = pkNames.reduce((acc, curr, currIndex) => {
-        return {
-            ...acc,
-            [curr]: pk[currIndex]
-        };
+        return Object.assign({}, acc, { [curr]: pk[currIndex] });
     }, {});
     const scalarAttrsValuesParams = scalarAttrsValues.reduce((acc, curr) => {
-        return { ...acc, [curr.attribute.name]: curr.value };
+        return Object.assign({}, acc, { [curr.attribute.name]: curr.value });
     }, {});
     const entityAttrsValuesParams = entityAttrsValues.reduce((acc, curr) => {
-        return { ...acc, [curr.attribute.name]: curr.values[0] };
+        return Object.assign({}, acc, { [curr.attribute.name]: curr.values[0] });
     }, {});
-    const params = { ...pkParams, ...scalarAttrsValuesParams, ...entityAttrsValuesParams };
+    const params = Object.assign({}, pkParams, scalarAttrsValuesParams, entityAttrsValuesParams);
     const scalarAttrsNames = Object.keys(scalarAttrsValuesParams);
     const entityAttrsNames = Object.keys(entityAttrsValuesParams);
     const names = [

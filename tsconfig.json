@@ -1,17 +1,18 @@
 {
   "compilerOptions": {
     "module": "commonjs",
-    "target": "esnext",
-    "lib": ["esnext"],
-    "sourceMap": true,
+    "target": "es2018",
+    "lib": [
+      "es2015",
+      "es2018"
+    ],
     "esModuleInterop": true,
     "strict": true,
-    "outDir": "./dist",
+    "outDir": "./dist/src",
+    "sourceMap": true,
     "declaration": true,
-    "declarationDir": "./dist/definitions",
-    "skipLibCheck": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true
+    "declarationMap": true,
+    "declarationDir": "./dist/definitions"
   },
   "exclude": [
     "./dist",

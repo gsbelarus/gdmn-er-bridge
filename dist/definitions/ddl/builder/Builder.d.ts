@@ -31,3 +31,4 @@ export declare abstract class Builder {
     protected _insertATAttr(attr: Attribute, options: IATAttrOptions): Promise<void>;
 }
 export {};
+//# sourceMappingURL=Builder.d.ts.map

@@ -348,7 +348,7 @@ class ERExport {
                             rbField = Constants_1.Constants.DEFAULT_RB_NAME;
                         }
                         if (adapter) {
-                            parentAttrAdapter = { ...adapter, lbField, rbField };
+                            parentAttrAdapter = Object.assign({}, adapter, { lbField, rbField });
                         }
                         else if (lbField || rbField) {
                             parentAttrAdapter = {

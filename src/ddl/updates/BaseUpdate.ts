@@ -1,5 +1,4 @@
-import {AConnection, ATransaction} from "gdmn-db";
-import {TExecutor} from "gdmn-db/src/types";
+import {AConnection, ATransaction, TExecutor} from "gdmn-db";
 
 export abstract class BaseUpdate {
 
@@ -25,7 +24,7 @@ export abstract class BaseUpdate {
   protected async _executeTransaction<R>(callback: TExecutor<ATransaction, R>): Promise<R> {
     return await AConnection.executeTransaction({
       connection: this._connection,
-      callback: callback
+      callback
     });
   }
 

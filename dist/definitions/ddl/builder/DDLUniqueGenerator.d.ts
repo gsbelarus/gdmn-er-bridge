@@ -7,3 +7,4 @@ export declare class DDLUniqueGenerator {
     next(): Promise<number>;
     private getNextUnique;
 }
+//# sourceMappingURL=DDLUniqueGenerator.d.ts.map

@@ -9,3 +9,4 @@ export declare abstract class SQLTemplates {
     static greater(alias: string, fieldName: string, value: string): string;
     static less(alias: string, fieldName: string, value: string): string;
 }
+//# sourceMappingURL=SQLTemplates.d.ts.map

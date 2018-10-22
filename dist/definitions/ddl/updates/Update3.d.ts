@@ -5,3 +5,4 @@ export declare class Update3 extends BaseSimpleUpdate {
     protected readonly _description: string;
     protected internalRun(ddlHelper: DDLHelper): Promise<void>;
 }
+//# sourceMappingURL=Update3.d.ts.map

@@ -11,3 +11,4 @@ export declare class DomainResolver {
     private static _dateTime2Str;
     private static _time2Str;
 }
+//# sourceMappingURL=DomainResolver.d.ts.map

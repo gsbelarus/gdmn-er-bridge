@@ -12,3 +12,4 @@ export declare class Transaction implements ITransaction {
     commit(): Promise<void>;
     rollback(): Promise<void>;
 }
+//# sourceMappingURL=Transaction.d.ts.map

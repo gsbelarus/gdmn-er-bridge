@@ -11,3 +11,4 @@ export declare class ERModelBuilder extends Builder {
     addEntity(entity: Entity): Promise<Entity>;
     removeEntity(_entity: Entity): Promise<void>;
 }
+//# sourceMappingURL=ERModelBuilder.d.ts.map

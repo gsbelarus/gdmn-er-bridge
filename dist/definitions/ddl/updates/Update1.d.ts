@@ -4,3 +4,4 @@ export declare class Update1 extends BaseUpdate {
     protected readonly _description: string;
     run(): Promise<void>;
 }
+//# sourceMappingURL=Update1.d.ts.map

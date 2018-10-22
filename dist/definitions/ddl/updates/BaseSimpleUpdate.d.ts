@@ -4,3 +4,4 @@ export declare abstract class BaseSimpleUpdate extends BaseUpdate {
     run(): Promise<void>;
     protected abstract internalRun(ddlHelper: DDLHelper): Promise<void>;
 }
+//# sourceMappingURL=BaseSimpleUpdate.d.ts.map

@@ -4,3 +4,4 @@ export interface IDBDetail<ConnectionOptions extends IConnectionOptions = IConne
     driver: ADriver;
     options: ConnectionOptions;
 }
+//# sourceMappingURL=dbdetail.d.ts.map

@@ -2,7 +2,7 @@
   "name": "gdmn-er-bridge",
   "version": "1.0.0",
   "description": "gdmn-er-bridge",
-  "main": "./dist/index.js",
+  "main": "./dist/src/index.js",
   "types": "./dist/definitions/index.d.ts",
   "scripts": {
     "clean": "rimraf dist",

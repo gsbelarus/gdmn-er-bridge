@@ -10,3 +10,4 @@ export declare class Prefix {
     static TRIGGER_BI: string;
     static join(name: string, ...prefixes: string[]): string;
 }
+//# sourceMappingURL=Prefix.d.ts.map

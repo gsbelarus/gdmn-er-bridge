@@ -15,3 +15,4 @@ export declare class Constants {
     static MIN_TIMESTAMP: Date;
     static MAX_TIMESTAMP: Date;
 }
+//# sourceMappingURL=Constants.d.ts.map

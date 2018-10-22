@@ -8,3 +8,4 @@ export declare class SequenceSource implements ISequenceSource {
     create<T extends Sequence>(_: ERModel, obj: T, transaction?: Transaction): Promise<T>;
     delete(_: ERModel, obj: Sequence, transaction?: Transaction): Promise<void>;
 }
+//# sourceMappingURL=SequenceSource.d.ts.map

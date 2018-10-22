@@ -8,3 +8,4 @@ export declare class DBSchemaUpdater extends BaseUpdate {
     private _sort;
     private _verifyAmount;
 }
+//# sourceMappingURL=DBSchemaUpdater.d.ts.map

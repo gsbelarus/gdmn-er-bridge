@@ -29,31 +29,19 @@ function groupAttrsValuesByType(attrsValues) {
     return attrsValues.reduce((acc, curr) => {
         if (gdmn_orm_1.ScalarAttribute.isType(curr.attribute)) {
             const scalarAttrsValues = [...acc.scalarAttrsValues, curr];
-            return {
-                ...acc,
-                scalarAttrsValues
-            };
+            return Object.assign({}, acc, { scalarAttrsValues });
         }
         if (gdmn_orm_1.SetAttribute.isType(curr.attribute)) {
             const setAttrsValues = [...acc.setAttrsValues, curr];
-            return {
-                ...acc,
-                setAttrsValues
-            };
+            return Object.assign({}, acc, { setAttrsValues });
         }
         if (gdmn_orm_1.DetailAttribute.isType(curr.attribute)) {
             const detailAttrsValues = [...acc.detailAttrsValues, curr];
-            return {
-                ...acc,
-                detailAttrsValues
-            };
+            return Object.assign({}, acc, { detailAttrsValues });
         }
         if (gdmn_orm_1.EntityAttribute.isType(curr.attribute)) {
             const entityAttrsValues = [...acc.entityAttrsValues, curr];
-            return {
-                ...acc,
-                entityAttrsValues
-            };
+            return Object.assign({}, acc, { entityAttrsValues });
         }
         throw new Error("Unknow attribute type");
     }, byType);
@@ -76,12 +64,12 @@ function makeDetailAttrsSteps(masterKeyValue, detailAttrsValues) {
                 .map(name => `${name} = :${name}${pkIndex}`)
                 .join(" AND ");
             const params = pKeyNames.reduce((acc, currName, currIndex) => {
-                return { ...acc, [`${currName}${pkIndex}`]: pk[currIndex] };
+                return Object.assign({}, acc, { [`${currName}${pkIndex}`]: pk[currIndex] });
             }, {});
             return { sqlPart, params };
         });
         const whereParams = parts.reduce((acc, part) => {
-            return { ...acc, ...part.params };
+            return Object.assign({}, acc, part.params);
         }, {});
         const whereSQL = parts.map(part => part.sqlPart).join(" OR ");
         const sql = `UPDATE ${detailRelation} SET ${link2masterField} = (${masterKeyValue}) WHERE ${whereSQL}`;
@@ -97,13 +85,9 @@ function makeSetAttrsSteps(makeSQL, crossPKOwn, setAttrsValues) {
         const innerSteps = refIDs.map((currRefID, index) => {
             const currValues = crossValues[index] || [];
             const restCrossAttrsParams = currValues.reduce((acc, curr) => {
-                return { ...acc, [curr.attribute.name]: curr.value };
+                return Object.assign({}, acc, { [curr.attribute.name]: curr.value });
             }, {});
-            const params = {
-                [Constants_1.Constants.DEFAULT_CROSS_PK_OWN_NAME]: crossPKOwn,
-                [Constants_1.Constants.DEFAULT_CROSS_PK_REF_NAME]: currRefID,
-                ...restCrossAttrsParams
-            };
+            const params = Object.assign({ [Constants_1.Constants.DEFAULT_CROSS_PK_OWN_NAME]: crossPKOwn, [Constants_1.Constants.DEFAULT_CROSS_PK_REF_NAME]: currRefID }, restCrossAttrsParams);
             const attrsNames = Object.keys(params);
             const placeholders = attrsNames.map(name => `:${name}`);
             let crossTableName;

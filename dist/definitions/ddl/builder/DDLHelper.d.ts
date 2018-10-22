@@ -55,3 +55,4 @@ export declare class DDLHelper {
     addAutoIncrementTrigger(triggerName: string, tableName: string, fieldName: string, sequenceName: string): Promise<string>;
     private _loggedExecute;
 }
+//# sourceMappingURL=DDLHelper.d.ts.map

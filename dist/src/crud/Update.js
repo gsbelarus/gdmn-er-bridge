@@ -27,18 +27,15 @@ function makeScalarsAndEntitiesSteps(entity, pk, scalarAttrsValues, entityAttrsV
     // with complex primary keys?
     const pkNames = entity.pk.map(key => key.adapter.field);
     const pkParams = pkNames.reduce((acc, curr, currIndex) => {
-        return {
-            ...acc,
-            [curr]: pk[currIndex]
-        };
+        return Object.assign({}, acc, { [curr]: pk[currIndex] });
     }, {});
     const scalarAttrsValuesParams = scalarAttrsValues.reduce((acc, curr) => {
-        return { ...acc, [curr.attribute.name]: curr.value };
+        return Object.assign({}, acc, { [curr.attribute.name]: curr.value });
     }, {});
     const entityAttrsValuesParams = entityAttrsValues.reduce((acc, curr) => {
-        return { ...acc, [curr.attribute.name]: curr.values[0] };
+        return Object.assign({}, acc, { [curr.attribute.name]: curr.values[0] });
     }, {});
-    const params = { ...pkParams, ...scalarAttrsValuesParams, ...entityAttrsValuesParams };
+    const params = Object.assign({}, pkParams, scalarAttrsValuesParams, entityAttrsValuesParams);
     const scalarAttrsNames = Object.keys(scalarAttrsValuesParams);
     const entityAttrsNames = Object.keys(entityAttrsValuesParams);
     const attrsNames = [
@@ -60,12 +57,9 @@ function makeSetAttrsSteps(crossPKOwn, setAttrsValues) {
         const innerSteps = common_1.zip3(refIDs, currRefIDs, crossValues).map(([refID, currRefID, currValues]) => {
             const currCrossValues = currValues || [];
             const restCrossAttrsParams = currCrossValues.reduce((acc, curr) => {
-                return { ...acc, [curr.attribute.name]: curr.value };
+                return Object.assign({}, acc, { [curr.attribute.name]: curr.value });
             }, {});
-            const setPartParams = {
-                [Constants_1.Constants.DEFAULT_CROSS_PK_REF_NAME]: refID,
-                ...restCrossAttrsParams
-            };
+            const setPartParams = Object.assign({ [Constants_1.Constants.DEFAULT_CROSS_PK_REF_NAME]: refID }, restCrossAttrsParams);
             const setPartNames = Object.keys(setPartParams);
             const setSQLPart = setPartNames.map(name => `${name} = :${name}`).join(", ");
             const wherePartParams = {
@@ -81,11 +75,7 @@ function makeSetAttrsSteps(crossPKOwn, setAttrsValues) {
                 crossTableName = currSetAttrValue.attribute.name;
             }
             const sql = `UPDATE ${crossTableName} SET ${setSQLPart} WHERE ${whereSQLPart}`;
-            const params = {
-                ...setPartParams,
-                ...wherePartParams,
-                ...restCrossAttrsParams
-            };
+            const params = Object.assign({}, setPartParams, wherePartParams, restCrossAttrsParams);
             const step = { sql, params };
             return step;
         });

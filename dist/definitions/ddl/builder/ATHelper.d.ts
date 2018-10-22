@@ -47,3 +47,4 @@ export declare class ATHelper {
     insertATFields(input: IInputATFields): Promise<number>;
     insertATRelationFields(input: IInputATRelationFields): Promise<number>;
 }
+//# sourceMappingURL=ATHelper.d.ts.map

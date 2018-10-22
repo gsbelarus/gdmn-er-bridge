@@ -35,3 +35,4 @@ export declare class SelectBuilder {
     private _addToParams;
     private _clearVariables;
 }
+//# sourceMappingURL=SelectBuilder.d.ts.map

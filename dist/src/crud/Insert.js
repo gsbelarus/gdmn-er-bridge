@@ -28,12 +28,12 @@ function makeInsertSQL(tableName, attrsNames, placeholders) {
 }
 function makeReturningIDsStep(entity, scalarAttrsValues, entityAttrsValues) {
     const scalarAttrsValuesParams = scalarAttrsValues.reduce((acc, curr) => {
-        return { ...acc, [curr.attribute.name]: curr.value };
+        return Object.assign({}, acc, { [curr.attribute.name]: curr.value });
     }, {});
     const entityAttrsValuesParams = entityAttrsValues.reduce((acc, curr) => {
-        return { ...acc, [curr.attribute.name]: curr.values[0] };
+        return Object.assign({}, acc, { [curr.attribute.name]: curr.values[0] });
     }, {});
-    const params = { ...scalarAttrsValuesParams, ...entityAttrsValuesParams };
+    const params = Object.assign({}, scalarAttrsValuesParams, entityAttrsValuesParams);
     const attrsNames = Object.keys(params);
     const placeholders = attrsNames.map(name => `:${name}`);
     const attrsNamesString = attrsNames.join(", ");

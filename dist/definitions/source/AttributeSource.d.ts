@@ -8,3 +8,4 @@ export declare class AttributeSource implements IAttributeSource {
     create<T extends Attribute>(parent: Entity, obj: T, transaction?: Transaction): Promise<T>;
     delete(parent: Entity, obj: Attribute, transaction?: Transaction): Promise<void>;
 }
+//# sourceMappingURL=AttributeSource.d.ts.map

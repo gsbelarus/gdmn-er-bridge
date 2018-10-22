@@ -381,7 +381,7 @@ class GDEntities {
                 lName: { ru: { name: "Шапка документа" } },
                 entities: [header]
             }));
-            this._documentClasses[ruid] = { ...this._documentClasses[ruid], line };
+            this._documentClasses[ruid] = Object.assign({}, this._documentClasses[ruid], { line });
             const masterLinks = [
                 {
                     detailRelation: "GD_DOCUMENT",

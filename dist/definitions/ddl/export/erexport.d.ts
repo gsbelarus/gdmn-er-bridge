@@ -27,3 +27,4 @@ export declare class ERExport {
     private _createAttribute;
     private _findEntities;
 }
+//# sourceMappingURL=ERExport.d.ts.map
