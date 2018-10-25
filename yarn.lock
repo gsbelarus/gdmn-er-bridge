@@ -1171,7 +1171,7 @@ gauge@~2.7.3:
     strip-ansi "^3.0.1"
     wide-align "^1.1.0"
 
-"gdmn-db@git+https://github.com/gsbelarus/gdmn-db.git#v1.0.0":
+"gdmn-db@git+https://github.com/gsbelarus/gdmn-db.git":
   version "1.0.0"
   resolved "git+https://github.com/gsbelarus/gdmn-db.git#0ccae18591522487845c0244354d7cc4c0024698"
   dependencies:
@@ -1184,7 +1184,7 @@ gauge@~2.7.3:
   dependencies:
     chevrotain "^3.7.4"
 
-"gdmn-orm@git+https://github.com/gsbelarus/gdmn-orm.git#v1.0.0":
+"gdmn-orm@git+https://github.com/gsbelarus/gdmn-orm.git":
   version "1.0.0"
   resolved "git+https://github.com/gsbelarus/gdmn-orm.git#ce0592ba33408f3e1041abda9f61b19f746dbce8"
   dependencies:
